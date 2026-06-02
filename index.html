@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aveti Learning — Chapter Test Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Supabase client (used only when USE_SUPABASE = true below) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --green:#3B6D11; --green-d:#173404; --green-soft:#EAF3DE;
+    --ink:#15231b; --muted:#5d6c62; --faint:#8a978d;
+    --line:#e6eae6; --bg:#f6f8f5; --card:#ffffff;
+    --teal:#1d9e75; --amber:#ef9f27; --red:#a32d2d;
+    --bandA:#9FE1CB; --bandB:#C0DD97; --bandC:#FAC775;
+    --radius:14px; --shadow:0 1px 2px rgba(20,40,25,.04),0 6px 24px rgba(20,40,25,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Onest',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;margin:0;letter-spacing:-.01em}
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;font-size:14px;color:var(--ink);transition:.15s}
+  button:hover{border-color:#cfd8cf}
+  button.primary{background:var(--green);border-color:var(--green);color:#fff}
+  button.primary:hover{background:#2f5a0d}
+  button.ghost{background:transparent;border:none;color:var(--muted);padding:6px}
+  select,input,textarea{font-family:inherit;font-size:14px;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+  .wrap{max-width:960px;margin:0 auto;padding:18px 16px 60px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .pad{padding:18px 18px}
+  .row{display:flex;gap:12px;align-items:center}
+  .between{justify-content:space-between}
+  .wrap-fields{display:flex;flex-wrap:wrap;gap:10px}
+  .field{flex:1;min-width:120px}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .muted{color:var(--muted)} .faint{color:var(--faint)} .small{font-size:12px} .tiny{font-size:11px}
+  .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600}
+  .pill{font-size:11px;background:#f0f3ef;color:var(--muted);padding:3px 10px;border-radius:99px;display:inline-block}
+  .pill.warn{background:#fdf0db;color:#7a4d05}
+  .pill.ok{background:var(--green-soft);color:var(--green-d)}
+  .brandbar{display:flex;align-items:center;gap:11px}
+  .logo{width:38px;height:38px;border-radius:9px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:700;font-family:'Bricolage Grotesque'}
+  .brandlogo{height:30px;width:auto;display:block}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .tile{border:1px solid var(--line);border-radius:var(--radius);padding:16px;background:var(--card);transition:.15s;cursor:pointer}
+  .tile:hover{border-color:var(--green);box-shadow:var(--shadow);transform:translateY(-1px)}
+  .tile h3{font-size:16px;margin-bottom:4px}
+  .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .listrow:last-child{border-bottom:none}
+  .bar{flex:1;height:8px;background:#eef1ee;border-radius:99px;overflow:hidden}
+  .bar>span{display:block;height:100%;background:var(--teal)}
+  .metric{background:#f8faf7;border-radius:11px;padding:12px 14px;flex:1;min-width:110px}
+  .metric .n{font-family:'Bricolage Grotesque';font-size:22px;font-weight:700}
+  .bands{display:flex;gap:6px;margin:8px 0 4px}
+  .band{flex:1;border-radius:10px;padding:8px 10px}
+  .num{font-family:'Bricolage Grotesque';font-weight:700}
+  .screen{display:none;animation:fade .25s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .topnav{position:sticky;top:0;z-index:5;background:rgba(246,248,245,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topnav .wrap{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+  .crumb{font-size:13px;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600}
+  .overlay{position:fixed;inset:0;background:rgba(10,20,12,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+  .overlay.show{display:flex}
+  .modal{width:100%;max-width:380px;background:var(--card);border-radius:var(--radius);padding:22px;text-align:center}
+  .check{width:48px;height:48px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:none;border-radius:0;background:transparent}
+  .seg button.on{background:var(--green-soft);color:var(--green-d)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .mkin{width:78px;text-align:center}
+  table{width:100%;border-collapse:collapse}
+  .banner{display:flex;gap:9px;align-items:center;background:#eef4fb;color:#1e4d80;border-radius:10px;padding:9px 12px;font-size:12px}
+  .demoflag{background:#fff7e8;border:1px solid #f3e2bf;color:#7a4d05;border-radius:10px;padding:8px 12px;font-size:12px;margin-bottom:14px}
+  a.link{color:var(--green);text-decoration:none}
+</style>
+</head>
+<body>
+
+<!-- ============================================================= -->
+<!--  CONFIG — to go LIVE: set USE_SUPABASE=true and paste keys.    -->
+<!--  Leave as-is to run in DEMO mode with sample data.            -->
+<!-- ============================================================= -->
+<script>
+  const CONFIG = {
+    USE_SUPABASE: true,
+    SUPABASE_URL: "https://rklbozixthnbdwqbzxfh.supabase.co",
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrbGJveml4dGhuYmR3cWJ6eGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTA5NDksImV4cCI6MjA5NTEyNjk0OX0._sRFQTo0qQ4jVFrQIpdtP8OplP2rCvzOykmIQPe7qnE",
+    CENTRE: { name: "Aveti Tuition Centre", address: "M74, Baramunda Housing Board Colony", phone: "98619 27954" }
+  };
+</script>
+
+<div class="topnav">
+  <div class="wrap">
+    <div class="brandbar">
+      <img class="brandlogo" alt="Aveti Learning" src="aveti-logo.png">
+      <div class="crumb" id="crumb" style="margin-left:2px">Home</div>
+    </div>
+    <div class="row">
+      <button class="ghost" id="navHome">Home</button>
+      <button class="ghost" id="navRoster">Students</button>
+      <button class="ghost" id="navSignout" style="display:none">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="app"></div>
+
+<!-- Save confirmation modal -->
+<div class="overlay" id="saveOverlay">
+  <div class="modal">
+    <div class="check">✓</div>
+    <h2 style="font-size:19px;">Test saved</h2>
+    <div class="muted small" id="saveSummary" style="margin:6px 0 14px"></div>
+    <div class="row" style="gap:8px;margin-bottom:8px">
+      <button class="primary" style="flex:1" id="saveToParents">Share parent cards</button>
+    </div>
+    <div class="row" style="gap:8px">
+      <button style="flex:1" id="saveToTeacher">Teacher report</button>
+      <button style="flex:1" id="saveToGrowth">Growth</button>
+    </div>
+    <div style="margin-top:12px"><a class="link small" id="saveDone" href="#">Done — back to home</a></div>
+  </div>
+</div>
+
+<!-- Login (shown only in live Supabase mode) -->
+<div class="overlay" id="loginOverlay">
+  <div class="modal" style="text-align:left">
+    <div class="brandbar" style="justify-content:center;margin-bottom:8px"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"></div>
+    <h2 id="loginTitle" style="font-size:19px;text-align:center">Sign in</h2>
+    <div class="muted small" style="text-align:center;margin-bottom:14px">Aveti Learning · teacher access</div>
+    <label class="tiny muted">Email</label>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="you@centre.org" style="margin:4px 0 10px">
+    <label class="tiny muted">Password</label>
+    <input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••" style="margin:4px 0 6px">
+    <div id="authErr" class="tiny" style="color:var(--red);min-height:16px;margin-bottom:8px"></div>
+    <button class="primary" id="authSubmit" style="width:100%">Sign in</button>
+    <div class="small muted" style="text-align:center;margin-top:12px"><a href="#" class="link" id="authToggle">New centre? Create an account</a></div>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+   DATA LAYER  — same interface for demo (in-memory) and Supabase.
+   ============================================================= */
+let supa = null;
+if (CONFIG.USE_SUPABASE) {
+  supa = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+}
+
+const uid = () => Math.random().toString(36).slice(2,10);
+
+/* ---- Demo seed (used when USE_SUPABASE = false) ---- */
+const demo = {
+  students: [
+    { id:'s1', name:'Saswat',     class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919800000021' },
+    { id:'s2', name:'Anshuman',   class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919900000007' },
+    { id:'s3', name:'Guruprasad', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919000000044' },
+    { id:'s4', name:'Asman',      class_level:9, section:'A', gender:'female', parent_name:'', parent_phone:'' },
+  ],
+  tests: [
+    { id:'t1', class_level:9, section:'A', subject:'Hindi', chapter_no:1, chapter_name:'दो बैलों की कथा', test_type:'CET', full_marks:25, test_date:'2026-04-08' },
+    { id:'t2', class_level:9, section:'A', subject:'Hindi', chapter_no:2, chapter_name:'ल्हासा की ओर',   test_type:'CET', full_marks:20, test_date:'2026-04-24' },
+    { id:'t3', class_level:9, section:'A', subject:'Hindi', chapter_no:3, chapter_name:'उपभोक्तावाद',     test_type:'CET', full_marks:25, test_date:'2026-05-12' },
+  ],
+  results: [
+    {id:'r1',test_id:'t1',student_id:'s1',marks:22,present:true},{id:'r2',test_id:'t1',student_id:'s2',marks:21.5,present:true},{id:'r3',test_id:'t1',student_id:'s3',marks:19.5,present:true},{id:'r4',test_id:'t1',student_id:'s4',marks:13,present:true},
+    {id:'r5',test_id:'t2',student_id:'s1',marks:16.8,present:true},{id:'r6',test_id:'t2',student_id:'s2',marks:16.4,present:true},{id:'r7',test_id:'t2',student_id:'s3',marks:14.8,present:true},{id:'r8',test_id:'t2',student_id:'s4',marks:9.6,present:true},
+    {id:'r9',test_id:'t3',student_id:'s1',marks:22.5,present:true},{id:'r10',test_id:'t3',student_id:'s2',marks:21.3,present:true},{id:'r11',test_id:'t3',student_id:'s3',marks:20,present:true},{id:'r12',test_id:'t3',student_id:'s4',marks:15,present:true},
+  ],
+};
+
+const memoryDB = {
+  async listStudents(){ return [...demo.students].sort((a,b)=>a.name.localeCompare(b.name)); },
+  async addStudent(s){ const r={id:uid(),...s}; demo.students.push(r); return r; },
+  async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
+  async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
+  async listTests(){ return [...demo.tests].sort((a,b)=>new Date(b.test_date)-new Date(a.test_date)); },
+  async addTest(t){ const r={id:uid(),...t}; demo.tests.push(r); return r; },
+  async listResults(testId){ return demo.results.filter(r=>r.test_id===testId); },
+  async allResults(){ return demo.results; },
+  async saveResults(testId,rows){ demo.results=demo.results.filter(r=>r.test_id!==testId); rows.forEach(r=>demo.results.push({id:uid(),test_id:testId,...r})); },
+};
+
+/* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
+let CENTRE_ID = null;   // set after login by ensureCentre()
+const supaDB = {
+  async listStudents(){ const {data}=await supa.from('students').select('*').order('name'); return data||[]; },
+  async addStudent(s){ const {data}=await supa.from('students').insert({...s, centre_id:CENTRE_ID}).select().single(); return data; },
+  async updateStudent(id,patch){ await supa.from('students').update(patch).eq('id',id); },
+  async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
+  async listTests(){ const {data}=await supa.from('tests').select('*').order('test_date',{ascending:false}); return data||[]; },
+  async addTest(t){ const {data}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select().single(); return data; },
+  async listResults(testId){ const {data}=await supa.from('results').select('*').eq('test_id',testId); return data||[]; },
+  async allResults(){ const {data}=await supa.from('results').select('*'); return data||[]; },
+  async saveResults(testId,rows){ await supa.from('results').delete().eq('test_id',testId); await supa.from('results').insert(rows.map(r=>({test_id:testId,...r}))); },
+};
+
+const DB = CONFIG.USE_SUPABASE ? supaDB : memoryDB;
+
+/* ---------- shared options + avatar ---------- */
+const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
+const CLASSES = Array.from({length:12},(_,i)=>i+1);
+const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
+const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'selected':''}>Class ${c}</option>`).join('');
+const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
+const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
+const genderOptions  = sel => ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
+const OPTIONAL = ['None','Hindi','English','Sanskrit'];
+const optionalOptions = sel => OPTIONAL.map(o=>`<option value="${o}" ${o===(sel||'None')?'selected':''}>${o==='None'?'Optional: —':'Opt: '+o}</option>`).join('');
+function avatar(gender,name){
+  const f = (gender||'').toLowerCase().startsWith('f');
+  const c = f ? '#d96aa0' : '#4a90d9';
+  const bg = f ? '#fbeef4' : '#eaf2fb';
+  return `<span title="${cap(gender)}" style="width:34px;height:34px;border-radius:50%;background:${bg};display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="${c}"><circle cx="12" cy="8" r="4.2"/><path d="M4.5 21c0-4.2 3.4-7.2 7.5-7.2s7.5 3 7.5 7.2z"/></svg></span>`;
+}
+const val = id => document.getElementById(id).value;
+const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
+function perfBand(p){
+  if(p>=90) return {label:'Excellent', emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
+  if(p>=75) return {label:'Very Good', emoji:'👏', line:n=>`Well done, ${n}. Strong work!`};
+  if(p>=60) return {label:'Good', emoji:'👍', line:n=>`Good going, ${n}. A little more will go far.`};
+  if(p>=40) return {label:'Needs Practice', emoji:'📘', line:n=>`${n} can improve with some revision. We're on it.`};
+  return {label:'Needs Support', emoji:'🤝', line:n=>`Let's work together to help ${n} improve.`};
+}
+
+/* ---------- helpers ---------- */
+const pct = (marks, full) => (marks==null||full==0) ? null : Math.round((marks/full)*1000)/10;
+const band = p => p>=80?'A':p>=60?'B':p>=40?'C':'D';
+const bandColor = b => ({A:'var(--teal)',B:'#639922',C:'var(--amber)',D:'var(--red)'})[b];
+const fmtDate = d => new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+async function classAverage(test){
+  const rs = (await DB.listResults(test.id)).filter(r=>r.present && r.marks!=null);
+  if(!rs.length) return null;
+  return Math.round(rs.reduce((a,r)=>a+pct(r.marks,test.full_marks),0)/rs.length*10)/10;
+}
+
+/* =============================================================
+   ROUTER + SCREENS
+   ============================================================= */
+const app = document.getElementById('app');
+const crumb = document.getElementById('crumb');
+let CURRENT_TEST = null;
+
+function setCrumb(t){ crumb.textContent = t; }
+function show(html){ app.innerHTML = '<div class="screen active">'+html+'</div>'; }
+
+const demoNote = CONFIG.USE_SUPABASE ? '' :
+  '<div class="demoflag">Demo mode — sample data, nothing is saved permanently. Set <b>USE_SUPABASE = true</b> in the file and add your keys to go live.</div>';
+
+/* ---------- HOME ---------- */
+async function home(){
+  setCrumb('Home');
+  const tests = await DB.listTests();
+  let recent='';
+  for(const t of tests.slice(0,4)){
+    const avg = await classAverage(t);
+    const rs = await DB.listResults(t.id);
+    const present = rs.filter(r=>r.present).length;
+    recent += `<div class="listrow">
+      <div style="flex:1;min-width:0">
+        <div>${chapterLabel(t)}</div>
+        <div class="tiny faint">${t.test_type} · ${t.full_marks} marks · ${fmtDate(t.test_date)} · ${present}/${rs.length} present</div>
+      </div>
+      <div class="num" style="width:46px;text-align:right">${avg!=null?avg+'%':'—'}</div>
+      <button class="ghost" onclick="openTeacher('${t.id}')" title="View">👁</button>
+      <button class="ghost" onclick="openParents('${t.id}')" title="Share">↗</button>
+    </div>`;
+  }
+  show(`
+    ${demoNote}
+    <div class="card pad" style="margin-bottom:16px">
+      <div class="row between" style="flex-wrap:wrap;gap:10px">
+        <div class="brandbar">
+          <img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png">
+          <div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">${CONFIG.CENTRE.address} · Ph ${CONFIG.CENTRE.phone}</div></div>
+        </div>
+        <button class="primary" onclick="enterMarks()">+ Enter test marks</button>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin:4px 2px 8px">Open a report</div>
+    <div class="tiles" style="margin-bottom:20px">
+      <div class="tile" onclick="openTeacher()">
+        <h3>📋 Teacher report</h3>
+        <div class="muted small">Class marks, ranking, bands and who needs support.</div>
+      </div>
+      <div class="tile" onclick="openParents()">
+        <h3>👪 Parent report</h3>
+        <div class="muted small">A card per student — send to parents on WhatsApp.</div>
+      </div>
+      <div class="tile" onclick="growth()">
+        <h3>📈 Growth tracker</h3>
+        <div class="muted small">Chapter-to-chapter trend, class vs individual.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad row between"><span class="eyebrow">Recent tests</span></div>
+      <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
+    </div>
+  `);
+}
+
+/* ---------- ROSTER ---------- */
+let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All';
+async function roster(){
+  setCrumb('Students');
+  const all = await DB.listStudents();
+  const students = SEC_FILTER==='All' ? all : all.filter(s=>(s.section||'')===SEC_FILTER);
+  const rows = students.length ? students.map(studentRow).join('')
+    : '<div class="muted small" style="padding:8px 0">No students here yet.</div>';
+  const fbtn = (v,label)=>`<button class="${SEC_FILTER===v?'on':''}" onclick="setSecFilter('${v}')">${label}</button>`;
+  show(`
+    ${demoNote}
+    <div class="card">
+      <div class="pad row between">
+        <div><h2 style="font-size:18px">Students</h2><div class="muted small">Add once with class, section, gender and parent number. They appear automatically when you enter marks for that class &amp; section.</div></div>
+        <button class="primary" onclick="toggleAdd()">+ Add student</button>
+      </div>
+      <div style="display:${SHOW_ADD?'block':'none'};padding:0 18px 4px">${addFormHTML()}</div>
+      <div class="pad row" style="padding-top:6px;padding-bottom:2px;gap:8px;align-items:center">
+        <span class="small muted">Show</span>
+        <select style="width:auto" onchange="setSecFilter(this.value)">
+          <option value="All" ${SEC_FILTER==='All'?'selected':''}>All sections</option>
+          <option value="A" ${SEC_FILTER==='A'?'selected':''}>Section A</option>
+          <option value="B" ${SEC_FILTER==='B'?'selected':''}>Section B</option>
+        </select>
+      </div>
+      <div class="pad" style="padding-top:8px">${rows}</div>
+    </div>
+  `);
+}
+window.setSecFilter = v=>{ SEC_FILTER=v; roster(); };
+function studentRow(s){
+  if(EDIT_ID===s.id) return editRow(s);
+  return `<div class="listrow">
+    ${avatar(s.gender,s.name)}
+    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}</div></div>
+    <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
+    <button onclick="startEdit('${s.id}')">Edit</button>
+    <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
+  </div>`;
+}
+function editRow(s){
+  return `<div class="listrow" style="flex-wrap:wrap;gap:8px">
+    <input id="ed_name" value="${s.name}" placeholder="Name" style="flex:1;min-width:120px">
+    <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
+    <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>
+    <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
+    <select id="ed_opt" style="width:auto">${optionalOptions(s.optional_subject)}</select>
+    <input id="ed_phone" value="${s.parent_phone||''}" placeholder="+91 parent number" style="flex:1;min-width:150px">
+    <button class="primary" onclick="saveEdit('${s.id}')">Save</button>
+    <button onclick="cancelEdit()">Cancel</button>
+  </div>`;
+}
+function addFormHTML(){
+  return `<div class="row" style="flex-wrap:wrap;gap:8px;background:#f8faf7;border-radius:11px;padding:12px">
+    <input id="ad_name" placeholder="Student name" style="flex:1;min-width:140px">
+    <select id="ad_class" style="width:auto">${classOptions(9)}</select>
+    <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
+    <select id="ad_gender" style="width:auto">${genderOptions('male')}</select>
+    <select id="ad_opt" style="width:auto">${optionalOptions('None')}</select>
+    <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
+    <button class="primary" onclick="submitAdd()">Add</button>
+  </div>`;
+}
+window.toggleAdd = ()=>{ SHOW_ADD=!SHOW_ADD; roster(); };
+window.submitAdd = async ()=>{
+  const name=val('ad_name').trim(); if(!name){ alert('Enter a student name'); return; }
+  const sec = val('ad_sec');
+  await DB.addStudent({ name, class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender:val('ad_gender'), optional_subject:val('ad_opt'), parent_name:'', parent_phone:val('ad_phone').trim() });
+  SHOW_ADD=false; roster();
+};
+window.startEdit = id=>{ EDIT_ID=id; roster(); };
+window.cancelEdit = ()=>{ EDIT_ID=null; roster(); };
+window.saveEdit = async id=>{
+  const sec = val('ed_sec');
+  await DB.updateStudent(id,{ name:val('ed_name').trim(), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender:val('ed_gender'), optional_subject:val('ed_opt'), parent_phone:val('ed_phone').trim() });
+  EDIT_ID=null; roster();
+};
+window.deleteStudent = async (id,name)=>{
+  if(!confirm('Delete '+name+'? This also removes their past marks and cannot be undone.')) return;
+  await DB.deleteStudent(id); roster();
+};
+
+/* ---------- ENTER MARKS ---------- */
+let EM = { full:25, rows:[] };
+async function enterMarks(){
+  setCrumb('Enter test marks');
+  EM = { full:25, rows:[] };
+  show(`
+    ${demoNote}
+    <div class="card pad">
+      <h2 style="font-size:18px;margin-bottom:14px">Enter test marks</h2>
+      <div class="wrap-fields" style="margin-bottom:10px">
+        <div class="field"><label>Class</label><select id="emClass" onchange="loadEMRoster()">${classOptions(9)}</select></div>
+        <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions('All',true)}</select></div>
+        <div class="field"><label>Subject</label><select id="emSub">${subjectOptions('Hindi')}</select></div>
+        <div class="field" style="flex:2"><label>Chapter</label><input id="emChap" placeholder="e.g. 4 — मनुष्यता"></div>
+      </div>
+      <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
+        <div class="field"><label>Test type</label><select><option>Chapter End Test</option><option>Class Test</option></select></div>
+        <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
+          <div class="seg"><button id="f20" onclick="setFull(20)">20</button><button id="f25" class="on" onclick="setFull(25)">25</button></div>
+        </div>
+        <div class="field"><label>Date</label><input type="date" id="emDate" value="${new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">25</b></span></div>
+      <div id="emRoster"></div>
+      <div id="emPicker" style="margin-top:10px"></div>
+      <div class="row between" style="background:#f8faf7;border-radius:11px;padding:12px 14px;margin-top:14px;flex-wrap:wrap;gap:12px">
+        <div class="row" style="gap:22px">
+          <div><div class="tiny muted">Entered</div><div class="num" style="font-size:18px"><span id="cEntered">0</span> / <span id="cTotal">0</span></div></div>
+          <div><div class="tiny muted">Class avg</div><div class="num" style="font-size:18px" id="cAvg">—</div></div>
+          <div><div class="tiny muted">Absent</div><div class="num" style="font-size:18px" id="cAbs">0</div></div>
+          <div><div class="tiny muted">N.A.</div><div class="num" style="font-size:18px" id="cNA">0</div></div>
+        </div>
+        <button class="primary" onclick="saveTest()">✓ Save &amp; generate reports</button>
+      </div>
+    </div>
+  `);
+  loadEMRoster();
+}
+window.loadEMRoster = async ()=>{
+  const cls = parseInt(val('emClass')), sec = val('emSec');
+  const all = await DB.listStudents();
+  EM.classStudents = all.filter(s=> s.class_level===cls);   // whole class, any section, for the picker
+  const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
+  EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
+  recountEM(); renderEMRoster();
+};
+function renderPicker(){
+  const el = document.getElementById('emPicker');
+  if(!el) return;
+  const inRoster = new Set(EM.rows.map(r=>r.student_id));
+  const avail = (EM.classStudents||[]).filter(s=>!inRoster.has(s.id));
+  if(!avail.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="row" style="gap:8px;align-items:center">
+    <span class="small muted">Add a student:</span>
+    <select id="emPick" style="width:auto"><option value="">Choose a name…</option>${avail.map(s=>`<option value="${s.id}">${s.name} (Class ${s.class_level}${s.section?(' '+s.section):''})</option>`).join('')}</select>
+    <button onclick="addPicked()">Add to roster</button>
+  </div>`;
+}
+window.addPicked = ()=>{
+  const id = val('emPick'); if(!id) return;
+  const s = (EM.classStudents||[]).find(x=>x.id===id); if(!s) return;
+  EM.rows.push({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false});
+  renderEMRoster();
+};
+window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); };
+function renderEMRoster(){
+  const el = document.getElementById('emRoster');
+  if(!EM.rows.length){
+    el.innerHTML = `<div class="muted small" style="padding:14px 0">No students in this class &amp; section yet. Add them in the <a class="link" href="#" onclick="event.preventDefault();window.navHavRoster()">Students</a> tab, or pick a name below.</div>`;
+    renderPicker(); recountEM(); return;
+  }
+  el.innerHTML = EM.rows.map((r,i)=>`
+    <div class="listrow" style="${r.na?'opacity:.55':''}">
+      <div style="width:20px" class="tiny faint">${i+1}</div>
+      ${avatar(r.gender,r.name)}
+      <div style="flex:1">${r.name}${r.na?' <span class="pill">N.A.</span>':''}</div>
+      <input class="mkin" type="number" min="0" max="${EM.full}" step="0.5" placeholder="0" ${(r.present&&!r.na)?'':'disabled'} value="${r.marks??''}" oninput="setMark(${i},this.value)">
+      <span class="tiny faint" style="width:28px">/${EM.full}</span>
+      <button style="min-width:74px" ${r.na?'disabled':''} class="${r.present?'':'on'}" onclick="toggleAbsent(${i})">${r.present?'Absent':'Absent ✓'}</button>
+      <button style="min-width:58px" class="${r.na?'on':''}" title="Did not take this subject (optional)" onclick="toggleNA(${i})">${r.na?'N.A. ✓':'N.A.'}</button>
+      <button class="ghost" title="Remove from this test" onclick="removeRow(${i})">✕</button>
+    </div>`).join('');
+  renderPicker();
+  recountEM();
+}
+window.setFull = f=>{ EM.full=f; document.getElementById('f20').classList.toggle('on',f===20); document.getElementById('f25').classList.toggle('on',f===25); document.getElementById('fmLabel').textContent=f; EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;}); renderEMRoster(); };
+window.setMark = (i,v)=>{ let n=parseFloat(v); if(isNaN(n)){EM.rows[i].marks=null;} else {n=Math.max(0,Math.min(EM.full,n)); EM.rows[i].marks=n;} recountEM(); };
+window.toggleAbsent = i=>{ if(EM.rows[i].na) return; EM.rows[i].present=!EM.rows[i].present; if(!EM.rows[i].present)EM.rows[i].marks=null; renderEMRoster(); };
+window.toggleNA = i=>{ EM.rows[i].na=!EM.rows[i].na; if(EM.rows[i].na){ EM.rows[i].marks=null; EM.rows[i].present=true; } renderEMRoster(); };
+function recountEM(){
+  const eligible = EM.rows.filter(r=>!r.na);
+  let entered=0,abs=0,naC=EM.rows.length-eligible.length,sum=0,c=0;
+  eligible.forEach(r=>{ if(!r.present){abs++;return;} if(r.marks!=null){entered++;sum+=pct(r.marks,EM.full);c++;} });
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('cEntered',entered); set('cTotal',eligible.length); set('cAbs',abs); set('cNA',naC);
+  set('cAvg', c?(Math.round(sum/c*10)/10)+'%':'—');
+}
+window.saveTest = async ()=>{
+  const eligible = EM.rows.filter(r=>!r.na);
+  if(!eligible.length){ alert('No students to record (everyone is marked N.A.).'); return; }
+  const blank = eligible.find(r=>r.present && r.marks==null);
+  if(blank){ if(!confirm(blank.name+' has no marks. Save anyway? (Cancel to go back and mark absent or N.A.)')) return; }
+  const chap = (val('emChap')||'').trim();
+  const numM = chap.match(/(\d+)/);
+  const clsNum = parseInt(val('emClass'));
+  const allTests = await DB.listTests();
+  const chapNo = numM ? parseInt(numM[1]) : (allTests.filter(t=>t.class_level===clsNum && t.subject===val('emSub')).length+1);
+  const secVal = val('emSec');
+  const test = await DB.addTest({
+    class_level: clsNum, section: secVal==='All'?null:secVal,
+    subject: val('emSub'),
+    chapter_no: chapNo,
+    chapter_name: chap || ('Chapter '+chapNo),
+    test_type:'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
+  });
+  await DB.saveResults(test.id, eligible.map(r=>({student_id:r.student_id,marks:r.present?r.marks:null,present:r.present})));
+  CURRENT_TEST = test.id;
+  const avg = await classAverage(test);
+  const entered = eligible.filter(r=>r.present&&r.marks!=null).length;
+  const abs = eligible.filter(r=>!r.present).length;
+  document.getElementById('saveSummary').innerHTML =
+    `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(test.test_date)}<br><br><b>${entered}</b> entered · <b>${abs}</b> absent · class avg <b>${avg??'—'}%</b>`;
+  document.getElementById('saveOverlay').classList.add('show');
+};
+
+/* ---------- TEACHER REPORT ---------- */
+async function openTeacher(testId){
+  const tests = await DB.listTests();
+  CURRENT_TEST = testId || CURRENT_TEST || (tests[0] && tests[0].id);
+  const test = tests.find(t=>t.id===CURRENT_TEST); if(!test){ home(); return; }
+  setCrumb('Teacher report');
+  const rs = await DB.listResults(test.id);
+  const students = await DB.listStudents();
+  const nameOf = id => (students.find(s=>s.id===id)||{}).name||'—';
+  let rows = rs.map(r=>({name:nameOf(r.student_id),marks:r.marks,present:r.present,p:r.present?pct(r.marks,test.full_marks):null}));
+  const present = rows.filter(r=>r.present && r.p!=null).sort((a,b)=>b.p-a.p);
+  const avg = present.length?Math.round(present.reduce((a,r)=>a+r.p,0)/present.length*10)/10:null;
+  const counts={A:0,B:0,C:0,D:0}; present.forEach(r=>counts[band(r.p)]++);
+  const hi=present[0], lo=present[present.length-1];
+  const list = present.map((r,i)=>`
+    <div class="listrow">
+      <div style="width:20px" class="tiny faint">${i+1}</div>
+      <div style="flex:1">${r.name}${r.p<40?' <span class="pill warn">needs support</span>':''}</div>
+      <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>
+      <div class="num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
+      <div class="muted small" style="width:42px;text-align:right">${r.p}%</div>
+    </div>`).join('');
+  show(`
+    <div class="card pad">
+      <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">Class ${test.class_level}${test.section?(" "+test.section):" (all)"} · ${test.subject} · ${chapterLabel(test)}</div></div></div>
+        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks<br>${fmtDate(test.test_date)}</div>
+      </div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
+        <div class="metric"><div class="tiny muted">Highest</div><div class="n">${hi?hi.p+'%':'—'}</div><div class="tiny faint">${hi?hi.name:''}</div></div>
+        <div class="metric"><div class="tiny muted">Lowest</div><div class="n">${lo?lo.p+'%':'—'}</div><div class="tiny faint">${lo?lo.name:''}</div></div>
+        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${present.length}/${rows.length}</div></div>
+      </div>
+      <div class="small muted">Score bands</div>
+      <div class="bands">
+        <div class="band" style="background:var(--bandA);flex:2"><div class="tiny" style="color:#04342c">A · 80–100</div><div class="num" style="color:#04342c">${counts.A}</div></div>
+        <div class="band" style="background:var(--bandB)"><div class="tiny" style="color:#173404">B · 60–79</div><div class="num" style="color:#173404">${counts.B}</div></div>
+        <div class="band" style="background:var(--bandC)"><div class="tiny" style="color:#412402">C · 40–59</div><div class="num" style="color:#412402">${counts.C}</div></div>
+        <div class="band" style="background:#f0f3ef"><div class="tiny faint">D · &lt;40</div><div class="num faint">${counts.D}</div></div>
+      </div>
+      <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
+      ${list}
+      <div class="row" style="margin-top:16px;gap:8px">
+        <button onclick="window.print()">🖨 Print / PDF</button>
+        <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
+      </div>
+    </div>
+  `);
+}
+
+/* ---------- PARENT SHARE ---------- */
+async function openParents(testId){
+  const tests = await DB.listTests();
+  CURRENT_TEST = testId || CURRENT_TEST || (tests[0] && tests[0].id);
+  const test = tests.find(t=>t.id===CURRENT_TEST); if(!test){ home(); return; }
+  setCrumb('Parent report');
+  const rs = await DB.listResults(test.id);
+  const students = await DB.listStudents();
+  const avg = await classAverage(test);
+  let rows='';
+  rs.filter(r=>r.present&&r.marks!=null).forEach(r=>{
+    const s = students.find(x=>x.id===r.student_id)||{};
+    const p = pct(r.marks,test.full_marks);
+    const pb = perfBand(p);
+    const msg = encodeURIComponent(
+`Namaste Parent 🙏
+Here is the Chapter End Test (CET) Report for ${s.name}:
+
+• Subject: ${test.subject} (${chapterLabel(test)})
+• Student Score: ${r.marks} / ${test.full_marks} (${p}%)
+• Class Average: ${avg}%
+• Performance: ${pb.label} ${pb.emoji}
+
+${pb.line(s.name)}
+
+Thanks,
+${CONFIG.CENTRE.name}`);
+    const phone = (s.parent_phone||'').replace(/[^\d]/g,'');
+    rows += `<div class="listrow">
+      ${avatar(s.gender,s.name)}
+      <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}</div></div>
+      ${phone
+        ? `<a class="link small" style="margin-right:6px">${s.parent_phone}</a><a href="https://wa.me/${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>`
+        : `<span class="pill warn" style="margin-right:6px">no number</span><button onclick="window.navHavRoster()">Add</button>`}
+    </div>`;
+  });
+  show(`
+    <div class="card pad">
+      <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">Class ${test.class_level}${test.section?(" "+test.section):" (all)"} · ${test.subject} · Ch ${test.chapter_no} · ${test.test_type}</div></div></div>
+      </div>
+      <div class="banner" style="margin-bottom:14px">🔒 Each parent receives only their own child's result — never the class list or rank.</div>
+      <div class="small muted" style="margin-bottom:4px">Recipients</div>
+      ${rows}
+      <div class="tiny faint" style="margin-top:12px">Tap <b>Send</b> to open that parent's WhatsApp with the message ready. (In demo, links open real WhatsApp web — they won't send by themselves.)</div>
+    </div>
+  `);
+}
+window.navHavRoster = ()=>roster();
+
+/* ---------- GROWTH ---------- */
+let GR = { mode:'class', student:null };
+async function growth(){
+  setCrumb('Growth tracker');
+  const tests = (await DB.listTests()).slice().sort((a,b)=>a.chapter_no-b.chapter_no);
+  const students = await DB.listStudents();
+  if(!GR.student && students[0]) GR.student = students[0].id;
+  if(tests.length<2){
+    show(`<div class="card pad"><h2 style="font-size:18px">Growth tracker</h2><div class="muted" style="margin-top:8px">Add one more chapter test to see the trend. A growth line needs at least two tests.</div></div>`);
+    return;
+  }
+  const allRes = await DB.allResults();
+  const labels = tests.map(t=>'Ch'+t.chapter_no);
+  const classSeries = [];
+  for(const t of tests){ classSeries.push(await classAverage(t)); }
+  const studentSeries = tests.map(t=>{
+    const r = allRes.find(x=>x.test_id===t.id && x.student_id===GR.student);
+    return (r&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
+  });
+  const sName = (students.find(s=>s.id===GR.student)||{}).name||'';
+  const opts = students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${s.name}</option>`).join('');
+  const series = GR.mode==='class'
+    ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3}]
+    : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true}];
+  show(`
+    <div class="card pad">
+      <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div><h2 style="font-size:18px">Marks journey</h2><div class="muted small">Percentage across chapters</div></div>
+        <div class="row" style="gap:8px">
+          <div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div>
+          <select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${opts}</select>
+        </div>
+      </div>
+      ${lineChartSVG(labels, series)}
+    </div>
+  `);
+}
+window.setGrowthMode = m=>{ GR.mode=m; growth(); };
+window.setGrowthStudent = id=>{ GR.student=id; growth(); };
+
+function lineChartSVG(labels, series){
+  const W=680,H=300,pad={l:38,r:14,t:16,b:34};
+  const iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
+  const x=i=>pad.l + (labels.length<=1?iw/2:(i*iw/(labels.length-1)));
+  const y=v=>pad.t + ih - (v/100*ih);
+  let grid='';
+  [0,25,50,75,100].forEach(g=>{ grid+=`<line x1="${pad.l}" y1="${y(g)}" x2="${W-pad.r}" y2="${y(g)}" stroke="#eef1ee"/><text x="${pad.l-8}" y="${y(g)+4}" font-size="11" fill="#8a978d" text-anchor="end">${g}%</text>`; });
+  let xl=labels.map((l,i)=>`<text x="${x(i)}" y="${H-12}" font-size="11" fill="#8a978d" text-anchor="middle">${l}</text>`).join('');
+  let paths='',dots='',legend='';
+  series.forEach((s,si)=>{
+    const pts=s.data.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);
+    const d=pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(' ');
+    paths+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
+    pts.forEach(p=>dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${s.color}"/>`);
+    legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
+  });
+  return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" width="100%">${grid}${paths}${dots}${xl}</svg>`;
+}
+
+/* ---------- modal + nav wiring ---------- */
+document.getElementById('saveDone').onclick=e=>{e.preventDefault();document.getElementById('saveOverlay').classList.remove('show');home();};
+document.getElementById('saveToParents').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openParents(CURRENT_TEST);};
+document.getElementById('saveToTeacher').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openTeacher(CURRENT_TEST);};
+document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');growth();};
+document.getElementById('navHome').onclick=home;
+document.getElementById('navRoster').onclick=roster;
+window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.enterMarks=enterMarks;
+
+/* =============================================================
+   AUTH (Supabase email/password). Demo mode skips login entirely.
+   ============================================================= */
+let AUTH_MODE = 'signin';
+const loginOverlay = document.getElementById('loginOverlay');
+const authErr = el => document.getElementById('authErr').textContent = el;
+
+function renderAuthMode(){
+  document.getElementById('loginTitle').textContent = AUTH_MODE==='signin' ? 'Sign in' : 'Create an account';
+  document.getElementById('authSubmit').textContent = AUTH_MODE==='signin' ? 'Sign in' : 'Create account';
+  document.getElementById('authToggle').textContent = AUTH_MODE==='signin' ? 'New centre? Create an account' : 'Have an account? Sign in';
+  document.getElementById('authPass').setAttribute('autocomplete', AUTH_MODE==='signin'?'current-password':'new-password');
+  authErr('');
+}
+document.getElementById('authToggle').onclick = e=>{ e.preventDefault(); AUTH_MODE = AUTH_MODE==='signin'?'signup':'signin'; renderAuthMode(); };
+
+async function ensureCentre(){
+  let { data } = await supa.from('centres').select('*').limit(1);
+  if (data && data.length){ CENTRE_ID = data[0].id; return; }
+  const { data:created, error } = await supa.from('centres')
+    .insert({ name:CONFIG.CENTRE.name, address:CONFIG.CENTRE.address, phone:CONFIG.CENTRE.phone })
+    .select().single();
+  if (error) throw error;
+  CENTRE_ID = created.id;
+}
+
+async function afterLogin(){
+  loginOverlay.classList.remove('show');
+  document.getElementById('navSignout').style.display='';
+  try { await ensureCentre(); } catch(e){ /* RLS/setup issue surfaces on first action */ }
+  home();
+}
+
+document.getElementById('authSubmit').onclick = async ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPass').value;
+  if(!email || !password){ authErr('Enter email and password.'); return; }
+  authErr('');
+  const fn = AUTH_MODE==='signup'
+    ? supa.auth.signUp({ email, password })
+    : supa.auth.signInWithPassword({ email, password });
+  const { data, error } = await fn;
+  if(error){ authErr(error.message); return; }
+  if(AUTH_MODE==='signup' && !data.session){
+    authErr('Account created — check your email to confirm, then sign in.');
+    AUTH_MODE='signin'; renderAuthMode();
+    return;
+  }
+  await afterLogin();
+};
+
+document.getElementById('navSignout').onclick = async ()=>{
+  if(supa){ await supa.auth.signOut(); }
+  location.reload();
+};
+
+async function init(){
+  if(!CONFIG.USE_SUPABASE){ home(); return; }          // demo mode: no login
+  renderAuthMode();
+  const { data:{ session } } = await supa.auth.getSession();
+  if(session){ await afterLogin(); }
+  else { loginOverlay.classList.add('show'); }
+}
+
+init();
+</script>
+</body>
+</html>
