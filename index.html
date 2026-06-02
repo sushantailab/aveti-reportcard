@@ -77,6 +77,35 @@
   .banner{display:flex;gap:9px;align-items:center;background:#eef4fb;color:#1e4d80;border-radius:10px;padding:9px 12px;font-size:12px}
   .demoflag{background:#fff7e8;border:1px solid #f3e2bf;color:#7a4d05;border-radius:10px;padding:8px 12px;font-size:12px;margin-bottom:14px}
   a.link{color:var(--green);text-decoration:none}
+  @media print{
+    @page{margin:12mm}
+    body,
+    .band,
+    .bar>span,
+    .metric,
+    .brandlogo,
+    .pill,
+    .banner,
+    .demoflag,
+    button.primary,
+    .seg button.on{
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    .topnav,
+    #navHome,
+    #navRoster,
+    #navSignout,
+    .teacher-filter,
+    .report-actions{
+      display:none!important;
+    }
+    body{background:#fff}
+    .wrap{max-width:none;margin:0;padding:0}
+    .screen.active{display:block;animation:none}
+    .card{box-shadow:none;margin:0!important;page-break-inside:avoid}
+    .card.pad{padding:0}
+  }
 </style>
 </head>
 <body>
@@ -221,6 +250,7 @@ function avatar(gender,name){
 }
 const val = id => document.getElementById(id).value;
 const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
+const chapterDetail = t => `Chapter ${t.chapter_no||''}${(t.chapter_name && t.chapter_name.trim()) ? ' — '+t.chapter_name : ''}`;
 function perfBand(p){
   if(p>=90) return {label:'Excellent', emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
   if(p>=75) return {label:'Very Good', emoji:'👏', line:n=>`Well done, ${n}. Strong work!`};
@@ -516,11 +546,57 @@ window.saveTest = async ()=>{
 };
 
 /* ---------- TEACHER REPORT ---------- */
+let TEACHER_FILTER = { cls:'', section:'', subject:'', testId:'' };
+
 async function openTeacher(testId){
   const tests = await DB.listTests();
-  CURRENT_TEST = testId || CURRENT_TEST || (tests[0] && tests[0].id);
-  const test = tests.find(t=>t.id===CURRENT_TEST); if(!test){ home(); return; }
   setCrumb('Teacher report');
+  if(testId){
+    const selected = tests.find(t=>t.id===testId);
+    if(selected){
+      TEACHER_FILTER = {
+        cls:String(selected.class_level||''),
+        section:selected.section||'All',
+        subject:selected.subject||'',
+        testId:selected.id
+      };
+      CURRENT_TEST = selected.id;
+    }
+  }
+  renderTeacher(tests);
+}
+
+function teacherFilterBar(tests){
+  const clsOpts = '<option value="">Class</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(TEACHER_FILTER.cls)?'selected':''}>Class ${c}</option>`).join('');
+  const secOpts = '<option value="">Section</option>' + ['All','A','B'].map(s=>`<option value="${s}" ${s===TEACHER_FILTER.section?'selected':''}>${s==='All'?'All':'Section '+s}</option>`).join('');
+  const subOpts = '<option value="">Subject</option>' + SUBJECTS.map(s=>`<option value="${s}" ${s===TEACHER_FILTER.subject?'selected':''}>${s}</option>`).join('');
+  const matching = (TEACHER_FILTER.cls && TEACHER_FILTER.section && TEACHER_FILTER.subject)
+    ? tests.filter(t=>String(t.class_level)===String(TEACHER_FILTER.cls) && (t.section||'All')===TEACHER_FILTER.section && t.subject===TEACHER_FILTER.subject)
+    : [];
+  if(TEACHER_FILTER.testId && !matching.some(t=>t.id===TEACHER_FILTER.testId)) TEACHER_FILTER.testId = '';
+  const chapOpts = '<option value="">Chapter</option>' + matching.map(t=>`<option value="${t.id}" ${t.id===TEACHER_FILTER.testId?'selected':''}>${chapterDetail(t)}</option>`).join('');
+  return `
+    <div class="card pad teacher-filter" style="margin-bottom:14px">
+      <div class="wrap-fields">
+        <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
+        <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
+        <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
+        <div class="field"><label>Chapter</label><select onchange="setTeacherFilter('testId',this.value)" ${matching.length?'':'disabled'}>${chapOpts}</select></div>
+      </div>
+    </div>`;
+}
+
+async function renderTeacher(tests){
+  const test = tests.find(t=>t.id===TEACHER_FILTER.testId);
+  if(!test){
+    CURRENT_TEST = null;
+    show(`
+      ${teacherFilterBar(tests)}
+      <div class="card pad"><div class="muted">No test found for this selection.</div></div>
+    `);
+    return;
+  }
+  CURRENT_TEST = test.id;
   const rs = await DB.listResults(test.id);
   const students = await DB.listStudents();
   const nameOf = id => (students.find(s=>s.id===id)||{}).name||'—';
@@ -538,10 +614,11 @@ async function openTeacher(testId){
       <div class="muted small" style="width:42px;text-align:right">${r.p}%</div>
     </div>`).join('');
   show(`
+    ${teacherFilterBar(tests)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">Class ${test.class_level}${test.section?(" "+test.section):" (all)"} · ${test.subject} · ${chapterLabel(test)}</div></div></div>
-        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks<br>${fmtDate(test.test_date)}</div>
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${chapterDetail(test)}</div></div></div>
+        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(test.test_date)}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
@@ -558,13 +635,19 @@ async function openTeacher(testId){
       </div>
       <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
       ${list}
-      <div class="row" style="margin-top:16px;gap:8px">
+      <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="window.print()">🖨 Print / PDF</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
     </div>
   `);
 }
+
+window.setTeacherFilter = async (key,value)=>{
+  TEACHER_FILTER[key] = value;
+  if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
+  renderTeacher(await DB.listTests());
+};
 
 /* ---------- PARENT SHARE ---------- */
 async function openParents(testId){
@@ -617,18 +700,45 @@ ${CONFIG.CENTRE.name}`);
 window.navHavRoster = ()=>roster();
 
 /* ---------- GROWTH ---------- */
-let GR = { mode:'class', student:null };
+let GR = { mode:'class', student:null, cls:'', section:'All', subject:'' };
 async function growth(){
   setCrumb('Growth tracker');
-  const tests = (await DB.listTests()).slice().sort((a,b)=>a.chapter_no-b.chapter_no);
+  const allTests = await DB.listTests();
   const students = await DB.listStudents();
-  if(!GR.student && students[0]) GR.student = students[0].id;
+  if((!GR.cls || !GR.subject) && allTests[0]){
+    GR.cls = String(allTests[0].class_level||'');
+    GR.section = allTests[0].section || 'All';
+    GR.subject = allTests[0].subject || SUBJECTS[0];
+  }
+  if(!GR.cls) GR.cls = '1';
+  if(!GR.section) GR.section = 'All';
+  if(!GR.subject) GR.subject = SUBJECTS[0];
+  const classStudents = students.filter(s=>String(s.class_level)===String(GR.cls));
+  if(!classStudents.some(s=>s.id===GR.student)) GR.student = classStudents[0] ? classStudents[0].id : null;
+  const tests = allTests
+    .filter(t=>String(t.class_level)===String(GR.cls) && (t.section||'All')===GR.section && t.subject===GR.subject)
+    .sort((a,b)=>(Number(a.chapter_no)||0)-(Number(b.chapter_no)||0));
+  const filterBar = growthFilterBar();
+  const controls = `
+    <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div><h2 style="font-size:18px">Marks journey</h2><div class="muted small">Percentage across chapters</div></div>
+      <div class="row" style="gap:8px">
+        <div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div>
+        <select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select>
+      </div>
+    </div>`;
   if(tests.length<2){
-    show(`<div class="card pad"><h2 style="font-size:18px">Growth tracker</h2><div class="muted" style="margin-top:8px">Add one more chapter test to see the trend. A growth line needs at least two tests.</div></div>`);
+    show(`
+      ${filterBar}
+      <div class="card pad">
+        ${controls}
+        <div class="muted" style="margin-top:8px">Add one more chapter test for ${GR.subject} to see the trend.</div>
+      </div>
+    `);
     return;
   }
   const allRes = await DB.allResults();
-  const labels = tests.map(t=>'Ch'+t.chapter_no);
+  const labels = tests.map(t=>chapterLabel(t));
   const classSeries = [];
   for(const t of tests){ classSeries.push(await classAverage(t)); }
   const studentSeries = tests.map(t=>{
@@ -636,23 +746,40 @@ async function growth(){
     return (r&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
   });
   const sName = (students.find(s=>s.id===GR.student)||{}).name||'';
-  const opts = students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${s.name}</option>`).join('');
   const series = GR.mode==='class'
     ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3}]
     : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true}];
   show(`
+    ${filterBar}
     <div class="card pad">
-      <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
-        <div><h2 style="font-size:18px">Marks journey</h2><div class="muted small">Percentage across chapters</div></div>
-        <div class="row" style="gap:8px">
-          <div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div>
-          <select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${opts}</select>
-        </div>
-      </div>
+      ${controls}
       ${lineChartSVG(labels, series)}
     </div>
   `);
 }
+
+function growthFilterBar(){
+  return `
+    <div class="card pad" style="margin-bottom:14px">
+      <div class="wrap-fields">
+        <div class="field"><label>Class</label><select onchange="setGrowthFilter('cls',this.value)">${classOptions(GR.cls)}</select></div>
+        <div class="field"><label>Section</label><select onchange="setGrowthFilter('section',this.value)">${sectionOptions(GR.section,true)}</select></div>
+        <div class="field"><label>Subject</label><select onchange="setGrowthFilter('subject',this.value)">${subjectOptions(GR.subject)}</select></div>
+      </div>
+    </div>`;
+}
+
+function growthStudentOptions(students){
+  return students.length
+    ? students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${s.name}</option>`).join('')
+    : '<option value="">No students</option>';
+}
+
+window.setGrowthFilter = (key,value)=>{
+  GR[key] = value;
+  if(key==='cls') GR.student = null;
+  growth();
+};
 window.setGrowthMode = m=>{ GR.mode=m; growth(); };
 window.setGrowthStudent = id=>{ GR.student=id; growth(); };
 
