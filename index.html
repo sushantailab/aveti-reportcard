@@ -45,21 +45,31 @@
   .logo{width:38px;height:38px;border-radius:9px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:700;font-family:'Bricolage Grotesque'}
   .brandlogo{height:30px;width:auto;display:block}
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-  .tile{border:1px solid var(--line);border-radius:var(--radius);padding:16px;background:var(--card);transition:.15s;cursor:pointer}
+  .tile{border:1px solid var(--line);border-left:5px solid var(--green);border-radius:var(--radius);padding:16px;background:linear-gradient(180deg,#fff,#f8faf7);transition:.15s;cursor:pointer}
+  .tile.teacher{border-left-color:#378ADD;background:#f5f9ff}
+  .tile.parent{border-left-color:var(--green);background:#f6fbf2}
+  .tile.growth{border-left-color:#8b5cf6;background:#faf7ff}
   .tile:hover{border-color:var(--green);box-shadow:var(--shadow);transform:translateY(-1px)}
   .tile h3{font-size:16px;margin-bottom:4px}
   .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
   .listrow:last-child{border-bottom:none}
+  .section-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
   .recent-test{padding:18px 0;border-bottom:1px solid var(--line)}
   .recent-test:last-child{border-bottom:none}
-  .recent-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
-  .recent-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
+  .recent-head{display:flex;align-items:flex-start;justify-content:flex-end;gap:14px;margin-bottom:12px}
   .recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
-  .recent-field{background:#f8faf7;border-radius:10px;padding:10px 12px}
+  .recent-field{background:#f8faf7;border-left:4px solid #cfe0c6;border-radius:10px;padding:10px 12px}
+  .recent-field:nth-child(2){border-left-color:#9FE1CB}
+  .recent-field:nth-child(3){border-left-color:#FAC775}
+  .recent-field:nth-child(4){border-left-color:#c7d7ff}
+  .recent-field:nth-child(5){border-left-color:#C0DD97}
+  .recent-field:nth-child(6){border-left-color:#d7c8ff}
   .recent-field .label{font-size:11px;color:var(--muted);margin-bottom:3px}
   .recent-field .value{font-size:17px;font-weight:600;color:var(--ink)}
   .recent-average{min-width:125px;text-align:right}
   .recent-average .value{font-family:'Bricolage Grotesque';font-size:30px;font-weight:700;color:var(--ink);line-height:1}
+  .action.teacher{border-color:#bcd7f4;color:#1e5d99;background:#f4f9ff}
+  .action.parent{border-color:#bfddb7;color:var(--green-d);background:#f5fbef}
   .bar{flex:1;height:8px;background:#eef1ee;border-radius:99px;overflow:hidden}
   .bar>span{display:block;height:100%;background:var(--teal)}
   .metric{background:#f8faf7;border-radius:11px;padding:12px 14px;flex:1;min-width:110px}
@@ -202,10 +212,10 @@ const uid = () => Math.random().toString(36).slice(2,10);
 /* ---- Demo seed (used when USE_SUPABASE = false) ---- */
 const demo = {
   students: [
-    { id:'s1', name:'Saswat',     class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919800000021' },
-    { id:'s2', name:'Anshuman',   class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919900000007' },
-    { id:'s3', name:'Guruprasad', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919000000044' },
-    { id:'s4', name:'Asman',      class_level:9, section:'A', gender:'female', parent_name:'', parent_phone:'' },
+    { id:'s1', name:'Saswat',     academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919800000021' },
+    { id:'s2', name:'Anshuman',   academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919900000007' },
+    { id:'s3', name:'Guruprasad', academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919000000044' },
+    { id:'s4', name:'Asman',      academic_session:'2026-27', class_level:9, section:'A', gender:'female', parent_name:'', parent_phone:'' },
   ],
   chapters: [
     { id:'c1', class_level:9, subject:'Hindi', chapter_no:1, title:'दो बैलों की कथा' },
@@ -277,7 +287,7 @@ const memoryDB = {
 /* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
 let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
-const STUDENT_COLS = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
+const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
@@ -395,8 +405,12 @@ function simplePdf(lines){
 /* ---------- shared options + avatar ---------- */
 const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
+const SESSIONS = ['2026-27','2027-28','2025-26'];
 const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
+const currentSession = () => SESSIONS[0];
+const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||currentSession())?'selected':''}>${s}</option>`).join('');
 const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'selected':''}>Class ${c}</option>`).join('');
+const classFilterOptions = sel => '<option value="All">All classes</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(sel)?'selected':''}>Class ${c}</option>`).join('');
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
 const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
@@ -419,13 +433,14 @@ function normalizeIndianPhone(phone){
 const sectionKey = s => s || 'All';
 function sameClassSectionName(a,b){
   return normalizeText(a.name).toLowerCase()===normalizeText(b.name).toLowerCase() &&
+    (a.academic_session||currentSession())===(b.academic_session||currentSession()) &&
     String(a.class_level)===String(b.class_level) &&
     sectionKey(a.section)===sectionKey(b.section);
 }
 async function warnStudentDuplicates(student, ignoreId){
   const students = await DB.listStudents();
   const duplicateName = students.find(s=>s.id!==ignoreId && sameClassSectionName(s,student));
-  if(duplicateName && !confirm(`${student.name} already exists in Class ${student.class_level}, Section ${sectionKey(student.section)}. Save anyway?`)) return false;
+  if(duplicateName && !confirm(`${student.name} already exists in Session ${student.academic_session}, Class ${student.class_level}, Section ${sectionKey(student.section)}. Save anyway?`)) return false;
   const phone = normalizeIndianPhone(student.parent_phone);
   if(phone){
     const duplicatePhone = students.find(s=>s.id!==ignoreId && normalizeIndianPhone(s.parent_phone)===phone);
@@ -496,10 +511,6 @@ async function home(){
     const appeared = rs.filter(r=>!r.na && r.present).length;
     recent += `<div class="recent-test">
       <div class="recent-head">
-        <div>
-          <div class="recent-title">Recent Test</div>
-          <div class="muted small">${t.test_type} · ${fmtDate(t.test_date)}</div>
-        </div>
         <div class="recent-average">
           <div class="label tiny muted">Average marks</div>
           <div class="value">${avg!=null?avg+'%':'—'}</div>
@@ -514,8 +525,8 @@ async function home(){
         <div class="recent-field"><div class="label">Number of students</div><div class="value">${appeared} of ${rs.length} appeared</div></div>
       </div>
       <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button onclick="openTeacher('${t.id}')">Teacher report</button>
-        <button onclick="openParents('${t.id}')">Parent report</button>
+        <button class="action teacher" onclick="openTeacher('${t.id}')">Teacher report</button>
+        <button class="action parent" onclick="openParents('${t.id}')">Parent report</button>
       </div>
     </div>`;
   }
@@ -533,33 +544,35 @@ async function home(){
 
     <div class="eyebrow" style="margin:4px 2px 8px">Open a report</div>
     <div class="tiles" style="margin-bottom:20px">
-      <div class="tile" onclick="openTeacher()">
+      <div class="tile teacher" onclick="openTeacher()">
         <h3>📋 Teacher report</h3>
         <div class="muted small">Class marks, ranking, bands and who needs support.</div>
       </div>
-      <div class="tile" onclick="openParents()">
+      <div class="tile parent" onclick="openParents()">
         <h3>👪 Parent report</h3>
         <div class="muted small">A card per student — send to parents on WhatsApp.</div>
       </div>
-      <div class="tile" onclick="growth()">
+      <div class="tile growth" onclick="growth()">
         <h3>📈 Growth tracker</h3>
         <div class="muted small">Chapter-to-chapter trend, class vs individual.</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="pad row between"><span class="eyebrow" style="font-weight:700;color:var(--ink)">Recent Test</span></div>
+      <div class="pad row between"><span class="section-title">Recent Test</span></div>
       <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
     </div>
   `);
 }
 
 /* ---------- ROSTER ---------- */
-let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All';
+let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();
 async function roster(){
   setCrumb('Students');
   const all = await DB.listStudents();
-  const students = SEC_FILTER==='All' ? all : all.filter(s=>(s.section||'')===SEC_FILTER);
+  const sessionStudents = all.filter(s=>(s.academic_session||currentSession())===SESSION_FILTER);
+  const classStudents = CLASS_FILTER==='All' ? sessionStudents : sessionStudents.filter(s=>String(s.class_level)===String(CLASS_FILTER));
+  const students = SEC_FILTER==='All' ? classStudents : classStudents.filter(s=>(s.section||'')===SEC_FILTER);
   const rows = students.length ? students.map(studentRow).join('')
     : '<div class="muted small" style="padding:8px 0">No students here yet.</div>';
   const fbtn = (v,label)=>`<button class="${SEC_FILTER===v?'on':''}" onclick="setSecFilter('${v}')">${label}</button>`;
@@ -572,6 +585,10 @@ async function roster(){
       </div>
       <div style="display:${SHOW_ADD?'block':'none'};padding:0 18px 4px">${addFormHTML()}</div>
       <div class="pad row" style="padding-top:6px;padding-bottom:2px;gap:8px;align-items:center">
+        <span class="small muted">Session</span>
+        <select style="width:auto" onchange="setSessionFilter(this.value)">${sessionOptions(SESSION_FILTER)}</select>
+        <span class="small muted">Class</span>
+        <select style="width:auto" onchange="setClassFilter(this.value)">${classFilterOptions(CLASS_FILTER)}</select>
         <span class="small muted">Show</span>
         <select style="width:auto" onchange="setSecFilter(this.value)">
           <option value="All" ${SEC_FILTER==='All'?'selected':''}>All sections</option>
@@ -584,11 +601,13 @@ async function roster(){
   `);
 }
 window.setSecFilter = v=>{ SEC_FILTER=v; roster(); };
+window.setClassFilter = v=>{ CLASS_FILTER=v; roster(); };
+window.setSessionFilter = v=>{ SESSION_FILTER=v; roster(); };
 function studentRow(s){
   if(EDIT_ID===s.id) return editRow(s);
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
-    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}</div></div>
+    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}</div></div>
     <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
     <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
@@ -597,6 +616,7 @@ function studentRow(s){
 function editRow(s){
   return `<div class="listrow" style="flex-wrap:wrap;gap:8px">
     <input id="ed_name" value="${s.name}" placeholder="Name" style="flex:1;min-width:120px">
+    <select id="ed_session" style="width:auto">${sessionOptions(s.academic_session)}</select>
     <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
     <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>
     <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
@@ -609,6 +629,7 @@ function editRow(s){
 function addFormHTML(){
   return `<div class="row" style="flex-wrap:wrap;gap:8px;background:#f8faf7;border-radius:11px;padding:12px">
     <input id="ad_name" placeholder="Student name" style="flex:1;min-width:140px">
+    <select id="ad_session" style="width:auto">${sessionOptions(SESSION_FILTER)}</select>
     <select id="ad_class" style="width:auto">${classOptions(9)}</select>
     <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
     <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
@@ -625,7 +646,7 @@ window.submitAdd = async ()=>{
   const rawPhone = val('ad_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ad_opt'), parent_name:'', parent_phone:phone };
+  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ad_opt'), parent_name:'', parent_phone:phone };
   if(!(await warnStudentDuplicates(student))) return;
   await DB.addStudent(student);
   SHOW_ADD=false; roster();
@@ -639,7 +660,7 @@ window.saveEdit = async id=>{
   const rawPhone = val('ed_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ed_opt'), parent_phone:phone };
+  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ed_opt'), parent_phone:phone };
   if(!(await warnStudentDuplicates(student,id))) return;
   await DB.updateStudent(id,student);
   EDIT_ID=null; roster();
@@ -658,10 +679,11 @@ async function enterMarks(testId){
   const useDraft = draft && confirm('You have an unsaved marks draft. Restore it?');
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
-  const defaultEntry = lastEntry || (recentTest ? {class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {class_level:9,section:'All',subject:'Hindi'});
+  const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Hindi'});
   EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest };
   if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
+  const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
   const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
   const selectedSection = editTest ? (editTest.section||'All') : (useDraft ? draft.section : (defaultEntry.section||'All'));
   const selectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
@@ -672,6 +694,7 @@ async function enterMarks(testId){
     <div class="card pad">
       <h2 style="font-size:18px;margin-bottom:14px">${editTest?'Edit test marks':'Enter test marks'}</h2>
       <div class="wrap-fields" style="margin-bottom:10px">
+        <div class="field"><label>Session</label><select id="emSession" onchange="loadEMRoster()">${sessionOptions(selectedSession)}</select></div>
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
         <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptions(selectedSubject)}</select></div>
@@ -720,6 +743,7 @@ function snapshotDraft(){
     editId:EM.editId,
     full:EM.full,
     class_level:parseInt(val('emClass')),
+    academic_session:val('emSession'),
     section:val('emSec'),
     subject:val('emSub'),
     chapter_id:val('emChap'),
@@ -732,9 +756,9 @@ function saveDraft(){
   if(draft) writeJSON(LS_MARK_DRAFT,draft);
 }
 window.loadEMRoster = async ()=>{
-  const cls = parseInt(val('emClass')), sec = val('emSec');
+  const cls = parseInt(val('emClass')), sec = val('emSec'), session = val('emSession');
   const all = await DB.listStudents();
-  EM.classStudents = all.filter(s=> s.class_level===cls);   // whole class, any section, for the picker
+  EM.classStudents = all.filter(s=> s.class_level===cls && (s.academic_session||currentSession())===session);   // whole class/session, any section, for the picker
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
   recountEM(); renderEMRoster(); saveDraft();
@@ -773,11 +797,11 @@ window.addEMChapter = async ()=>{
   await loadEMChapters();
 };
 async function loadEMExisting(test){
-  const cls = parseInt(val('emClass')), sec = val('emSec');
+  const cls = parseInt(val('emClass')), sec = val('emSec'), session = val('emSession');
   const all = await DB.listStudents();
   const rs = await cachedResults(test.id);
   const byStudent = new Map(rs.map(r=>[r.student_id,r]));
-  EM.classStudents = all.filter(s=> s.class_level===cls);
+  EM.classStudents = all.filter(s=> s.class_level===cls && (s.academic_session||currentSession())===session);
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   const extra = rs
     .map(r=>all.find(s=>s.id===r.student_id))
@@ -790,7 +814,7 @@ async function loadEMExisting(test){
 }
 async function loadEMDraft(draft){
   const all = await DB.listStudents();
-  EM.classStudents = all.filter(s=> s.class_level===parseInt(val('emClass')));
+  EM.classStudents = all.filter(s=> s.class_level===parseInt(val('emClass')) && (s.academic_session||currentSession())===val('emSession'));
   EM.rows = (draft.rows||[]).map(r=>{
     const s = all.find(x=>x.id===r.student_id) || {};
     return {...r,name:r.name||s.name||'Student',gender:r.gender||s.gender};
@@ -805,7 +829,7 @@ function renderPicker(){
   if(!avail.length){ el.innerHTML=''; return; }
   el.innerHTML = `<div class="row" style="gap:8px;align-items:center">
     <span class="small muted">Add a student:</span>
-    <select id="emPick" style="width:auto"><option value="">Choose a name…</option>${avail.map(s=>`<option value="${s.id}">${s.name} (Class ${s.class_level}${s.section?(' '+s.section):''})</option>`).join('')}</select>
+    <select id="emPick" style="width:auto"><option value="">Choose a name…</option>${avail.map(s=>`<option value="${s.id}">${s.name} (${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' '+s.section):''})</option>`).join('')}</select>
     <button onclick="addPicked()">Add to roster</button>
   </div>`;
 }
@@ -888,7 +912,7 @@ window.saveTest = async ()=>{
     await DB.saveResults(test.id, resultRows);
     if(pendingLogs.length) await DB.addEditLogs(pendingLogs.map(l=>({...l,test_id:test.id})));
     invalidateResults(test.id);
-    writeJSON(LS_LAST_ENTRY,{class_level:clsNum,section:secVal,subject:val('emSub')});
+    writeJSON(LS_LAST_ENTRY,{academic_session:val('emSession'),class_level:clsNum,section:secVal,subject:val('emSub')});
     clearJSON(LS_MARK_DRAFT);
     CURRENT_TEST = test.id;
     const avg = await classAverage(test);
