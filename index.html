@@ -54,20 +54,17 @@
   .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
   .listrow:last-child{border-bottom:none}
   .section-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
-  .recent-test{padding:18px 0;border-bottom:1px solid var(--line)}
+  .recent-test{padding:8px 0;border-bottom:1px solid var(--line)}
   .recent-test:last-child{border-bottom:none}
-  .recent-head{display:flex;align-items:flex-start;justify-content:flex-end;gap:14px;margin-bottom:12px}
-  .recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
-  .recent-field{background:#f8faf7;border-left:4px solid #cfe0c6;border-radius:10px;padding:10px 12px}
-  .recent-field:nth-child(2){border-left-color:#9FE1CB}
-  .recent-field:nth-child(3){border-left-color:#FAC775}
-  .recent-field:nth-child(4){border-left-color:#c7d7ff}
-  .recent-field:nth-child(5){border-left-color:#C0DD97}
-  .recent-field:nth-child(6){border-left-color:#d7c8ff}
-  .recent-field .label{font-size:11px;color:var(--muted);margin-bottom:3px}
-  .recent-field .value{font-size:17px;font-weight:600;color:var(--ink)}
-  .recent-average{min-width:125px;text-align:right}
-  .recent-average .value{font-family:'Bricolage Grotesque';font-size:30px;font-weight:700;color:var(--ink);line-height:1}
+  .recent-grid{display:grid;grid-template-columns:102px 92px 80px minmax(120px,1fr) 64px 90px 64px auto;gap:0;align-items:center;background:#fbfcfa;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:8px 10px}
+  .recent-field{padding:0 9px;border-right:1px solid var(--line);min-height:34px;display:flex;flex-direction:column;justify-content:center}
+  .recent-field:first-child{padding-left:0}
+  .recent-field:nth-child(7){border-right:none}
+  .recent-field .label{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+  .recent-field .value{font-size:12px;font-weight:600;color:var(--ink);line-height:1.22}
+  .recent-field .value.strong{font-family:'Bricolage Grotesque';font-size:16px;font-weight:700}
+  .recent-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .recent-actions button{padding:7px 9px;font-size:11px;white-space:nowrap}
   .action.teacher{border-color:#bcd7f4;color:#1e5d99;background:#f4f9ff}
   .action.parent{border-color:#bfddb7;color:var(--green-d);background:#f5fbef}
   .bar{flex:1;height:8px;background:#eef1ee;border-radius:99px;overflow:hidden}
@@ -97,6 +94,10 @@
   .banner{display:flex;gap:9px;align-items:center;background:#eef4fb;color:#1e4d80;border-radius:10px;padding:9px 12px;font-size:12px}
   .demoflag{background:#fff7e8;border:1px solid #f3e2bf;color:#7a4d05;border-radius:10px;padding:8px 12px;font-size:12px;margin-bottom:14px}
   a.link{color:var(--green);text-decoration:none}
+  @media (max-width:980px){
+    .recent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .recent-actions{grid-column:1/-1;justify-content:flex-start}
+  }
   @media print{
     @page{margin:12mm}
     body,
@@ -510,23 +511,18 @@ async function home(){
     const rs = await cachedResults(t.id);
     const appeared = rs.filter(r=>!r.na && r.present).length;
     recent += `<div class="recent-test">
-      <div class="recent-head">
-        <div class="recent-average">
-          <div class="label tiny muted">Average marks</div>
-          <div class="value">${avg!=null?avg+'%':'—'}</div>
-        </div>
-      </div>
       <div class="recent-grid">
+        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(t.test_date)}</div></div>
         <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
         <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
-        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(t.test_date)}</div></div>
         <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
-        <div class="recent-field"><div class="label">Number of students</div><div class="value">${appeared} of ${rs.length} appeared</div></div>
-      </div>
-      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="action teacher" onclick="openTeacher('${t.id}')">Teacher report</button>
-        <button class="action parent" onclick="openParents('${t.id}')">Parent report</button>
+        <div class="recent-field"><div class="label">Students</div><div class="value">${appeared}/${rs.length} appeared</div></div>
+        <div class="recent-field"><div class="label">Average</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
+        <div class="recent-actions">
+          <button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button>
+          <button class="action parent" onclick="openParents('${t.id}')">Parent</button>
+        </div>
       </div>
     </div>`;
   }
@@ -559,7 +555,7 @@ async function home(){
     </div>
 
     <div class="card">
-      <div class="pad row between"><span class="section-title">Recent Test</span></div>
+      <div class="pad row between" style="padding-bottom:6px"><span class="section-title">Recent Test</span></div>
       <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
     </div>
   `);
