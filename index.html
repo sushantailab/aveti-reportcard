@@ -56,12 +56,13 @@
   .section-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
   .recent-test{padding:8px 0;border-bottom:1px solid var(--line)}
   .recent-test:last-child{border-bottom:none}
-  .recent-grid{display:grid;grid-template-columns:102px 92px 80px minmax(120px,1fr) 64px 90px 64px auto;gap:0;align-items:center;background:#fbfcfa;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:8px 10px}
+  .recent-grid{display:grid;grid-template-columns:118px 92px 80px minmax(120px,1fr) 64px 90px 64px auto;gap:0;align-items:center;background:#fbfcfa;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:8px 10px}
   .recent-field{padding:0 9px;border-right:1px solid var(--line);min-height:34px;display:flex;flex-direction:column;justify-content:center}
   .recent-field:first-child{padding-left:0}
   .recent-field:nth-child(7){border-right:none}
   .recent-field .label{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
   .recent-field .value{font-size:12px;font-weight:600;color:var(--ink);line-height:1.22}
+  .recent-field:first-child .value{white-space:nowrap}
   .recent-field .value.strong{font-family:'Bricolage Grotesque';font-size:16px;font-weight:700}
   .recent-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
   .recent-actions button{padding:7px 9px;font-size:11px;white-space:nowrap}
@@ -459,7 +460,7 @@ function chapterDetail(t){
   return `Chapter ${no} — ${name}`;
 }
 const chapterOptionLabel = c => chapterDetail({chapter_no:c.chapter_no, chapter_name:c.title});
-const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(t.test_date)}`;
+const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(testDate(t))}`;
 const bandConfig = () => (CONFIG.BANDS||[]).slice().sort((a,b)=>b.min-a.min);
 const band = p => {
   const bands = bandConfig();
@@ -480,7 +481,13 @@ function perfBand(p){
 /* ---------- helpers ---------- */
 const pct = (marks, full) => (marks==null||full==0) ? null : Math.round((marks/full)*1000)/10;
 const bandColor = b => ({A:'var(--teal)',B:'#639922',C:'var(--amber)',D:'var(--red)'})[b] || 'var(--muted)';
-const fmtDate = d => new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+function fmtDate(d){
+  if(!d) return 'No date';
+  const date = new Date(d);
+  if(Number.isNaN(date.getTime())) return String(d);
+  return date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+const testDate = t => t?.test_date || t?.date || t?.created_at || '';
 
 async function classAverage(test){
   const rs = (await cachedResults(test.id)).filter(r=>!r.na && r.present && r.marks!=null);
@@ -512,7 +519,7 @@ async function home(){
     const appeared = rs.filter(r=>!r.na && r.present).length;
     recent += `<div class="recent-test">
       <div class="recent-grid">
-        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(t.test_date)}</div></div>
+        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}</div></div>
         <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
         <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
@@ -917,7 +924,7 @@ window.saveTest = async ()=>{
     const naC = EM.rows.filter(r=>r.na).length;
     updateSaveState('saved','Saved.');
     document.getElementById('saveSummary').innerHTML =
-      `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(test.test_date)}<br><br><b>${entered}</b> appeared of <b>${EM.rows.length}</b> enrolled · <b>${abs}</b> absent · <b>${naC}</b> N.A. · class avg <b>${avg??'—'}%</b>`;
+      `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(testDate(test))}<br><br><b>${entered}</b> appeared of <b>${EM.rows.length}</b> enrolled · <b>${abs}</b> absent · <b>${naC}</b> N.A. · class avg <b>${avg??'—'}%</b>`;
     document.getElementById('saveOverlay').classList.add('show');
   }catch(e){
     updateSaveState('failed','Save failed. Your marks are still here. Check connection and retry.');
@@ -1017,7 +1024,7 @@ async function renderTeacher(tests){
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${chapterDetail(test)} · ${appearedCount} of ${enrolled} appeared</div></div></div>
-        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(test.test_date)}</div>
+        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
@@ -1071,7 +1078,7 @@ window.exportTeacherCSV = async testId=>{
   const rankedIds = new Map(data.ranked.map((r,i)=>[r.student_id,i+1]));
   const lines = [
     ['Teacher / Class Report'],
-    [`Class ${test.class_level}`,`Section ${test.section||'All'}`,test.subject,chapterDetail(test),fmtDate(test.test_date)],
+    [`Class ${test.class_level}`,`Section ${test.section||'All'}`,test.subject,chapterDetail(test),fmtDate(testDate(test))],
     [`Appeared ${appeared} of ${enrolled}`,`Absent ${absent}`,`N.A. ${na}`,`Class average ${avg??'—'}%`],
     [],
     header
@@ -1092,7 +1099,7 @@ window.exportTeacherPDF = async testId=>{
     {text:'Teacher / Class Report',x:40,y:800,size:18},
     {text:`${CONFIG.CENTRE.name}`,x:40,y:778,size:11},
     {text:`Class ${test.class_level} | Section ${test.section||'All'} | ${test.subject} | ${chapterDetail(test)}`,x:40,y:758,size:11},
-    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(test.test_date)}`,x:40,y:742,size:11},
+    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(testDate(test))}`,x:40,y:742,size:11},
     {text:`Appeared ${appeared} of ${enrolled} | Absent ${absent} | N.A. ${na} | Class average ${avg??'—'}%`,x:40,y:720,size:12},
     {text:'Ranked results',x:40,y:690,size:13},
     {text:'Rank  Student                    Marks      Percent   Band   Note',x:40,y:672,size:10}
