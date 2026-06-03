@@ -251,6 +251,7 @@ function avatar(gender,name){
 const val = id => document.getElementById(id).value;
 const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
 const chapterDetail = t => `Chapter ${t.chapter_no||''}${(t.chapter_name && t.chapter_name.trim()) ? ' — '+t.chapter_name : ''}`;
+const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(t.test_date)}`;
 function perfBand(p){
   if(p>=90) return {label:'Excellent', emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
   if(p>=75) return {label:'Very Good', emoji:'👏', line:n=>`Well done, ${n}. Strong work!`};
@@ -562,11 +563,20 @@ async function openTeacher(testId){
       };
       CURRENT_TEST = selected.id;
     }
+  } else if(!TEACHER_FILTER.testId && tests[0]){
+    const recent = tests[0];
+    TEACHER_FILTER = {
+      cls:String(recent.class_level||''),
+      section:recent.section||'All',
+      subject:recent.subject||'',
+      testId:recent.id
+    };
   }
   renderTeacher(tests);
 }
 
 function teacherFilterBar(tests){
+  const recentOpts = '<option value="">Recent exam</option>' + tests.slice(0,12).map(t=>`<option value="${t.id}" ${t.id===TEACHER_FILTER.testId?'selected':''}>${testOptionLabel(t)}</option>`).join('');
   const clsOpts = '<option value="">Class</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(TEACHER_FILTER.cls)?'selected':''}>Class ${c}</option>`).join('');
   const secOpts = '<option value="">Section</option>' + ['All','A','B'].map(s=>`<option value="${s}" ${s===TEACHER_FILTER.section?'selected':''}>${s==='All'?'All':'Section '+s}</option>`).join('');
   const subOpts = '<option value="">Subject</option>' + SUBJECTS.map(s=>`<option value="${s}" ${s===TEACHER_FILTER.subject?'selected':''}>${s}</option>`).join('');
@@ -578,6 +588,7 @@ function teacherFilterBar(tests){
   return `
     <div class="card pad teacher-filter" style="margin-bottom:14px">
       <div class="wrap-fields">
+        <div class="field"><label>Recent</label><select onchange="setTeacherFilter('recent',this.value)">${recentOpts}</select></div>
         <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
@@ -644,33 +655,115 @@ async function renderTeacher(tests){
 }
 
 window.setTeacherFilter = async (key,value)=>{
-  TEACHER_FILTER[key] = value;
-  if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
-  renderTeacher(await DB.listTests());
+  const tests = await DB.listTests();
+  if(key==='recent'){
+    const selected = tests.find(t=>t.id===value);
+    if(selected){
+      TEACHER_FILTER = {
+        cls:String(selected.class_level||''),
+        section:selected.section||'All',
+        subject:selected.subject||'',
+        testId:selected.id
+      };
+    } else {
+      TEACHER_FILTER.testId = '';
+    }
+  } else {
+    TEACHER_FILTER[key] = value;
+    if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
+  }
+  renderTeacher(tests);
 };
 
 /* ---------- PARENT SHARE ---------- */
+let PARENT_FILTER = { cls:'', section:'', subject:'', testId:'', student:'All' };
+
 async function openParents(testId){
   const tests = await DB.listTests();
-  CURRENT_TEST = testId || CURRENT_TEST || (tests[0] && tests[0].id);
-  const test = tests.find(t=>t.id===CURRENT_TEST); if(!test){ home(); return; }
   setCrumb('Parent report');
-  const rs = await DB.listResults(test.id);
+  if(testId){
+    const selected = tests.find(t=>t.id===testId);
+    if(selected){
+      PARENT_FILTER = {
+        cls:String(selected.class_level||''),
+        section:selected.section||'All',
+        subject:selected.subject||'',
+        testId:selected.id,
+        student:'All'
+      };
+      CURRENT_TEST = selected.id;
+    }
+  } else if(!PARENT_FILTER.testId && tests[0]){
+    const recent = tests[0];
+    PARENT_FILTER = {
+      cls:String(recent.class_level||''),
+      section:recent.section||'All',
+      subject:recent.subject||'',
+      testId:recent.id,
+      student:'All'
+    };
+  }
+  renderParents(tests);
+}
+
+function parentFilterBar(tests, students){
+  const recentOpts = '<option value="">Recent exam</option>' + tests.slice(0,12).map(t=>`<option value="${t.id}" ${t.id===PARENT_FILTER.testId?'selected':''}>${testOptionLabel(t)}</option>`).join('');
+  const clsOpts = '<option value="">Class</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(PARENT_FILTER.cls)?'selected':''}>Class ${c}</option>`).join('');
+  const secOpts = '<option value="">Section</option>' + ['All','A','B'].map(s=>`<option value="${s}" ${s===PARENT_FILTER.section?'selected':''}>${s==='All'?'All':'Section '+s}</option>`).join('');
+  const subOpts = '<option value="">Subject</option>' + SUBJECTS.map(s=>`<option value="${s}" ${s===PARENT_FILTER.subject?'selected':''}>${s}</option>`).join('');
+  const matching = (PARENT_FILTER.cls && PARENT_FILTER.section && PARENT_FILTER.subject)
+    ? tests.filter(t=>String(t.class_level)===String(PARENT_FILTER.cls) && (t.section||'All')===PARENT_FILTER.section && t.subject===PARENT_FILTER.subject)
+    : [];
+  if(PARENT_FILTER.testId && !matching.some(t=>t.id===PARENT_FILTER.testId)) PARENT_FILTER.testId = '';
+  const chapOpts = '<option value="">Chapter</option>' + matching.map(t=>`<option value="${t.id}" ${t.id===PARENT_FILTER.testId?'selected':''}>${chapterDetail(t)}</option>`).join('');
+  const classStudents = students.filter(s=>
+    String(s.class_level)===String(PARENT_FILTER.cls) &&
+    (PARENT_FILTER.section==='All' || (s.section||'')===PARENT_FILTER.section)
+  );
+  const studentOpts = '<option value="All">All students</option>' + classStudents.map(s=>`<option value="${s.id}" ${s.id===PARENT_FILTER.student?'selected':''}>${s.name}</option>`).join('');
+  if(PARENT_FILTER.student!=='All' && !classStudents.some(s=>s.id===PARENT_FILTER.student)) PARENT_FILTER.student = 'All';
+  return `
+    <div class="card pad" style="margin-bottom:14px">
+      <div class="wrap-fields">
+        <div class="field"><label>Recent</label><select onchange="setParentFilter('recent',this.value)">${recentOpts}</select></div>
+        <div class="field"><label>Class</label><select onchange="setParentFilter('cls',this.value)">${clsOpts}</select></div>
+        <div class="field"><label>Section</label><select onchange="setParentFilter('section',this.value)">${secOpts}</select></div>
+        <div class="field"><label>Subject</label><select onchange="setParentFilter('subject',this.value)">${subOpts}</select></div>
+        <div class="field"><label>Chapter</label><select onchange="setParentFilter('testId',this.value)" ${matching.length?'':'disabled'}>${chapOpts}</select></div>
+        <div class="field"><label>Student</label><select onchange="setParentFilter('student',this.value)">${studentOpts}</select></div>
+      </div>
+    </div>`;
+}
+
+async function renderParents(tests){
   const students = await DB.listStudents();
+  const test = tests.find(t=>t.id===PARENT_FILTER.testId);
+  if(!test){
+    CURRENT_TEST = null;
+    show(`
+      ${parentFilterBar(tests, students)}
+      <div class="card pad"><div class="muted">No test found for this selection.</div></div>
+    `);
+    return;
+  }
+  CURRENT_TEST = test.id;
+  const rs = await DB.listResults(test.id);
   const avg = await classAverage(test);
   let rows='';
-  rs.filter(r=>r.present&&r.marks!=null).forEach(r=>{
+  rs.filter(r=>r.present&&r.marks!=null && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
     const p = pct(r.marks,test.full_marks);
     const pb = perfBand(p);
     const msg = encodeURIComponent(
-`Namaste Parent 🙏
-Here is the Chapter End Test (CET) Report for ${s.name}:
+`Dear Parents,
+
+📋 Exam Report
+Aveti's Chapter End Test (CET) Report for ${s.name}:
 
 • Subject: ${test.subject} (${chapterLabel(test)})
 • Student Score: ${r.marks} / ${test.full_marks} (${p}%)
 • Class Average: ${avg}%
-• Performance: ${pb.label} ${pb.emoji}
+• Performance: ${pb.label}
 
 ${pb.line(s.name)}
 
@@ -686,17 +779,43 @@ ${CONFIG.CENTRE.name}`);
     </div>`;
   });
   show(`
+    ${parentFilterBar(tests, students)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">Class ${test.class_level}${test.section?(" "+test.section):" (all)"} · ${test.subject} · Ch ${test.chapter_no} · ${test.test_type}</div></div></div>
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks</div></div></div>
       </div>
       <div class="banner" style="margin-bottom:14px">🔒 Each parent receives only their own child's result — never the class list or rank.</div>
       <div class="small muted" style="margin-bottom:4px">Recipients</div>
-      ${rows}
+      ${rows||'<div class="muted small" style="padding:8px 0">No student result found for this selection.</div>'}
       <div class="tiny faint" style="margin-top:12px">Tap <b>Send</b> to open that parent's WhatsApp with the message ready. (In demo, links open real WhatsApp web — they won't send by themselves.)</div>
     </div>
   `);
 }
+
+window.setParentFilter = async (key,value)=>{
+  const tests = await DB.listTests();
+  if(key==='recent'){
+    const selected = tests.find(t=>t.id===value);
+    if(selected){
+      PARENT_FILTER = {
+        cls:String(selected.class_level||''),
+        section:selected.section||'All',
+        subject:selected.subject||'',
+        testId:selected.id,
+        student:'All'
+      };
+    } else {
+      PARENT_FILTER.testId = '';
+    }
+  } else {
+    PARENT_FILTER[key] = value;
+    if(key==='cls' || key==='section' || key==='subject'){
+      PARENT_FILTER.testId = '';
+      PARENT_FILTER.student = 'All';
+    }
+  }
+  renderParents(tests);
+};
 window.navHavRoster = ()=>roster();
 
 /* ---------- GROWTH ---------- */
