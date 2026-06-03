@@ -129,7 +129,13 @@
     USE_SUPABASE: true,
     SUPABASE_URL: "https://rklbozixthnbdwqbzxfh.supabase.co",
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrbGJveml4dGhuYmR3cWJ6eGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTA5NDksImV4cCI6MjA5NTEyNjk0OX0._sRFQTo0qQ4jVFrQIpdtP8OplP2rCvzOykmIQPe7qnE",
-    CENTRE: { name: "Aveti Tuition Centre", address: "M74, Baramunda Housing Board Colony", phone: "98619 27954" }
+    CENTRE: { name: "Aveti Tuition Centre", address: "M74, Baramunda Housing Board Colony", phone: "98619 27954" },
+    BANDS: [
+      { grade:'A', min:80, max:100, label:'Excellent' },
+      { grade:'B', min:60, max:79, label:'Very Good' },
+      { grade:'C', min:40, max:59, label:'Good' },
+      { grade:'D', min:0,  max:39, label:'Needs Support' }
+    ]
   };
 </script>
 
@@ -201,47 +207,190 @@ const demo = {
     { id:'s3', name:'Guruprasad', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919000000044' },
     { id:'s4', name:'Asman',      class_level:9, section:'A', gender:'female', parent_name:'', parent_phone:'' },
   ],
+  chapters: [
+    { id:'c1', class_level:9, subject:'Hindi', chapter_no:1, title:'दो बैलों की कथा' },
+    { id:'c2', class_level:9, subject:'Hindi', chapter_no:2, title:'ल्हासा की ओर' },
+    { id:'c3', class_level:9, subject:'Hindi', chapter_no:3, title:'उपभोक्तावाद' },
+    { id:'c4', class_level:9, subject:'SST', chapter_no:1, title:'Demo Civics 1' },
+    { id:'c5', class_level:9, subject:'SST', chapter_no:2, title:'Demo Geography 2' },
+    { id:'c6', class_level:9, subject:'SST', chapter_no:3, title:'Demo History 3' },
+    { id:'c7', class_level:9, subject:'Science', chapter_no:1, title:'Demo Matter' },
+    { id:'c8', class_level:9, subject:'Science', chapter_no:2, title:'Demo Tissues' },
+    { id:'c9', class_level:9, subject:'Science', chapter_no:3, title:'Demo Motion' },
+  ],
   tests: [
-    { id:'t1', class_level:9, section:'A', subject:'Hindi', chapter_no:1, chapter_name:'दो बैलों की कथा', test_type:'CET', full_marks:25, test_date:'2026-04-08' },
-    { id:'t2', class_level:9, section:'A', subject:'Hindi', chapter_no:2, chapter_name:'ल्हासा की ओर',   test_type:'CET', full_marks:20, test_date:'2026-04-24' },
-    { id:'t3', class_level:9, section:'A', subject:'Hindi', chapter_no:3, chapter_name:'उपभोक्तावाद',     test_type:'CET', full_marks:25, test_date:'2026-05-12' },
+    { id:'t1', class_level:9, section:'A', subject:'Hindi', chapter_id:'c1', chapter_no:1, chapter_name:'दो बैलों की कथा', test_type:'CET', full_marks:25, test_date:'2026-04-08' },
+    { id:'t2', class_level:9, section:'A', subject:'Hindi', chapter_id:'c2', chapter_no:2, chapter_name:'ल्हासा की ओर',   test_type:'CET', full_marks:20, test_date:'2026-04-24' },
+    { id:'t3', class_level:9, section:'A', subject:'Hindi', chapter_id:'c3', chapter_no:3, chapter_name:'उपभोक्तावाद',     test_type:'CET', full_marks:25, test_date:'2026-05-12' },
+    { id:'t4', class_level:9, section:'A', subject:'SST', chapter_id:'c4', chapter_no:1, chapter_name:'Demo Civics 1', test_type:'CET', full_marks:25, test_date:'2026-05-20' },
+    { id:'t5', class_level:9, section:'A', subject:'SST', chapter_id:'c5', chapter_no:2, chapter_name:'Demo Geography 2', test_type:'CET', full_marks:25, test_date:'2026-05-28' },
+    { id:'t6', class_level:9, section:'A', subject:'SST', chapter_id:'c6', chapter_no:3, chapter_name:'Demo History 3', test_type:'CET', full_marks:25, test_date:'2026-06-04' },
+    { id:'t7', class_level:9, section:'A', subject:'Science', chapter_id:'c7', chapter_no:1, chapter_name:'Demo Matter', test_type:'CET', full_marks:20, test_date:'2026-05-18' },
+    { id:'t8', class_level:9, section:'A', subject:'Science', chapter_id:'c8', chapter_no:2, chapter_name:'Demo Tissues', test_type:'CET', full_marks:20, test_date:'2026-05-27' },
+    { id:'t9', class_level:9, section:'A', subject:'Science', chapter_id:'c9', chapter_no:3, chapter_name:'Demo Motion', test_type:'CET', full_marks:20, test_date:'2026-06-03' },
   ],
   results: [
     {id:'r1',test_id:'t1',student_id:'s1',marks:22,present:true},{id:'r2',test_id:'t1',student_id:'s2',marks:21.5,present:true},{id:'r3',test_id:'t1',student_id:'s3',marks:19.5,present:true},{id:'r4',test_id:'t1',student_id:'s4',marks:13,present:true},
     {id:'r5',test_id:'t2',student_id:'s1',marks:16.8,present:true},{id:'r6',test_id:'t2',student_id:'s2',marks:16.4,present:true},{id:'r7',test_id:'t2',student_id:'s3',marks:14.8,present:true},{id:'r8',test_id:'t2',student_id:'s4',marks:9.6,present:true},
     {id:'r9',test_id:'t3',student_id:'s1',marks:22.5,present:true},{id:'r10',test_id:'t3',student_id:'s2',marks:21.3,present:true},{id:'r11',test_id:'t3',student_id:'s3',marks:20,present:true},{id:'r12',test_id:'t3',student_id:'s4',marks:15,present:true},
+    {id:'r13',test_id:'t4',student_id:'s1',marks:18,present:true},{id:'r14',test_id:'t4',student_id:'s2',marks:16,present:true},{id:'r15',test_id:'t4',student_id:'s3',marks:20,present:true},{id:'r16',test_id:'t4',student_id:'s4',marks:12,present:true},
+    {id:'r17',test_id:'t5',student_id:'s1',marks:21,present:true},{id:'r18',test_id:'t5',student_id:'s2',marks:17.5,present:true},{id:'r19',test_id:'t5',student_id:'s3',marks:null,present:false},{id:'r20',test_id:'t5',student_id:'s4',marks:14,present:true},
+    {id:'r21',test_id:'t6',student_id:'s1',marks:23,present:true},{id:'r22',test_id:'t6',student_id:'s2',marks:19,present:true},{id:'r23',test_id:'t6',student_id:'s3',marks:22,present:true},{id:'r24',test_id:'t6',student_id:'s4',marks:16,present:true},
+    {id:'r25',test_id:'t7',student_id:'s1',marks:15,present:true},{id:'r26',test_id:'t7',student_id:'s2',marks:14,present:true},{id:'r27',test_id:'t7',student_id:'s3',marks:16,present:true},{id:'r28',test_id:'t7',student_id:'s4',marks:10,present:true},
+    {id:'r29',test_id:'t8',student_id:'s1',marks:16.5,present:true},{id:'r30',test_id:'t8',student_id:'s2',marks:null,present:false},{id:'r31',test_id:'t8',student_id:'s3',marks:17,present:true},{id:'r32',test_id:'t8',student_id:'s4',marks:12,present:true},
+    {id:'r33',test_id:'t9',student_id:'s1',marks:18,present:true},{id:'r34',test_id:'t9',student_id:'s2',marks:15,present:true},{id:'r35',test_id:'t9',student_id:'s3',marks:18.5,present:true},{id:'r36',test_id:'t9',student_id:'s4',marks:13,present:true},
   ],
 };
+
+const normalizeText = s => (s||'').trim().replace(/\s+/g,' ');
+const chapterKey = (cls,subject,title) => [cls, subject, normalizeText(title).toLowerCase()].join('|');
+function attachChapter(t){
+  const ch = t.chapter || demo.chapters?.find(c=>c.id===t.chapter_id);
+  return ch ? {...t, chapter:ch, chapter_no:ch.chapter_no, chapter_name:ch.title} : t;
+}
 
 const memoryDB = {
   async listStudents(){ return [...demo.students].sort((a,b)=>a.name.localeCompare(b.name)); },
   async addStudent(s){ const r={id:uid(),...s}; demo.students.push(r); return r; },
   async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
   async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
-  async listTests(){ return [...demo.tests].sort((a,b)=>new Date(b.test_date)-new Date(a.test_date)); },
-  async addTest(t){ const r={id:uid(),...t}; demo.tests.push(r); return r; },
-  async updateTest(id,patch){ const t=demo.tests.find(x=>x.id===id); Object.assign(t,patch); return t; },
+  async listChapters(cls,subject){ return demo.chapters.filter(c=>String(c.class_level)===String(cls) && c.subject===subject).sort((a,b)=>a.chapter_no-b.chapter_no); },
+  async addChapter(ch){
+    const title = normalizeText(ch.title);
+    const existing = demo.chapters.find(c=>
+      String(c.class_level)===String(ch.class_level) &&
+      c.subject===ch.subject &&
+      (Number(c.chapter_no)===Number(ch.chapter_no) || chapterKey(c.class_level,c.subject,c.title)===chapterKey(ch.class_level,ch.subject,title))
+    );
+    if(existing) return existing;
+    const r={id:uid(),...ch,title}; demo.chapters.push(r); return r;
+  },
+  async listTests(){ return [...demo.tests].map(attachChapter).sort((a,b)=>new Date(b.test_date)-new Date(a.test_date)); },
+  async addTest(t){ const r=attachChapter({id:uid(),...t}); demo.tests.push(r); return r; },
+  async updateTest(id,patch){ const t=demo.tests.find(x=>x.id===id); Object.assign(t,patch); return attachChapter(t); },
   async listResults(testId){ return demo.results.filter(r=>r.test_id===testId); },
   async allResults(){ return demo.results; },
   async saveResults(testId,rows){ demo.results=demo.results.filter(r=>r.test_id!==testId); rows.forEach(r=>demo.results.push({id:uid(),test_id:testId,...r})); },
+  async addEditLogs(rows){ demo.edit_logs = demo.edit_logs || []; rows.forEach(r=>demo.edit_logs.push({id:uid(),...r})); },
 };
 
 /* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
 let CENTRE_ID = null;   // set after login by ensureCentre()
+let CURRENT_USER_ID = 'demo-user';
+const STUDENT_COLS = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
+const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
+const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
+const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
+const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
 const supaDB = {
-  async listStudents(){ const {data}=await supa.from('students').select('*').order('name'); return data||[]; },
-  async addStudent(s){ const {data}=await supa.from('students').insert({...s, centre_id:CENTRE_ID}).select().single(); return data; },
+  async listStudents(){ const {data}=await supa.from('students').select(STUDENT_COLS).order('name'); return data||[]; },
+  async addStudent(s){ const {data}=await supa.from('students').insert({...s, centre_id:CENTRE_ID}).select(STUDENT_COLS).single(); return data; },
   async updateStudent(id,patch){ await supa.from('students').update(patch).eq('id',id); },
   async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
-  async listTests(){ const {data}=await supa.from('tests').select('*').order('test_date',{ascending:false}); return data||[]; },
-  async addTest(t){ const {data}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select().single(); return data; },
-  async updateTest(id,patch){ const {data}=await supa.from('tests').update(patch).eq('id',id).select().single(); return data; },
-  async listResults(testId){ const {data}=await supa.from('results').select('*').eq('test_id',testId); return data||[]; },
-  async allResults(){ const {data}=await supa.from('results').select('*'); return data||[]; },
+  async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
+  async addChapter(ch){
+    const title = normalizeText(ch.title);
+    const existing = (await this.listChapters(ch.class_level,ch.subject)).find(c=>Number(c.chapter_no)===Number(ch.chapter_no) || normalizeText(c.title).toLowerCase()===title.toLowerCase());
+    if(existing) return existing;
+    const {data,error}=await supa.from('chapters').insert({...ch,title,centre_id:CENTRE_ID}).select(CHAPTER_COLS).single();
+    if(error && String(error.message||'').toLowerCase().includes('duplicate')){
+      return (await this.listChapters(ch.class_level,ch.subject)).find(c=>Number(c.chapter_no)===Number(ch.chapter_no) || normalizeText(c.title).toLowerCase()===title.toLowerCase());
+    }
+    if(error) throw error;
+    return data;
+  },
+  async listTests(){ const {data}=await supa.from('tests').select(TEST_COLS).order('test_date',{ascending:false}); return (data||[]).map(t=>t.chapter?{...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title}:t); },
+  async addTest(t){ const {data}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single(); return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data; },
+  async updateTest(id,patch){ const {data}=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single(); return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data; },
+  async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
+  async allResults(){ const {data}=await supa.from('results').select(RESULT_COLS); return data||[]; },
   async saveResults(testId,rows){ await supa.from('results').delete().eq('test_id',testId); await supa.from('results').insert(rows.map(r=>({test_id:testId,...r}))); },
+  async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
 };
 
 const DB = CONFIG.USE_SUPABASE ? supaDB : memoryDB;
+const resultsCache = new Map();
+async function cachedResults(testId){
+  if(!resultsCache.has(testId)) resultsCache.set(testId, DB.listResults(testId));
+  return await resultsCache.get(testId);
+}
+function invalidateResults(testId){ resultsCache.delete(testId); }
+const LS_LAST_ENTRY = 'aveti:last-entry';
+const LS_MARK_DRAFT = 'aveti:mark-draft';
+const readJSON = (key,fallback=null) => { try { return JSON.parse(localStorage.getItem(key)||'null') ?? fallback; } catch(e){ return fallback; } };
+const writeJSON = (key,value) => localStorage.setItem(key, JSON.stringify(value));
+const clearJSON = key => localStorage.removeItem(key);
+function updateSaveState(state,msg){
+  const el=document.getElementById('saveState');
+  const btn=document.getElementById('saveBtn');
+  if(el) el.textContent=msg||'';
+  if(btn){
+    btn.disabled = state==='saving';
+    btn.textContent = state==='saving' ? 'Saving...' : state==='failed' ? 'Retry save' : (EM.saveLabel || '✓ Save & generate reports');
+  }
+}
+const fileSafe = s => normalizeText(String(s||'')).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'report';
+const csvCell = v => `"${String(v??'').replace(/"/g,'""')}"`;
+function downloadBlob(filename,type,content){
+  const blob = new Blob([content],{type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+const resultValue = r => r?.na ? 'N.A.' : r?.present===false ? 'Absent' : r?.marks??'';
+function changedResultLogs(test, oldRows, newRows){
+  const oldByStudent = new Map(oldRows.map(r=>[r.student_id,r]));
+  const editedAt = new Date().toISOString();
+  return newRows.map(n=>{
+    const o = oldByStudent.get(n.student_id) || {};
+    const changed = (o.marks??null)!==(n.marks??null) || !!o.present!==!!n.present || !!o.na!==!!n.na;
+    return changed ? {
+      test_id:test.id,
+      student_id:n.student_id,
+      edited_by:CURRENT_USER_ID,
+      edited_at:editedAt,
+      old_marks:o.marks??null,
+      new_marks:n.marks??null,
+      old_present:!!o.present,
+      new_present:!!n.present,
+      old_na:!!o.na,
+      new_na:!!n.na
+    } : null;
+  }).filter(Boolean);
+}
+async function teacherReportData(testId){
+  const test = (await DB.listTests()).find(t=>t.id===testId);
+  if(!test) return null;
+  const rs = await cachedResults(test.id);
+  const students = await DB.listStudents();
+  const rows = rs.map(r=>{
+    const s = students.find(x=>x.id===r.student_id)||{};
+    const p = (!r.na&&r.present&&r.marks!=null) ? pct(r.marks,test.full_marks) : null;
+    return {student_id:r.student_id,name:s.name||'Student',marks:r.marks,present:!!r.present,na:!!r.na,p,grade:p==null?'':band(p),support:p!=null&&needsSupport(p)};
+  });
+  const ranked = rows.filter(r=>!r.na&&r.present&&r.p!=null).sort((a,b)=>b.p-a.p);
+  const avg = ranked.length?Math.round(ranked.reduce((a,r)=>a+r.p,0)/ranked.length*10)/10:null;
+  return {test,rows,ranked,avg,enrolled:rows.length,appeared:rows.filter(r=>!r.na&&r.present).length,absent:rows.filter(r=>!r.na&&!r.present).length,na:rows.filter(r=>r.na).length};
+}
+function pdfEscape(s){ return String(s??'').replace(/[^\x20-\x7E]/g,'?').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+function simplePdf(lines){
+  const objects = [];
+  const add = s => { objects.push(s); return objects.length; };
+  const content = lines.map(l=>`BT /F1 ${l.size||10} Tf ${l.x||40} ${l.y} Td (${pdfEscape(l.text)}) Tj ET`).join('\n');
+  const contentId = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  const fontId = add(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
+  const pageId = add(`<< /Type /Page /Parent 4 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`);
+  const pagesId = add(`<< /Type /Pages /Kids [${pageId} 0 R] /Count 1 >>`);
+  const catalogId = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+  let pdf='%PDF-1.4\n', offsets=[0];
+  objects.forEach((o,i)=>{ offsets[i+1]=pdf.length; pdf+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach(o=>{ pdf+=String(o).padStart(10,'0')+' 00000 n \n'; });
+  pdf+=`trailer << /Size ${objects.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return pdf;
+}
 
 /* ---------- shared options + avatar ---------- */
 const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
@@ -250,7 +399,7 @@ const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'selected':''}>Class ${c}</option>`).join('');
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
-const genderOptions  = sel => ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
+const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
 const OPTIONAL = ['None','Hindi','English','Sanskrit'];
 const optionalOptions = sel => OPTIONAL.map(o=>`<option value="${o}" ${o===(sel||'None')?'selected':''}>${o==='None'?'Optional: —':'Opt: '+o}</option>`).join('');
 function avatar(gender,name){
@@ -261,25 +410,64 @@ function avatar(gender,name){
     <svg width="20" height="20" viewBox="0 0 24 24" fill="${c}"><circle cx="12" cy="8" r="4.2"/><path d="M4.5 21c0-4.2 3.4-7.2 7.5-7.2s7.5 3 7.5 7.2z"/></svg></span>`;
 }
 const val = id => document.getElementById(id).value;
+const cleanPhone = p => (p||'').replace(/[^\d]/g,'');
+function normalizeIndianPhone(phone){
+  let d = cleanPhone(phone);
+  if(d.length===12 && d.startsWith('91')) d = d.slice(2);
+  return d.length===10 && /^[6-9]\d{9}$/.test(d) ? d : null;
+}
+const sectionKey = s => s || 'All';
+function sameClassSectionName(a,b){
+  return normalizeText(a.name).toLowerCase()===normalizeText(b.name).toLowerCase() &&
+    String(a.class_level)===String(b.class_level) &&
+    sectionKey(a.section)===sectionKey(b.section);
+}
+async function warnStudentDuplicates(student, ignoreId){
+  const students = await DB.listStudents();
+  const duplicateName = students.find(s=>s.id!==ignoreId && sameClassSectionName(s,student));
+  if(duplicateName && !confirm(`${student.name} already exists in Class ${student.class_level}, Section ${sectionKey(student.section)}. Save anyway?`)) return false;
+  const phone = normalizeIndianPhone(student.parent_phone);
+  if(phone){
+    const duplicatePhone = students.find(s=>s.id!==ignoreId && normalizeIndianPhone(s.parent_phone)===phone);
+    if(duplicatePhone && !confirm(`This parent phone is already used for ${duplicatePhone.name}. Save anyway?`)) return false;
+  }
+  return true;
+}
 const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
-const chapterDetail = t => `Chapter ${t.chapter_no||''}${(t.chapter_name && t.chapter_name.trim()) ? ' — '+t.chapter_name : ''}`;
+function chapterDetail(t){
+  const name = (t.chapter_name||'').trim();
+  const no = String(t.chapter_no||'').trim();
+  if(!name) return 'Chapter '+no;
+  const compact = name.toLowerCase().replace(/[\s-]/g,'');
+  if(no && (compact===('ch'+no) || compact===('chapter'+no))) return 'Chapter '+no;
+  return `Chapter ${no} — ${name}`;
+}
+const chapterOptionLabel = c => chapterDetail({chapter_no:c.chapter_no, chapter_name:c.title});
 const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(t.test_date)}`;
+const bandConfig = () => (CONFIG.BANDS||[]).slice().sort((a,b)=>b.min-a.min);
+const band = p => {
+  const bands = bandConfig();
+  return (bands.find(b=>p>=b.min && p<=b.max) || bands[bands.length-1] || {grade:'D'}).grade;
+};
+const bandMeta = p => bandConfig().find(b=>b.grade===band(p)) || {grade:'D',min:0,max:39,label:'Needs Support'};
+const supportBand = () => bandConfig().slice().sort((a,b)=>a.min-b.min)[0] || {grade:'D',min:0,max:39,label:'Needs Support'};
+const needsSupport = p => band(p)===supportBand().grade;
+const bandRangeLabel = b => b.max>=100 ? `${b.min}–100` : b.min<=0 ? `<${b.max+1}` : `${b.min}–${b.max}`;
 function perfBand(p){
-  if(p>=90) return {label:'Excellent', emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
-  if(p>=75) return {label:'Very Good', emoji:'👏', line:n=>`Well done, ${n}. Strong work!`};
-  if(p>=60) return {label:'Good', emoji:'👍', line:n=>`Good going, ${n}. A little more will go far.`};
-  if(p>=40) return {label:'Needs Practice', emoji:'📘', line:n=>`${n} can improve with some revision. We're on it.`};
-  return {label:'Needs Support', emoji:'🤝', line:n=>`Let's work together to help ${n} improve.`};
+  const meta = bandMeta(p);
+  if(meta.grade==='A') return {label:meta.label, emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
+  if(meta.grade==='B') return {label:meta.label, emoji:'👏', line:n=>`Well done, ${n}. Strong work!`};
+  if(meta.grade==='C') return {label:meta.label, emoji:'👍', line:n=>`Good going, ${n}. A little more will go far.`};
+  return {label:meta.label, emoji:'🤝', line:n=>`Let's work together to help ${n} improve.`};
 }
 
 /* ---------- helpers ---------- */
 const pct = (marks, full) => (marks==null||full==0) ? null : Math.round((marks/full)*1000)/10;
-const band = p => p>=80?'A':p>=60?'B':p>=40?'C':'D';
-const bandColor = b => ({A:'var(--teal)',B:'#639922',C:'var(--amber)',D:'var(--red)'})[b];
+const bandColor = b => ({A:'var(--teal)',B:'#639922',C:'var(--amber)',D:'var(--red)'})[b] || 'var(--muted)';
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 
 async function classAverage(test){
-  const rs = (await DB.listResults(test.id)).filter(r=>r.present && r.marks!=null);
+  const rs = (await cachedResults(test.id)).filter(r=>!r.na && r.present && r.marks!=null);
   if(!rs.length) return null;
   return Math.round(rs.reduce((a,r)=>a+pct(r.marks,test.full_marks),0)/rs.length*10)/10;
 }
@@ -304,8 +492,8 @@ async function home(){
   let recent='';
   for(const t of tests.slice(0,4)){
     const avg = await classAverage(t);
-    const rs = await DB.listResults(t.id);
-    const present = rs.filter(r=>r.present).length;
+    const rs = await cachedResults(t.id);
+    const appeared = rs.filter(r=>!r.na && r.present).length;
     recent += `<div class="recent-test">
       <div class="recent-head">
         <div>
@@ -323,7 +511,7 @@ async function home(){
         <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
         <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(t.test_date)}</div></div>
         <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
-        <div class="recent-field"><div class="label">Number of students</div><div class="value">${present}/${rs.length}</div></div>
+        <div class="recent-field"><div class="label">Number of students</div><div class="value">${appeared} of ${rs.length} appeared</div></div>
       </div>
       <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button onclick="openTeacher('${t.id}')">Teacher report</button>
@@ -423,7 +611,7 @@ function addFormHTML(){
     <input id="ad_name" placeholder="Student name" style="flex:1;min-width:140px">
     <select id="ad_class" style="width:auto">${classOptions(9)}</select>
     <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
-    <select id="ad_gender" style="width:auto">${genderOptions('male')}</select>
+    <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
     <select id="ad_opt" style="width:auto">${optionalOptions('None')}</select>
     <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
     <button class="primary" onclick="submitAdd()">Add</button>
@@ -433,19 +621,32 @@ window.toggleAdd = ()=>{ SHOW_ADD=!SHOW_ADD; roster(); };
 window.submitAdd = async ()=>{
   const name=val('ad_name').trim(); if(!name){ alert('Enter a student name'); return; }
   const sec = val('ad_sec');
-  await DB.addStudent({ name, class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender:val('ad_gender'), optional_subject:val('ad_opt'), parent_name:'', parent_phone:val('ad_phone').trim() });
+  const gender = val('ad_gender'); if(!gender){ alert('Select gender.'); return; }
+  const rawPhone = val('ad_phone').trim();
+  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
+  if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
+  const student = { name, class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ad_opt'), parent_name:'', parent_phone:phone };
+  if(!(await warnStudentDuplicates(student))) return;
+  await DB.addStudent(student);
   SHOW_ADD=false; roster();
 };
 window.startEdit = id=>{ EDIT_ID=id; roster(); };
 window.cancelEdit = ()=>{ EDIT_ID=null; roster(); };
 window.saveEdit = async id=>{
   const sec = val('ed_sec');
-  await DB.updateStudent(id,{ name:val('ed_name').trim(), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender:val('ed_gender'), optional_subject:val('ed_opt'), parent_phone:val('ed_phone').trim() });
+  const name = val('ed_name').trim(); if(!name){ alert('Enter a student name'); return; }
+  const gender = val('ed_gender'); if(!gender){ alert('Select gender.'); return; }
+  const rawPhone = val('ed_phone').trim();
+  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
+  if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
+  const student = { name, class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ed_opt'), parent_phone:phone };
+  if(!(await warnStudentDuplicates(student,id))) return;
+  await DB.updateStudent(id,student);
   EDIT_ID=null; roster();
 };
 window.deleteStudent = async (id,name)=>{
   if(!confirm('Delete '+name+'? This also removes their past marks and cannot be undone.')) return;
-  await DB.deleteStudent(id); roster();
+  await DB.deleteStudent(id); resultsCache.clear(); roster();
 };
 
 /* ---------- ENTER MARKS ---------- */
@@ -453,28 +654,40 @@ let EM = { full:25, rows:[], editId:null };
 async function enterMarks(testId){
   setCrumb('Enter test marks');
   const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
+  const draft = !editTest ? readJSON(LS_MARK_DRAFT,null) : null;
+  const useDraft = draft && confirm('You have an unsaved marks draft. Restore it?');
+  const lastEntry = readJSON(LS_LAST_ENTRY,null);
+  const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
+  const defaultEntry = lastEntry || (recentTest ? {class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {class_level:9,section:'All',subject:'Hindi'});
   EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest };
-  const selectedClass = editTest ? editTest.class_level : 9;
-  const selectedSection = editTest ? (editTest.section||'All') : 'All';
-  const selectedSubject = editTest ? editTest.subject : 'Hindi';
-  const selectedChapter = editTest ? chapterLabel(editTest) : '';
-  const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : new Date().toISOString().slice(0,10);
+  if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null};
+  EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
+  const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
+  const selectedSection = editTest ? (editTest.section||'All') : (useDraft ? draft.section : (defaultEntry.section||'All'));
+  const selectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
+  const selectedChapterId = editTest ? (editTest.chapter_id||'') : (useDraft ? draft.chapter_id : '');
+  const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   show(`
     ${demoNote}
     <div class="card pad">
       <h2 style="font-size:18px;margin-bottom:14px">${editTest?'Edit test marks':'Enter test marks'}</h2>
       <div class="wrap-fields" style="margin-bottom:10px">
-        <div class="field"><label>Class</label><select id="emClass" onchange="loadEMRoster()">${classOptions(selectedClass)}</select></div>
+        <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
-        <div class="field"><label>Subject</label><select id="emSub">${subjectOptions(selectedSubject)}</select></div>
-        <div class="field" style="flex:2"><label>Chapter</label><input id="emChap" value="${selectedChapter}" placeholder="e.g. 4 — मनुष्यता"></div>
+        <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptions(selectedSubject)}</select></div>
+        <div class="field" style="flex:2"><label>Chapter</label><select id="emChap" onchange="toggleNewChapter()"></select></div>
+      </div>
+      <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
+        <div class="field"><label>Chapter no.</label><input id="newChapNo" type="number" min="1" step="1" placeholder="1"></div>
+        <div class="field" style="flex:2"><label>Chapter title</label><input id="newChapTitle" placeholder="e.g. मनुष्यता"></div>
+        <button onclick="addEMChapter()">Add chapter</button>
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
         <div class="field"><label>Test type</label><select><option>Chapter End Test</option><option>Class Test</option></select></div>
         <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
           <div class="seg"><button id="f20" class="${EM.full===20?'on':''}" onclick="setFull(20)">20</button><button id="f25" class="${EM.full===25?'on':''}" onclick="setFull(25)">25</button></div>
         </div>
-        <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}"></div>
+        <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>
       </div>
       <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
       <div id="emRoster"></div>
@@ -486,11 +699,37 @@ async function enterMarks(testId){
           <div><div class="tiny muted">Absent</div><div class="num" style="font-size:18px" id="cAbs">0</div></div>
           <div><div class="tiny muted">N.A.</div><div class="num" style="font-size:18px" id="cNA">0</div></div>
         </div>
-        <button class="primary" onclick="saveTest()">✓ ${editTest?'Save changes':'Save &amp; generate reports'}</button>
+        <div style="margin-left:auto;text-align:right">
+          <button id="saveBtn" class="primary" onclick="saveTest()">${EM.saveLabel}</button>
+          <div id="saveState" class="tiny faint" style="margin-top:4px"></div>
+        </div>
       </div>
     </div>
   `);
-  editTest ? loadEMExisting(editTest) : loadEMRoster();
+  EM.selectedChapterId = selectedChapterId;
+  if(editTest) await loadEMExisting(editTest);
+  else if(useDraft) await loadEMDraft(draft);
+  else await loadEMRoster();
+  loadEMChapters();
+}
+window.onEMClassChange = ()=>{ loadEMRoster(); loadEMChapters(); };
+function snapshotDraft(){
+  const clsEl=document.getElementById('emClass');
+  if(!clsEl) return null;
+  return {
+    editId:EM.editId,
+    full:EM.full,
+    class_level:parseInt(val('emClass')),
+    section:val('emSec'),
+    subject:val('emSub'),
+    chapter_id:val('emChap'),
+    test_date:document.getElementById('emDate')?.value,
+    rows:EM.rows
+  };
+}
+function saveDraft(){
+  const draft=snapshotDraft();
+  if(draft) writeJSON(LS_MARK_DRAFT,draft);
 }
 window.loadEMRoster = async ()=>{
   const cls = parseInt(val('emClass')), sec = val('emSec');
@@ -498,12 +737,45 @@ window.loadEMRoster = async ()=>{
   EM.classStudents = all.filter(s=> s.class_level===cls);   // whole class, any section, for the picker
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
-  recountEM(); renderEMRoster();
+  recountEM(); renderEMRoster(); saveDraft();
+};
+window.loadEMChapters = async ()=>{
+  const sel = document.getElementById('emChap');
+  if(!sel) return;
+  const cls = parseInt(val('emClass'));
+  const subject = val('emSub');
+  EM.chapters = await DB.listChapters(cls,subject);
+  const previous = EM.selectedChapterId || (EM.editTest && String(EM.editTest.class_level)===String(cls) && EM.editTest.subject===subject ? EM.editTest.chapter_id : '');
+  const options = ['<option value="">Select chapter</option>']
+    .concat(EM.chapters.map(c=>`<option value="${c.id}" ${c.id===previous?'selected':''}>${chapterOptionLabel(c)}</option>`))
+    .concat('<option value="__new__">+ Add new chapter</option>');
+  sel.innerHTML = options.join('');
+  EM.selectedChapterId = sel.value;
+  toggleNewChapter();
+  saveDraft();
+};
+window.toggleNewChapter = ()=>{
+  const selected = val('emChap');
+  EM.selectedChapterId = selected;
+  const box = document.getElementById('newChapterBox');
+  if(box) box.style.display = selected==='__new__' ? 'flex' : 'none';
+};
+window.addEMChapter = async ()=>{
+  const cls = parseInt(val('emClass'));
+  const subject = val('emSub');
+  const title = normalizeText(val('newChapTitle'));
+  const no = parseInt(val('newChapNo'));
+  if(!no || no<1){ alert('Enter a valid chapter number.'); return; }
+  if(!title){ alert('Enter a chapter title.'); return; }
+  const existing = (EM.chapters||[]).find(c=>Number(c.chapter_no)===Number(no) || normalizeText(c.title).toLowerCase()===title.toLowerCase());
+  const chapter = existing || await DB.addChapter({class_level:cls,subject,chapter_no:no,title});
+  EM.selectedChapterId = chapter.id;
+  await loadEMChapters();
 };
 async function loadEMExisting(test){
   const cls = parseInt(val('emClass')), sec = val('emSec');
   const all = await DB.listStudents();
-  const rs = await DB.listResults(test.id);
+  const rs = await cachedResults(test.id);
   const byStudent = new Map(rs.map(r=>[r.student_id,r]));
   EM.classStudents = all.filter(s=> s.class_level===cls);
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
@@ -512,7 +784,16 @@ async function loadEMExisting(test){
     .filter(s=>s && !match.some(m=>m.id===s.id));
   EM.rows = [...match, ...extra].map(s=>{
     const r = byStudent.get(s.id);
-    return {student_id:s.id,name:s.name,gender:s.gender,marks:r?(r.marks??null):null,present:r?(!!r.present):true,na:false};
+    return {student_id:s.id,name:s.name,gender:s.gender,marks:r?(r.marks??null):null,present:r?(!!r.present):true,na:r?(!!r.na):false};
+  });
+  recountEM(); renderEMRoster(); saveDraft();
+}
+async function loadEMDraft(draft){
+  const all = await DB.listStudents();
+  EM.classStudents = all.filter(s=> s.class_level===parseInt(val('emClass')));
+  EM.rows = (draft.rows||[]).map(r=>{
+    const s = all.find(x=>x.id===r.student_id) || {};
+    return {...r,name:r.name||s.name||'Student',gender:r.gender||s.gender};
   });
   recountEM(); renderEMRoster();
 }
@@ -532,9 +813,9 @@ window.addPicked = ()=>{
   const id = val('emPick'); if(!id) return;
   const s = (EM.classStudents||[]).find(x=>x.id===id); if(!s) return;
   EM.rows.push({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false});
-  renderEMRoster();
+  renderEMRoster(); saveDraft();
 };
-window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); };
+window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); saveDraft(); };
 function renderEMRoster(){
   const el = document.getElementById('emRoster');
   if(!EM.rows.length){
@@ -555,10 +836,10 @@ function renderEMRoster(){
   renderPicker();
   recountEM();
 }
-window.setFull = f=>{ EM.full=f; document.getElementById('f20').classList.toggle('on',f===20); document.getElementById('f25').classList.toggle('on',f===25); document.getElementById('fmLabel').textContent=f; EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;}); renderEMRoster(); };
-window.setMark = (i,v)=>{ let n=parseFloat(v); if(isNaN(n)){EM.rows[i].marks=null;} else {n=Math.max(0,Math.min(EM.full,n)); EM.rows[i].marks=n;} recountEM(); };
-window.toggleAbsent = i=>{ if(EM.rows[i].na) return; EM.rows[i].present=!EM.rows[i].present; if(!EM.rows[i].present)EM.rows[i].marks=null; renderEMRoster(); };
-window.toggleNA = i=>{ EM.rows[i].na=!EM.rows[i].na; if(EM.rows[i].na){ EM.rows[i].marks=null; EM.rows[i].present=true; } renderEMRoster(); };
+window.setFull = f=>{ EM.full=f; document.getElementById('f20').classList.toggle('on',f===20); document.getElementById('f25').classList.toggle('on',f===25); document.getElementById('fmLabel').textContent=f; EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;}); renderEMRoster(); saveDraft(); };
+window.setMark = (i,v)=>{ let n=parseFloat(v); if(isNaN(n)){EM.rows[i].marks=null;} else {n=Math.max(0,Math.min(EM.full,n)); EM.rows[i].marks=n;} recountEM(); saveDraft(); };
+window.toggleAbsent = i=>{ if(EM.rows[i].na) return; EM.rows[i].present=!EM.rows[i].present; if(!EM.rows[i].present)EM.rows[i].marks=null; renderEMRoster(); saveDraft(); };
+window.toggleNA = i=>{ EM.rows[i].na=!EM.rows[i].na; if(EM.rows[i].na){ EM.rows[i].marks=null; EM.rows[i].present=true; } renderEMRoster(); saveDraft(); };
 function recountEM(){
   const eligible = EM.rows.filter(r=>!r.na);
   let entered=0,abs=0,naC=EM.rows.length-eligible.length,sum=0,c=0;
@@ -572,28 +853,56 @@ window.saveTest = async ()=>{
   if(!eligible.length){ alert('No students to record (everyone is marked N.A.).'); return; }
   const blank = eligible.find(r=>r.present && r.marks==null);
   if(blank){ if(!confirm(blank.name+' has no marks. Save anyway? (Cancel to go back and mark absent or N.A.)')) return; }
-  const chap = (val('emChap')||'').trim();
-  const numM = chap.match(/(\d+)/);
   const clsNum = parseInt(val('emClass'));
-  const allTests = await DB.listTests();
-  const chapNo = numM ? parseInt(numM[1]) : (EM.editTest?.chapter_no || allTests.filter(t=>t.class_level===clsNum && t.subject===val('emSub')).length+1);
+  const chapterId = val('emChap');
+  if(!chapterId || chapterId==='__new__'){ alert('Select a chapter, or add the new chapter first.'); return; }
+  const chapter = (EM.chapters||[]).find(c=>c.id===chapterId) || (await DB.listChapters(clsNum,val('emSub'))).find(c=>c.id===chapterId);
+  if(!chapter){ alert('Chapter not found. Please select the chapter again.'); return; }
   const secVal = val('emSec');
   const testData = {
     class_level: clsNum, section: secVal==='All'?null:secVal,
     subject: val('emSub'),
-    chapter_no: chapNo,
-    chapter_name: chap || ('Chapter '+chapNo),
+    chapter_id: chapter.id,
+    chapter_no: chapter.chapter_no,
+    chapter_name: chapter.title,
     test_type:'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
   };
-  const test = EM.editId ? await DB.updateTest(EM.editId,testData) : await DB.addTest(testData);
-  await DB.saveResults(test.id, eligible.map(r=>({student_id:r.student_id,marks:r.present?r.marks:null,present:r.present})));
-  CURRENT_TEST = test.id;
-  const avg = await classAverage(test);
-  const entered = eligible.filter(r=>r.present&&r.marks!=null).length;
-  const abs = eligible.filter(r=>!r.present).length;
-  document.getElementById('saveSummary').innerHTML =
-    `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(test.test_date)}<br><br><b>${entered}</b> entered · <b>${abs}</b> absent · class avg <b>${avg??'—'}%</b>`;
-  document.getElementById('saveOverlay').classList.add('show');
+  const resultRows = EM.rows.map(r=>({student_id:r.student_id,marks:(r.present&&!r.na)?r.marks:null,present:r.na?false:r.present,na:!!r.na}));
+  const oldRows = EM.editId ? await cachedResults(EM.editId) : [];
+  const pendingLogs = EM.editId ? changedResultLogs({id:EM.editId}, oldRows, resultRows) : [];
+  if(EM.editId){
+    const msg = pendingLogs.length
+      ? `Overwrite this saved test and record ${pendingLogs.length} mark/attendance change${pendingLogs.length===1?'':'s'}?`
+      : 'Overwrite this saved test? No mark changes were detected, but test details may be updated.';
+    if(!confirm(msg)) return;
+  }
+  saveDraft();
+  updateSaveState('saving','Saving marks...');
+  let test = null;
+  try{
+    test = EM.editId ? await DB.updateTest(EM.editId,testData) : await DB.addTest(testData);
+    EM.editId = test.id;
+    EM.editTest = test;
+    EM.saveLabel = '✓ Save changes';
+    saveDraft();
+    await DB.saveResults(test.id, resultRows);
+    if(pendingLogs.length) await DB.addEditLogs(pendingLogs.map(l=>({...l,test_id:test.id})));
+    invalidateResults(test.id);
+    writeJSON(LS_LAST_ENTRY,{class_level:clsNum,section:secVal,subject:val('emSub')});
+    clearJSON(LS_MARK_DRAFT);
+    CURRENT_TEST = test.id;
+    const avg = await classAverage(test);
+    const entered = EM.rows.filter(r=>!r.na&&r.present&&r.marks!=null).length;
+    const abs = EM.rows.filter(r=>!r.na&&!r.present).length;
+    const naC = EM.rows.filter(r=>r.na).length;
+    updateSaveState('saved','Saved.');
+    document.getElementById('saveSummary').innerHTML =
+      `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(test.test_date)}<br><br><b>${entered}</b> appeared of <b>${EM.rows.length}</b> enrolled · <b>${abs}</b> absent · <b>${naC}</b> N.A. · class avg <b>${avg??'—'}%</b>`;
+    document.getElementById('saveOverlay').classList.add('show');
+  }catch(e){
+    updateSaveState('failed','Save failed. Your marks are still here. Check connection and retry.');
+    alert('Save failed. Your entered marks were kept as a local draft. Please check the connection and click Retry save.');
+  }
 };
 
 /* ---------- TEACHER REPORT ---------- */
@@ -658,18 +967,27 @@ async function renderTeacher(tests){
     return;
   }
   CURRENT_TEST = test.id;
-  const rs = await DB.listResults(test.id);
+  const rs = await cachedResults(test.id);
   const students = await DB.listStudents();
   const nameOf = id => (students.find(s=>s.id===id)||{}).name||'—';
-  let rows = rs.map(r=>({name:nameOf(r.student_id),marks:r.marks,present:r.present,p:r.present?pct(r.marks,test.full_marks):null}));
-  const present = rows.filter(r=>r.present && r.p!=null).sort((a,b)=>b.p-a.p);
+  let rows = rs.map(r=>({name:nameOf(r.student_id),marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
+  const enrolled = rows.length;
+  const appearedCount = rows.filter(r=>!r.na && r.present).length;
+  const absentCount = rows.filter(r=>!r.na && !r.present).length;
+  const naCount = rows.filter(r=>r.na).length;
+  const present = rows.filter(r=>!r.na && r.present && r.p!=null).sort((a,b)=>b.p-a.p);
   const avg = present.length?Math.round(present.reduce((a,r)=>a+r.p,0)/present.length*10)/10:null;
-  const counts={A:0,B:0,C:0,D:0}; present.forEach(r=>counts[band(r.p)]++);
+  const counts={}; bandConfig().forEach(b=>counts[b.grade]=0); present.forEach(r=>counts[band(r.p)]++);
   const hi=present[0], lo=present[present.length-1];
+  const bandCards = bandConfig().map((b,i)=>`
+    <div class="band" style="background:${i===0?'var(--bandA)':i===1?'var(--bandB)':i===2?'var(--bandC)':'#f0f3ef'};${i===0?'flex:2':''}">
+      <div class="tiny" style="color:${i===0?'#04342c':i===1?'#173404':i===2?'#412402':'var(--faint)'}">${b.grade} · ${bandRangeLabel(b)}</div>
+      <div class="num" style="color:${i===0?'#04342c':i===1?'#173404':i===2?'#412402':'var(--faint)'}">${counts[b.grade]||0}</div>
+    </div>`).join('');
   const list = present.map((r,i)=>`
     <div class="listrow">
       <div style="width:20px" class="tiny faint">${i+1}</div>
-      <div style="flex:1">${r.name}${r.p<40?' <span class="pill warn">needs support</span>':''}</div>
+      <div style="flex:1">${r.name}${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
       <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>
       <div class="num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
       <div class="muted small" style="width:42px;text-align:right">${r.p}%</div>
@@ -678,26 +996,25 @@ async function renderTeacher(tests){
     ${teacherFilterBar(tests)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${chapterDetail(test)}</div></div></div>
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${chapterDetail(test)} · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(test.test_date)}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
         <div class="metric"><div class="tiny muted">Highest</div><div class="n">${hi?hi.p+'%':'—'}</div><div class="tiny faint">${hi?hi.name:''}</div></div>
         <div class="metric"><div class="tiny muted">Lowest</div><div class="n">${lo?lo.p+'%':'—'}</div><div class="tiny faint">${lo?lo.name:''}</div></div>
-        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${present.length}/${rows.length}</div></div>
+        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${appearedCount} of ${enrolled}</div><div class="tiny faint">${absentCount} absent · ${naCount} N.A.</div></div>
       </div>
       <div class="small muted">Score bands</div>
       <div class="bands">
-        <div class="band" style="background:var(--bandA);flex:2"><div class="tiny" style="color:#04342c">A · 80–100</div><div class="num" style="color:#04342c">${counts.A}</div></div>
-        <div class="band" style="background:var(--bandB)"><div class="tiny" style="color:#173404">B · 60–79</div><div class="num" style="color:#173404">${counts.B}</div></div>
-        <div class="band" style="background:var(--bandC)"><div class="tiny" style="color:#412402">C · 40–59</div><div class="num" style="color:#412402">${counts.C}</div></div>
-        <div class="band" style="background:#f0f3ef"><div class="tiny faint">D · &lt;40</div><div class="num faint">${counts.D}</div></div>
+        ${bandCards}
       </div>
       <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
       ${list}
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
+        <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
+        <button onclick="exportTeacherPDF('${test.id}')">Download PDF</button>
         <button onclick="window.print()">🖨 Print / PDF</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
@@ -724,6 +1041,51 @@ window.setTeacherFilter = async (key,value)=>{
     if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
   }
   renderTeacher(tests);
+};
+
+window.exportTeacherCSV = async testId=>{
+  const data = await teacherReportData(testId);
+  if(!data){ alert('No report data found.'); return; }
+  const {test,rows,avg,enrolled,appeared,absent,na} = data;
+  const header = ['Rank','Student','Status','Marks','Full marks','Percent','Band','Needs support'];
+  const rankedIds = new Map(data.ranked.map((r,i)=>[r.student_id,i+1]));
+  const lines = [
+    ['Teacher / Class Report'],
+    [`Class ${test.class_level}`,`Section ${test.section||'All'}`,test.subject,chapterDetail(test),fmtDate(test.test_date)],
+    [`Appeared ${appeared} of ${enrolled}`,`Absent ${absent}`,`N.A. ${na}`,`Class average ${avg??'—'}%`],
+    [],
+    header
+  ];
+  rows.forEach(r=>{
+    const status = r.na ? 'N.A.' : r.present ? 'Appeared' : 'Absent';
+    lines.push([rankedIds.get(r.student_id)||'',r.name,status,resultValue(r),test.full_marks,r.p==null?'':r.p+'%',r.grade,r.support?'Yes':'No']);
+  });
+  const csv = lines.map(row=>row.map(csvCell).join(',')).join('\n');
+  downloadBlob(`${fileSafe(test.subject+'-'+chapterDetail(test))}-teacher-report.csv`,'text/csv;charset=utf-8',csv);
+};
+
+window.exportTeacherPDF = async testId=>{
+  const data = await teacherReportData(testId);
+  if(!data){ alert('No report data found.'); return; }
+  const {test,ranked,avg,enrolled,appeared,absent,na} = data;
+  const lines = [
+    {text:'Teacher / Class Report',x:40,y:800,size:18},
+    {text:`${CONFIG.CENTRE.name}`,x:40,y:778,size:11},
+    {text:`Class ${test.class_level} | Section ${test.section||'All'} | ${test.subject} | ${chapterDetail(test)}`,x:40,y:758,size:11},
+    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(test.test_date)}`,x:40,y:742,size:11},
+    {text:`Appeared ${appeared} of ${enrolled} | Absent ${absent} | N.A. ${na} | Class average ${avg??'—'}%`,x:40,y:720,size:12},
+    {text:'Ranked results',x:40,y:690,size:13},
+    {text:'Rank  Student                    Marks      Percent   Band   Note',x:40,y:672,size:10}
+  ];
+  let y=654;
+  ranked.slice(0,28).forEach((r,i)=>{
+    const note = r.support ? 'Needs support' : band(r.p)==='A' ? 'Top performer' : '';
+    lines.push({text:`${String(i+1).padEnd(5)} ${r.name.slice(0,24).padEnd(26)} ${String(r.marks+'/'+test.full_marks).padEnd(10)} ${String(r.p+'%').padEnd(9)} ${String(r.grade).padEnd(5)} ${note}`,x:40,y,size:10});
+    y-=16;
+  });
+  if(ranked.length>28) lines.push({text:`+ ${ranked.length-28} more rows in CSV export`,x:40,y:y-8,size:9});
+  lines.push({text:'Privacy note: parent phone numbers are not included in this teacher PDF.',x:40,y:38,size:8});
+  downloadBlob(`${fileSafe(test.subject+'-'+chapterDetail(test))}-teacher-report.pdf`,'application/pdf',simplePdf(lines));
 };
 
 /* ---------- PARENT SHARE ---------- */
@@ -798,10 +1160,12 @@ async function renderParents(tests){
     return;
   }
   CURRENT_TEST = test.id;
-  const rs = await DB.listResults(test.id);
+  const rs = await cachedResults(test.id);
   const avg = await classAverage(test);
+  const enrolled = rs.length;
+  const appearedCount = rs.filter(r=>!r.na && r.present).length;
   let rows='';
-  rs.filter(r=>r.present&&r.marks!=null && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
+  rs.filter(r=>!r.na&&r.present&&r.marks!=null && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
     const p = pct(r.marks,test.full_marks);
     const pb = perfBand(p);
@@ -819,20 +1183,20 @@ ${pb.line(s.name)}
 
 Thanks,
 ${CONFIG.CENTRE.name}`);
-    const phone = (s.parent_phone||'').replace(/[^\d]/g,'');
+    const phone = normalizeIndianPhone(s.parent_phone);
     rows += `<div class="listrow">
       ${avatar(s.gender,s.name)}
       <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}</div></div>
       ${phone
-        ? `<a class="link small" style="margin-right:6px">${s.parent_phone}</a><a href="https://wa.me/${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>`
-        : `<span class="pill warn" style="margin-right:6px">no number</span><button onclick="window.navHavRoster()">Add</button>`}
+        ? `<a class="link small" style="margin-right:6px">${phone}</a><a href="https://wa.me/91${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>`
+        : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
     </div>`;
   });
   show(`
     ${parentFilterBar(tests, students)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks</div></div></div>
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
       </div>
       <div class="banner" style="margin-bottom:14px">🔒 Each parent receives only their own child's result — never the class list or rank.</div>
       <div class="small muted" style="margin-bottom:4px">Recipients</div>
@@ -912,7 +1276,7 @@ async function growth(){
   for(const t of tests){ classSeries.push(await classAverage(t)); }
   const studentSeries = tests.map(t=>{
     const r = allRes.find(x=>x.test_id===t.id && x.student_id===GR.student);
-    return (r&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
+    return (r&&!r.na&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
   });
   const sName = (students.find(s=>s.id===GR.student)||{}).name||'';
   const series = GR.mode==='class'
@@ -962,10 +1326,15 @@ function lineChartSVG(labels, series){
   let xl=labels.map((l,i)=>`<text x="${x(i)}" y="${H-12}" font-size="11" fill="#8a978d" text-anchor="middle">${l}</text>`).join('');
   let paths='',dots='',legend='';
   series.forEach((s,si)=>{
-    const pts=s.data.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);
-    const d=pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(' ');
-    paths+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
-    pts.forEach(p=>dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${s.color}"/>`);
+    let d='',open=false;
+    s.data.forEach((v,i)=>{
+      if(v==null){ open=false; return; }
+      const p=[x(i),y(v)];
+      d+=(open?'L':'M')+p[0]+' '+p[1]+' ';
+      open=true;
+      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${s.color}"/>`;
+    });
+    if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
     legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
   });
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" width="100%">${grid}${paths}${dots}${xl}</svg>`;
@@ -997,11 +1366,15 @@ function renderAuthMode(){
 document.getElementById('authToggle').onclick = e=>{ e.preventDefault(); AUTH_MODE = AUTH_MODE==='signin'?'signup':'signin'; renderAuthMode(); };
 
 async function ensureCentre(){
-  let { data } = await supa.from('centres').select('*').limit(1);
-  if (data && data.length){ CENTRE_ID = data[0].id; return; }
+  let { data } = await supa.from('centres').select('id,name,address,phone,band_config,owner_user_id').limit(1);
+  if (data && data.length){
+    CENTRE_ID = data[0].id;
+    if(Array.isArray(data[0].band_config) && data[0].band_config.length) CONFIG.BANDS = data[0].band_config;
+    return;
+  }
   const { data:created, error } = await supa.from('centres')
-    .insert({ name:CONFIG.CENTRE.name, address:CONFIG.CENTRE.address, phone:CONFIG.CENTRE.phone })
-    .select().single();
+    .insert({ name:CONFIG.CENTRE.name, address:CONFIG.CENTRE.address, phone:CONFIG.CENTRE.phone, band_config:CONFIG.BANDS })
+    .select('id,name,address,phone,band_config,owner_user_id').single();
   if (error) throw error;
   CENTRE_ID = created.id;
 }
@@ -1009,6 +1382,7 @@ async function ensureCentre(){
 async function afterLogin(){
   loginOverlay.classList.remove('show');
   document.getElementById('navSignout').style.display='';
+  try { const {data:{user}} = await supa.auth.getUser(); CURRENT_USER_ID = user?.id || 'unknown-user'; } catch(e){}
   try { await ensureCentre(); } catch(e){ /* RLS/setup issue surfaces on first action */ }
   home();
 }
