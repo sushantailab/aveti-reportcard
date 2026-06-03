@@ -50,6 +50,16 @@
   .tile h3{font-size:16px;margin-bottom:4px}
   .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
   .listrow:last-child{border-bottom:none}
+  .recent-test{padding:18px 0;border-bottom:1px solid var(--line)}
+  .recent-test:last-child{border-bottom:none}
+  .recent-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+  .recent-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
+  .recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px}
+  .recent-field{background:#f8faf7;border-radius:10px;padding:10px 12px}
+  .recent-field .label{font-size:11px;color:var(--muted);margin-bottom:3px}
+  .recent-field .value{font-size:17px;font-weight:600;color:var(--ink)}
+  .recent-average{min-width:125px;text-align:right}
+  .recent-average .value{font-family:'Bricolage Grotesque';font-size:30px;font-weight:700;color:var(--ink);line-height:1}
   .bar{flex:1;height:8px;background:#eef1ee;border-radius:99px;overflow:hidden}
   .bar>span{display:block;height:100%;background:var(--teal)}
   .metric{background:#f8faf7;border-radius:11px;padding:12px 14px;flex:1;min-width:110px}
@@ -210,6 +220,7 @@ const memoryDB = {
   async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
   async listTests(){ return [...demo.tests].sort((a,b)=>new Date(b.test_date)-new Date(a.test_date)); },
   async addTest(t){ const r={id:uid(),...t}; demo.tests.push(r); return r; },
+  async updateTest(id,patch){ const t=demo.tests.find(x=>x.id===id); Object.assign(t,patch); return t; },
   async listResults(testId){ return demo.results.filter(r=>r.test_id===testId); },
   async allResults(){ return demo.results; },
   async saveResults(testId,rows){ demo.results=demo.results.filter(r=>r.test_id!==testId); rows.forEach(r=>demo.results.push({id:uid(),test_id:testId,...r})); },
@@ -224,6 +235,7 @@ const supaDB = {
   async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
   async listTests(){ const {data}=await supa.from('tests').select('*').order('test_date',{ascending:false}); return data||[]; },
   async addTest(t){ const {data}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select().single(); return data; },
+  async updateTest(id,patch){ const {data}=await supa.from('tests').update(patch).eq('id',id).select().single(); return data; },
   async listResults(testId){ const {data}=await supa.from('results').select('*').eq('test_id',testId); return data||[]; },
   async allResults(){ const {data}=await supa.from('results').select('*'); return data||[]; },
   async saveResults(testId,rows){ await supa.from('results').delete().eq('test_id',testId); await supa.from('results').insert(rows.map(r=>({test_id:testId,...r}))); },
@@ -294,14 +306,29 @@ async function home(){
     const avg = await classAverage(t);
     const rs = await DB.listResults(t.id);
     const present = rs.filter(r=>r.present).length;
-    recent += `<div class="listrow">
-      <div style="flex:1;min-width:0">
-        <div>${chapterLabel(t)}</div>
-        <div class="tiny faint">${t.test_type} · ${t.full_marks} marks · ${fmtDate(t.test_date)} · ${present}/${rs.length} present</div>
+    recent += `<div class="recent-test">
+      <div class="recent-head">
+        <div>
+          <div class="recent-title">Recent Test</div>
+          <div class="muted small">${t.test_type} · ${fmtDate(t.test_date)}</div>
+        </div>
+        <div class="recent-average">
+          <div class="label tiny muted">Average marks</div>
+          <div class="value">${avg!=null?avg+'%':'—'}</div>
+        </div>
       </div>
-      <div class="num" style="width:46px;text-align:right">${avg!=null?avg+'%':'—'}</div>
-      <button class="ghost" onclick="openTeacher('${t.id}')" title="View">👁</button>
-      <button class="ghost" onclick="openParents('${t.id}')" title="Share">↗</button>
+      <div class="recent-grid">
+        <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
+        <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
+        <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
+        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(t.test_date)}</div></div>
+        <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
+        <div class="recent-field"><div class="label">Number of students</div><div class="value">${present}/${rs.length}</div></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button onclick="openTeacher('${t.id}')">Teacher report</button>
+        <button onclick="openParents('${t.id}')">Parent report</button>
+      </div>
     </div>`;
   }
   show(`
@@ -333,7 +360,7 @@ async function home(){
     </div>
 
     <div class="card">
-      <div class="pad row between"><span class="eyebrow">Recent tests</span></div>
+      <div class="pad row between"><span class="eyebrow" style="font-weight:700;color:var(--ink)">Recent Test</span></div>
       <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
     </div>
   `);
@@ -422,28 +449,34 @@ window.deleteStudent = async (id,name)=>{
 };
 
 /* ---------- ENTER MARKS ---------- */
-let EM = { full:25, rows:[] };
-async function enterMarks(){
+let EM = { full:25, rows:[], editId:null };
+async function enterMarks(testId){
   setCrumb('Enter test marks');
-  EM = { full:25, rows:[] };
+  const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
+  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest };
+  const selectedClass = editTest ? editTest.class_level : 9;
+  const selectedSection = editTest ? (editTest.section||'All') : 'All';
+  const selectedSubject = editTest ? editTest.subject : 'Hindi';
+  const selectedChapter = editTest ? chapterLabel(editTest) : '';
+  const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : new Date().toISOString().slice(0,10);
   show(`
     ${demoNote}
     <div class="card pad">
-      <h2 style="font-size:18px;margin-bottom:14px">Enter test marks</h2>
+      <h2 style="font-size:18px;margin-bottom:14px">${editTest?'Edit test marks':'Enter test marks'}</h2>
       <div class="wrap-fields" style="margin-bottom:10px">
-        <div class="field"><label>Class</label><select id="emClass" onchange="loadEMRoster()">${classOptions(9)}</select></div>
-        <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions('All',true)}</select></div>
-        <div class="field"><label>Subject</label><select id="emSub">${subjectOptions('Hindi')}</select></div>
-        <div class="field" style="flex:2"><label>Chapter</label><input id="emChap" placeholder="e.g. 4 — मनुष्यता"></div>
+        <div class="field"><label>Class</label><select id="emClass" onchange="loadEMRoster()">${classOptions(selectedClass)}</select></div>
+        <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
+        <div class="field"><label>Subject</label><select id="emSub">${subjectOptions(selectedSubject)}</select></div>
+        <div class="field" style="flex:2"><label>Chapter</label><input id="emChap" value="${selectedChapter}" placeholder="e.g. 4 — मनुष्यता"></div>
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
         <div class="field"><label>Test type</label><select><option>Chapter End Test</option><option>Class Test</option></select></div>
         <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
-          <div class="seg"><button id="f20" onclick="setFull(20)">20</button><button id="f25" class="on" onclick="setFull(25)">25</button></div>
+          <div class="seg"><button id="f20" class="${EM.full===20?'on':''}" onclick="setFull(20)">20</button><button id="f25" class="${EM.full===25?'on':''}" onclick="setFull(25)">25</button></div>
         </div>
-        <div class="field"><label>Date</label><input type="date" id="emDate" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}"></div>
       </div>
-      <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">25</b></span></div>
+      <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
       <div id="emRoster"></div>
       <div id="emPicker" style="margin-top:10px"></div>
       <div class="row between" style="background:#f8faf7;border-radius:11px;padding:12px 14px;margin-top:14px;flex-wrap:wrap;gap:12px">
@@ -453,11 +486,11 @@ async function enterMarks(){
           <div><div class="tiny muted">Absent</div><div class="num" style="font-size:18px" id="cAbs">0</div></div>
           <div><div class="tiny muted">N.A.</div><div class="num" style="font-size:18px" id="cNA">0</div></div>
         </div>
-        <button class="primary" onclick="saveTest()">✓ Save &amp; generate reports</button>
+        <button class="primary" onclick="saveTest()">✓ ${editTest?'Save changes':'Save &amp; generate reports'}</button>
       </div>
     </div>
   `);
-  loadEMRoster();
+  editTest ? loadEMExisting(editTest) : loadEMRoster();
 }
 window.loadEMRoster = async ()=>{
   const cls = parseInt(val('emClass')), sec = val('emSec');
@@ -467,6 +500,22 @@ window.loadEMRoster = async ()=>{
   EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
   recountEM(); renderEMRoster();
 };
+async function loadEMExisting(test){
+  const cls = parseInt(val('emClass')), sec = val('emSec');
+  const all = await DB.listStudents();
+  const rs = await DB.listResults(test.id);
+  const byStudent = new Map(rs.map(r=>[r.student_id,r]));
+  EM.classStudents = all.filter(s=> s.class_level===cls);
+  const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
+  const extra = rs
+    .map(r=>all.find(s=>s.id===r.student_id))
+    .filter(s=>s && !match.some(m=>m.id===s.id));
+  EM.rows = [...match, ...extra].map(s=>{
+    const r = byStudent.get(s.id);
+    return {student_id:s.id,name:s.name,gender:s.gender,marks:r?(r.marks??null):null,present:r?(!!r.present):true,na:false};
+  });
+  recountEM(); renderEMRoster();
+}
 function renderPicker(){
   const el = document.getElementById('emPicker');
   if(!el) return;
@@ -527,15 +576,16 @@ window.saveTest = async ()=>{
   const numM = chap.match(/(\d+)/);
   const clsNum = parseInt(val('emClass'));
   const allTests = await DB.listTests();
-  const chapNo = numM ? parseInt(numM[1]) : (allTests.filter(t=>t.class_level===clsNum && t.subject===val('emSub')).length+1);
+  const chapNo = numM ? parseInt(numM[1]) : (EM.editTest?.chapter_no || allTests.filter(t=>t.class_level===clsNum && t.subject===val('emSub')).length+1);
   const secVal = val('emSec');
-  const test = await DB.addTest({
+  const testData = {
     class_level: clsNum, section: secVal==='All'?null:secVal,
     subject: val('emSub'),
     chapter_no: chapNo,
     chapter_name: chap || ('Chapter '+chapNo),
     test_type:'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
-  });
+  };
+  const test = EM.editId ? await DB.updateTest(EM.editId,testData) : await DB.addTest(testData);
   await DB.saveResults(test.id, eligible.map(r=>({student_id:r.student_id,marks:r.present?r.marks:null,present:r.present})));
   CURRENT_TEST = test.id;
   const avg = await classAverage(test);
@@ -647,6 +697,7 @@ async function renderTeacher(tests){
       <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
       ${list}
       <div class="row report-actions" style="margin-top:16px;gap:8px">
+        <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="window.print()">🖨 Print / PDF</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
@@ -757,7 +808,6 @@ async function renderParents(tests){
     const msg = encodeURIComponent(
 `Dear Parents,
 
-📋 Exam Report
 Aveti's Chapter End Test (CET) Report for ${s.name}:
 
 • Subject: ${test.subject} (${chapterLabel(test)})
