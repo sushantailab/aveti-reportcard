@@ -94,6 +94,7 @@
   table{width:100%;border-collapse:collapse}
   .banner{display:flex;gap:9px;align-items:center;background:#eef4fb;color:#1e4d80;border-radius:10px;padding:9px 12px;font-size:12px}
   .demoflag{background:#fff7e8;border:1px solid #f3e2bf;color:#7a4d05;border-radius:10px;padding:8px 12px;font-size:12px;margin-bottom:14px}
+  .csv-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f8faf7;border:1px dashed #cfd9ca;border-radius:10px;padding:10px 12px}
   a.link{color:var(--green);text-decoration:none}
   @media (max-width:980px){
     .recent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -343,12 +344,38 @@ function updateSaveState(state,msg){
 }
 const fileSafe = s => normalizeText(String(s||'')).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase() || 'report';
 const csvCell = v => `"${String(v??'').replace(/"/g,'""')}"`;
+const csvLine = row => row.map(csvCell).join(',');
+const csvKey = s => normalizeText(s).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
 function downloadBlob(filename,type,content){
   const blob = new Blob([content],{type});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function parseCSV(text){
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i], next=text[i+1];
+    if(q){
+      if(ch==='"' && next==='"'){ cell+='"'; i++; }
+      else if(ch==='"') q=false;
+      else cell+=ch;
+    }else if(ch==='"') q=true;
+    else if(ch===','){ row.push(cell); cell=''; }
+    else if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+    else if(ch==='\r'){}
+    else cell+=ch;
+  }
+  row.push(cell); rows.push(row);
+  return rows.filter(r=>r.some(c=>normalizeText(c)));
+}
+async function readCSVFile(file){
+  const text = await file.text();
+  const rows = parseCSV(text);
+  if(rows.length<2) throw new Error('CSV must include a header row and at least one data row.');
+  const headers = rows[0].map(csvKey);
+  return rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,normalizeText(r[i])]))).filter(o=>Object.values(o).some(Boolean));
 }
 const resultValue = r => r?.na ? 'N.A.' : r?.present===false ? 'Absent' : r?.marks??'';
 function changedResultLogs(test, oldRows, newRows){
@@ -416,8 +443,13 @@ const classFilterOptions = sel => '<option value="All">All classes</option>' + C
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
 const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
-const OPTIONAL = ['None','Hindi','English','Sanskrit'];
-const optionalOptions = sel => OPTIONAL.map(o=>`<option value="${o}" ${o===(sel||'None')?'selected':''}>${o==='None'?'Optional: —':'Opt: '+o}</option>`).join('');
+const OPTIONAL = ['N.A.','Hindi','English','Sanskrit','None'];
+function normalizeOptional(v){
+  const text = normalizeText(v);
+  if(!text || ['na','n/a','n.a','n.a.','none','-'].includes(text.toLowerCase())) return 'N.A.';
+  return OPTIONAL.find(o=>o.toLowerCase()===text.toLowerCase()) || text;
+}
+const optionalOptions = sel => OPTIONAL.map(o=>`<option value="${o}" ${o===normalizeOptional(sel)?'selected':''}>${o==='N.A.'?'Optional: N.A.':o==='None'?'Optional: —':'Opt: '+o}</option>`).join('');
 function avatar(gender,name){
   const f = (gender||'').toLowerCase().startsWith('f');
   const c = f ? '#d96aa0' : '#4a90d9';
@@ -630,15 +662,23 @@ function editRow(s){
   </div>`;
 }
 function addFormHTML(){
-  return `<div class="row" style="flex-wrap:wrap;gap:8px;background:#f8faf7;border-radius:11px;padding:12px">
-    <input id="ad_name" placeholder="Student name" style="flex:1;min-width:140px">
-    <select id="ad_session" style="width:auto">${sessionOptions(SESSION_FILTER)}</select>
-    <select id="ad_class" style="width:auto">${classOptions(9)}</select>
-    <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
-    <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
-    <select id="ad_opt" style="width:auto">${optionalOptions('None')}</select>
-    <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
-    <button class="primary" onclick="submitAdd()">Add</button>
+  return `<div style="background:#f8faf7;border-radius:11px;padding:12px">
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <input id="ad_name" placeholder="Student name" style="flex:1;min-width:140px">
+      <select id="ad_session" style="width:auto">${sessionOptions(SESSION_FILTER)}</select>
+      <select id="ad_class" style="width:auto">${classOptions(9)}</select>
+      <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
+      <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
+      <select id="ad_opt" style="width:auto">${optionalOptions('N.A.')}</select>
+      <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
+      <button class="primary" onclick="submitAdd()">Add</button>
+    </div>
+    <div class="csv-tools" style="margin-top:10px">
+      <span class="small muted" style="flex:1">Bulk add students by CSV</span>
+      <button onclick="downloadStudentCSVTemplate()">Download CSV format</button>
+      <button onclick="document.getElementById('studentCsvInput').click()">Upload CSV</button>
+      <input id="studentCsvInput" type="file" accept=".csv,text/csv" style="display:none" onchange="importStudentsCSV(this.files[0]);this.value=''">
+    </div>
   </div>`;
 }
 window.toggleAdd = ()=>{ SHOW_ADD=!SHOW_ADD; roster(); };
@@ -649,10 +689,68 @@ window.submitAdd = async ()=>{
   const rawPhone = val('ad_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ad_opt'), parent_name:'', parent_phone:phone };
+  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:normalizeOptional(val('ad_opt')), parent_name:'', parent_phone:phone };
   if(!(await warnStudentDuplicates(student))) return;
   await DB.addStudent(student);
   SHOW_ADD=false; roster();
+};
+window.downloadStudentCSVTemplate = ()=>{
+  const rows = [
+    ['student_name','academic_session','class','section','gender','optional_subject','parent_phone'],
+    ['Adidev','2026-27','7','A','male','N.A.','7894040614'],
+    ['Devanshi','2026-27','7','B','female','Sanskrit','7894040615']
+  ];
+  downloadBlob('aveti-students-template.csv','text/csv;charset=utf-8',rows.map(csvLine).join('\n'));
+};
+window.importStudentsCSV = async file=>{
+  if(!file) return;
+  try{
+    const rows = await readCSVFile(file);
+    const existing = await DB.listStudents();
+    const existingNameKeys = new Set(existing.map(s=>[
+      (s.academic_session||currentSession()),
+      s.class_level,
+      sectionKey(s.section),
+      normalizeText(s.name).toLowerCase()
+    ].join('|')));
+    const existingPhones = new Set(existing.map(s=>normalizeIndianPhone(s.parent_phone)).filter(Boolean));
+    const students = [];
+    const warnings = [];
+    rows.forEach((r,i)=>{
+      const rowNo = i+2;
+      const name = r.student_name || r.name;
+      const cls = parseInt(r.class || r.class_level || r.class_level_no);
+      const sectionRaw = normalizeText(r.section || 'All');
+      const section = ['A','B'].includes(sectionRaw.toUpperCase()) ? sectionRaw.toUpperCase() : null;
+      const gender = normalizeText(r.gender).toLowerCase();
+      const rawPhone = r.parent_phone || r.phone || r.mobile || '';
+      const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
+      const academic_session = r.academic_session || r.session || currentSession();
+      if(!name || !cls || !CLASSES.includes(cls) || !['male','female'].includes(gender)){
+        warnings.push(`Row ${rowNo}: missing/invalid name, class, or gender.`);
+        return;
+      }
+      if(rawPhone && !phone){
+        warnings.push(`Row ${rowNo}: invalid parent phone for ${name}.`);
+        return;
+      }
+      const key = [academic_session,cls,sectionKey(section),normalizeText(name).toLowerCase()].join('|');
+      if(existingNameKeys.has(key)) warnings.push(`Row ${rowNo}: duplicate name in same session/class/section (${name}).`);
+      if(phone && existingPhones.has(phone)) warnings.push(`Row ${rowNo}: parent phone already used (${name}).`);
+      existingNameKeys.add(key);
+      if(phone) existingPhones.add(phone);
+      students.push({name:normalizeText(name),academic_session,class_level:cls,section,gender,optional_subject:normalizeOptional(r.optional_subject),parent_name:'',parent_phone:phone});
+    });
+    if(!students.length){ alert(`No students imported.\n${warnings.join('\n')}`); return; }
+    const msg = [`Import ${students.length} student${students.length===1?'':'s'}?`].concat(warnings.slice(0,8));
+    if(warnings.length>8) msg.push(`+ ${warnings.length-8} more warning(s).`);
+    if(!confirm(msg.join('\n'))) return;
+    for(const s of students) await DB.addStudent(s);
+    alert(`Imported ${students.length} student${students.length===1?'':'s'}.`);
+    SHOW_ADD=false; roster();
+  }catch(e){
+    alert(e.message || 'Could not read this CSV file.');
+  }
 };
 window.startEdit = id=>{ EDIT_ID=id; roster(); };
 window.cancelEdit = ()=>{ EDIT_ID=null; roster(); };
@@ -663,7 +761,7 @@ window.saveEdit = async id=>{
   const rawPhone = val('ed_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:val('ed_opt'), parent_phone:phone };
+  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:normalizeOptional(val('ed_opt')), parent_phone:phone };
   if(!(await warnStudentDuplicates(student,id))) return;
   await DB.updateStudent(id,student);
   EDIT_ID=null; roster();
@@ -714,6 +812,12 @@ async function enterMarks(testId){
           <div class="seg"><button id="f20" class="${EM.full===20?'on':''}" onclick="setFull(20)">20</button><button id="f25" class="${EM.full===25?'on':''}" onclick="setFull(25)">25</button></div>
         </div>
         <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>
+      </div>
+      <div class="csv-tools" style="margin-bottom:12px">
+        <span class="small muted" style="flex:1">Fill marks by CSV after selecting class, section and subject</span>
+        <button onclick="downloadMarksCSVTemplate()">Download marks CSV</button>
+        <button onclick="document.getElementById('marksCsvInput').click()">Upload marks CSV</button>
+        <input id="marksCsvInput" type="file" accept=".csv,text/csv" style="display:none" onchange="importMarksCSV(this.files[0]);this.value=''">
       </div>
       <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
       <div id="emRoster"></div>
@@ -841,6 +945,61 @@ window.addPicked = ()=>{
   const s = (EM.classStudents||[]).find(x=>x.id===id); if(!s) return;
   EM.rows.push({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false});
   renderEMRoster(); saveDraft();
+};
+window.downloadMarksCSVTemplate = ()=>{
+  if(!EM.rows.length){ alert('Select a class/section with students first.'); return; }
+  const rows = [
+    ['student_id','student_name','marks','status'],
+    ...EM.rows.map(r=>[r.student_id,r.name,resultValue(r),r.na?'N.A.':r.present===false?'Absent':'Present'])
+  ];
+  const subject = val('emSub') || 'marks';
+  const cls = val('emClass') || 'class';
+  downloadBlob(`aveti-marks-class-${cls}-${fileSafe(subject)}.csv`,'text/csv;charset=utf-8',rows.map(csvLine).join('\n'));
+};
+window.importMarksCSV = async file=>{
+  if(!file) return;
+  try{
+    const rows = await readCSVFile(file);
+    const all = await DB.listStudents();
+    const classStudents = EM.classStudents?.length ? EM.classStudents : all.filter(s=>s.class_level===parseInt(val('emClass')) && (s.academic_session||currentSession())===val('emSession'));
+    const byId = new Map(classStudents.map(s=>[String(s.id),s]));
+    const byName = new Map(classStudents.map(s=>[normalizeText(s.name).toLowerCase(),s]));
+    let changed = 0;
+    const warnings = [];
+    rows.forEach((r,i)=>{
+      const rowNo = i+2;
+      const id = r.student_id || r.id;
+      const name = r.student_name || r.name;
+      const student = (id && byId.get(String(id))) || (name && byName.get(normalizeText(name).toLowerCase()));
+      if(!student){ warnings.push(`Row ${rowNo}: student not found (${name||id||'blank'}).`); return; }
+      let row = EM.rows.find(x=>x.student_id===student.id);
+      if(!row){
+        row = {student_id:student.id,name:student.name,gender:student.gender,marks:null,present:true,na:false};
+        EM.rows.push(row);
+      }
+      const status = normalizeText(r.status || r.attendance || '').toLowerCase();
+      const markText = normalizeText(r.marks || r.mark || r.score);
+      if(['na','n/a','n.a.','n.a'].includes(status) || ['na','n/a','n.a.','n.a'].includes(markText.toLowerCase())){
+        row.na = true; row.present = true; row.marks = null; changed++; return;
+      }
+      if(['absent','abs','a'].includes(status) || ['absent','abs','a'].includes(markText.toLowerCase())){
+        row.na = false; row.present = false; row.marks = null; changed++; return;
+      }
+      const marks = markText==='' ? null : parseFloat(markText);
+      if(markText!=='' && (Number.isNaN(marks) || marks<0 || marks>EM.full)){
+        warnings.push(`Row ${rowNo}: invalid marks for ${student.name}.`);
+        return;
+      }
+      row.na = false;
+      row.present = true;
+      row.marks = marks;
+      changed++;
+    });
+    renderEMRoster(); saveDraft();
+    alert(`Updated ${changed} mark row${changed===1?'':'s'}.${warnings.length?'\n\n'+warnings.slice(0,8).join('\n'):''}${warnings.length>8?`\n+ ${warnings.length-8} more warning(s).`:''}`);
+  }catch(e){
+    alert(e.message || 'Could not read this CSV file.');
+  }
 };
 window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); saveDraft(); };
 function renderEMRoster(){
