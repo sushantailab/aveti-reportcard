@@ -291,14 +291,43 @@ const memoryDB = {
 let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
 const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
+const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
+const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
+const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
+const stripSession = obj => {
+  const copy = {...obj};
+  delete copy.academic_session;
+  return copy;
+};
 const supaDB = {
-  async listStudents(){ const {data}=await supa.from('students').select(STUDENT_COLS).order('name'); return data||[]; },
-  async addStudent(s){ const {data}=await supa.from('students').insert({...s, centre_id:CENTRE_ID}).select(STUDENT_COLS).single(); return data; },
-  async updateStudent(id,patch){ await supa.from('students').update(patch).eq('id',id); },
+  async listStudents(){
+    const res = await supa.from('students').select(STUDENT_COLS).order('name');
+    if(res.error && missingAcademicSession(res.error)){
+      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).order('name');
+      return withDefaultSession(legacy.data);
+    }
+    return withDefaultSession(res.data);
+  },
+  async addStudent(s){
+    const payload = {...s, centre_id:CENTRE_ID};
+    let res = await supa.from('students').insert(payload).select(STUDENT_COLS).single();
+    if(res.error && missingAcademicSession(res.error)){
+      res = await supa.from('students').insert(stripSession(payload)).select(STUDENT_COLS_LEGACY).single();
+      return res.data ? {...res.data,academic_session:s.academic_session||currentSession()} : null;
+    }
+    return res.data;
+  },
+  async updateStudent(id,patch){
+    let res = await supa.from('students').update(patch).eq('id',id);
+    if(res.error && missingAcademicSession(res.error)){
+      res = await supa.from('students').update(stripSession(patch)).eq('id',id);
+    }
+    if(res.error) throw res.error;
+  },
   async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
   async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
   async addChapter(ch){
@@ -1155,7 +1184,7 @@ async function renderTeacher(tests){
   CURRENT_TEST = test.id;
   const rs = await cachedResults(test.id);
   const students = await DB.listStudents();
-  const nameOf = id => (students.find(s=>s.id===id)||{}).name||'—';
+  const nameOf = id => (students.find(s=>s.id===id)||{}).name||'Unknown student';
   let rows = rs.map(r=>({name:nameOf(r.student_id),marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
   const enrolled = rows.length;
   const appearedCount = rows.filter(r=>!r.na && r.present).length;
