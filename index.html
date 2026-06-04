@@ -706,8 +706,8 @@ function addFormHTML(){
     </div>
     <div class="csv-tools" style="margin-top:10px">
       <span class="small muted" style="flex:1">Bulk add students by CSV</span>
-      <button onclick="downloadStudentCSVTemplate()">Download CSV format</button>
-      <button onclick="document.getElementById('studentCsvInput').click()">Upload CSV</button>
+      <button onclick="downloadStudentCSVTemplate()">Download sample CSV</button>
+      <button onclick="document.getElementById('studentCsvInput').click()">Upload filled CSV</button>
       <input id="studentCsvInput" type="file" accept=".csv,text/csv" style="display:none" onchange="importStudentsCSV(this.files[0]);this.value=''">
     </div>
   </div>`;
@@ -846,18 +846,19 @@ async function enterMarks(testId){
       </div>
       <div class="csv-tools" style="margin-bottom:12px">
         <span class="small muted" style="flex:1">Fill marks by CSV after selecting class, section and subject</span>
-        <button onclick="downloadMarksCSVTemplate()">Download marks CSV</button>
-        <button onclick="document.getElementById('marksCsvInput').click()">Upload marks CSV</button>
+        <button onclick="downloadMarksCSVTemplate()">Download sample CSV</button>
+        <button onclick="document.getElementById('marksCsvInput').click()">Upload filled CSV</button>
         <input id="marksCsvInput" type="file" accept=".csv,text/csv" style="display:none" onchange="importMarksCSV(this.files[0]);this.value=''">
       </div>
-      <div id="speechMarkBox" class="csv-tools voice-tools" style="margin-bottom:12px">
-        <span class="small muted" style="flex:1"><b>Speak one mark</b> · Say “Aditya 20”, “Devanshi absent”, or “Rudra N.A.”</span>
-        <button id="speechBtn" onclick="startSpeechMarks()">🎙 Speak</button>
-        <span id="speechState" class="small muted"></span>
+      <div id="geminiMarkBox" class="csv-tools voice-tools" style="margin-bottom:12px">
+        <span class="small muted" style="flex:1"><b>Gemini voice mark</b> · Record one phrase: “Aditya 20”, “Devanshi absent”, or “Rudra N.A.”</span>
+        <button onclick="setGeminiKey()">API key</button>
+        <button onclick="window.open('https://aistudio.google.com/app/apikey','_blank')">Get free key</button>
+        <button id="geminiRecordBtn" onclick="toggleGeminiRecording()">Record</button>
+        <span id="geminiState" class="small muted"></span>
       </div>
       <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
       <div id="emRoster"></div>
-      <div id="emPicker" style="margin-top:10px"></div>
       <div class="row between" style="background:#f8faf7;border-radius:11px;padding:12px 14px;margin-top:14px;flex-wrap:wrap;gap:12px">
         <div class="row" style="gap:22px">
           <div><div class="tiny muted">Entered</div><div class="num" style="font-size:18px"><span id="cEntered">0</span> / <span id="cTotal">0</span></div></div>
@@ -901,7 +902,8 @@ function saveDraft(){
 window.loadEMRoster = async ()=>{
   const cls = parseInt(val('emClass')), sec = val('emSec'), session = val('emSession');
   const all = await DB.listStudents();
-  EM.classStudents = all.filter(s=> s.class_level===cls && (s.academic_session||currentSession())===session);   // whole class/session, any section, for the picker
+  EM.classStudents = all.filter(s=> String(s.class_level)===String(cls) && (s.academic_session||currentSession())===session);
+  if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(cls));
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
   recountEM(); renderEMRoster(); saveDraft();
@@ -944,7 +946,8 @@ async function loadEMExisting(test){
   const all = await DB.listStudents();
   const rs = await cachedResults(test.id);
   const byStudent = new Map(rs.map(r=>[r.student_id,r]));
-  EM.classStudents = all.filter(s=> s.class_level===cls && (s.academic_session||currentSession())===session);
+  EM.classStudents = all.filter(s=> String(s.class_level)===String(cls) && (s.academic_session||currentSession())===session);
+  if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(cls));
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   const extra = rs
     .map(r=>all.find(s=>s.id===r.student_id))
@@ -957,36 +960,23 @@ async function loadEMExisting(test){
 }
 async function loadEMDraft(draft){
   const all = await DB.listStudents();
-  EM.classStudents = all.filter(s=> s.class_level===parseInt(val('emClass')) && (s.academic_session||currentSession())===val('emSession'));
+  EM.classStudents = all.filter(s=> String(s.class_level)===String(parseInt(val('emClass'))) && (s.academic_session||currentSession())===val('emSession'));
+  if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(parseInt(val('emClass'))));
   EM.rows = (draft.rows||[]).map(r=>{
     const s = all.find(x=>x.id===r.student_id) || {};
     return {...r,name:r.name||s.name||'Student',gender:r.gender||s.gender};
   });
   recountEM(); renderEMRoster();
 }
-function renderPicker(){
-  const el = document.getElementById('emPicker');
-  if(!el) return;
-  const inRoster = new Set(EM.rows.map(r=>r.student_id));
-  const avail = (EM.classStudents||[]).filter(s=>!inRoster.has(s.id));
-  if(!avail.length){ el.innerHTML=''; return; }
-  el.innerHTML = `<div class="row" style="gap:8px;align-items:center">
-    <span class="small muted">Add a student:</span>
-    <select id="emPick" style="width:auto"><option value="">Choose a name…</option>${avail.map(s=>`<option value="${s.id}">${s.name} (${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' '+s.section):''})</option>`).join('')}</select>
-    <button onclick="addPicked()">Add to roster</button>
-  </div>`;
-}
-window.addPicked = ()=>{
-  const id = val('emPick'); if(!id) return;
-  const s = (EM.classStudents||[]).find(x=>x.id===id); if(!s) return;
-  EM.rows.push({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false});
-  renderEMRoster(); saveDraft();
-};
 window.downloadMarksCSVTemplate = ()=>{
-  if(!EM.rows.length){ alert('Select a class/section with students first.'); return; }
+  const sourceRows = EM.rows.length ? EM.rows : (EM.classStudents||[]).map(s=>({student_id:s.id,name:s.name,marks:null,present:true,na:false}));
   const rows = [
     ['student_id','student_name','marks','status'],
-    ...EM.rows.map(r=>[r.student_id,r.name,resultValue(r),r.na?'N.A.':r.present===false?'Absent':'Present'])
+    ...(sourceRows.length ? sourceRows.map(r=>[r.student_id,r.name,resultValue(r),r.na?'N.A.':r.present===false?'Absent':'Present']) : [
+      ['student-id-from-roster','Aditya','20','Present'],
+      ['student-id-from-roster','Devanshi','','Absent'],
+      ['student-id-from-roster','Rudra','N.A.','N.A.']
+    ])
   ];
   const subject = val('emSub') || 'marks';
   const cls = val('emClass') || 'class';
@@ -1037,18 +1027,15 @@ window.importMarksCSV = async file=>{
     alert(e.message || 'Could not read this CSV file.');
   }
 };
-let SPEECH_REC = null;
-const SpeechRecognitionAPI = () => window.SpeechRecognition || window.webkitSpeechRecognition;
-function setSpeechState(msg,listening=false){
-  const state = document.getElementById('speechState');
-  const box = document.getElementById('speechMarkBox');
-  const btn = document.getElementById('speechBtn');
+let GEMINI_RECORDER = null, GEMINI_CHUNKS = [], GEMINI_TIMER = null;
+const LS_GEMINI_KEY = 'aveti:gemini-api-key';
+function setGeminiState(msg,listening=false){
+  const state = document.getElementById('geminiState');
+  const box = document.getElementById('geminiMarkBox');
+  const btn = document.getElementById('geminiRecordBtn');
   if(state) state.textContent = msg || '';
   if(box) box.classList.toggle('listening',!!listening);
-  if(btn){
-    btn.disabled = !!listening;
-    btn.textContent = listening ? 'Listening...' : '🎙 Speak';
-  }
+  if(btn) btn.textContent = listening ? 'Stop' : 'Record';
 }
 const voiceClean = s => normalizeText(String(s||'').toLowerCase().replace(/[^\p{L}\p{N}. ]/gu,' '));
 const numberWords = {
@@ -1088,64 +1075,123 @@ function nameScore(candidate, spoken){
   if(first && text.startsWith(first.slice(0,Math.min(4,first.length)))) score += 12;
   return score;
 }
-function applySpeechMark(transcript){
-  if(!EM.rows.length){ setSpeechState('No roster loaded.'); return; }
-  const status = speechStatus(transcript);
-  const mark = status ? null : parseSpokenNumber(transcript);
-  if(!status && mark==null){ setSpeechState(`Heard: "${transcript}" · No mark found.`); return; }
-  const scored = EM.rows.map((r,i)=>({i,r,score:nameScore(r.name,transcript)})).sort((a,b)=>b.score-a.score);
+function applyVoiceMark({student_name='',marks=null,status='',raw=''}) {
+  const phrase = [student_name, status, marks].filter(v=>v!==null && v!=='').join(' ') || raw;
+  if(!EM.rows.length){ setGeminiState('No roster loaded.'); return; }
+  const normStatus = normalizeText(status).toLowerCase();
+  const parsedStatus = ['absent','na','n/a','n.a.','not applicable'].includes(normStatus) ? normStatus : speechStatus(raw || phrase);
+  const mark = parsedStatus ? null : (marks!=null ? Number(marks) : parseSpokenNumber(raw || phrase));
+  if(!parsedStatus && (mark==null || Number.isNaN(mark))){ setGeminiState(`Heard: "${raw||phrase}" · No mark found.`); return; }
+  const scored = EM.rows.map((r,i)=>({i,r,score:nameScore(r.name,student_name || raw || phrase)})).sort((a,b)=>b.score-a.score);
   const best = scored[0];
   if(!best || best.score<20){
-    setSpeechState(`Heard: "${transcript}" · Student not found.`);
+    setGeminiState(`Heard: "${raw||phrase}" · Student not found.`);
     return;
   }
   const ties = scored.filter(x=>x.score===best.score);
   if(ties.length>1 && ties[1].r.name!==best.r.name){
-    setSpeechState(`Heard: "${transcript}" · Which ${ties.slice(0,3).map(x=>x.r.name).join(' / ')}?`);
+    setGeminiState(`Heard: "${raw||phrase}" · Which ${ties.slice(0,3).map(x=>x.r.name).join(' / ')}?`);
     return;
   }
   const row = EM.rows[best.i];
-  if(status==='na'){
+  if(['na','n/a','n.a.','not applicable'].includes(parsedStatus)){
     row.na = true; row.present = true; row.marks = null;
-  }else if(status==='absent'){
+  }else if(parsedStatus==='absent'){
     row.na = false; row.present = false; row.marks = null;
   }else{
+    if(mark<0 || mark>EM.full){ setGeminiState(`${row.name}: mark ${mark} is outside ${EM.full}.`); return; }
     row.na = false; row.present = true; row.marks = mark;
   }
   renderEMRoster();
   saveDraft();
-  setSpeechState(`${row.name}: ${status==='na'?'N.A.':status==='absent'?'Absent':mark+'/'+EM.full}`);
+  setGeminiState(`${row.name}: ${parsedStatus && parsedStatus!=='absent'?'N.A.':parsedStatus==='absent'?'Absent':mark+'/'+EM.full}`);
 }
-window.startSpeechMarks = ()=>{
-  const Rec = SpeechRecognitionAPI();
-  if(!Rec){ alert('Speech input is not supported in this browser. Try Chrome on Android/Desktop.'); return; }
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+function geminiKey(){
+  return localStorage.getItem(LS_GEMINI_KEY) || '';
+}
+window.setGeminiKey = ()=>{
+  const current = geminiKey();
+  const key = prompt('Paste your Gemini API key. It is saved only in this browser, not in GitHub or Supabase.', current);
+  if(key===null) return;
+  if(normalizeText(key)) localStorage.setItem(LS_GEMINI_KEY, normalizeText(key));
+  else localStorage.removeItem(LS_GEMINI_KEY);
+  setGeminiState(normalizeText(key) ? 'Gemini key saved on this browser.' : 'Gemini key removed.');
+};
+async function sendGeminiAudio(blob){
+  const key = geminiKey();
+  if(!key){ setGeminiKey(); if(!geminiKey()) return; }
+  setGeminiState('Reading audio with Gemini...');
+  const audio = await blobToBase64(blob);
+  const roster = EM.rows.map(r=>r.name).join(', ');
+  const promptText = `Extract one test mark from this teacher audio. Match the student to one of these roster names only: ${roster}. Full marks is ${EM.full}. Return JSON only with keys student_name, marks, status, raw. status must be present, absent, or na. marks is a number or null.`;
+  const body = {
+    contents:[{parts:[
+      {text:promptText},
+      {inline_data:{mime_type:blob.type || 'audio/webm', data:audio}}
+    ]}]
+  };
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${encodeURIComponent(geminiKey())}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const json = await res.json();
+  if(!res.ok) throw new Error(json.error?.message || 'Gemini request failed.');
+  const text = json.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+  const clean = text.replace(/```json|```/g,'').trim();
+  const jsonText = clean.match(/\{[\s\S]*\}/)?.[0] || clean;
+  try{
+    applyVoiceMark(JSON.parse(jsonText));
+  }catch(e){
+    applyVoiceMark({raw:clean});
+  }
+}
+window.toggleGeminiRecording = async ()=>{
+  if(GEMINI_RECORDER && GEMINI_RECORDER.state==='recording'){
+    GEMINI_RECORDER.stop();
+    return;
+  }
   if(!EM.rows.length){ alert('Select a class/section with students first.'); return; }
-  if(SPEECH_REC) SPEECH_REC.abort();
-  const rec = new Rec();
-  SPEECH_REC = rec;
-  rec.lang = 'en-IN';
-  rec.continuous = false;
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
-  rec.onstart = ()=>setSpeechState('Listening: say one name and mark.',true);
-  rec.onerror = e=>setSpeechState(e.error==='not-allowed'?'Microphone permission blocked.':'Could not hear clearly. Try again.');
-  rec.onresult = e=>{
-    const transcript = e.results?.[0]?.[0]?.transcript || '';
-    applySpeechMark(transcript);
-  };
-  rec.onend = ()=>{
-    if(SPEECH_REC===rec) SPEECH_REC=null;
-    const state = document.getElementById('speechState')?.textContent || '';
-    setSpeechState(state,false);
-  };
-  rec.start();
+  if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){ alert('Audio recording is not supported in this browser.'); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    GEMINI_CHUNKS = [];
+    const rec = new MediaRecorder(stream);
+    GEMINI_RECORDER = rec;
+    rec.ondataavailable = e=>{ if(e.data.size) GEMINI_CHUNKS.push(e.data); };
+    rec.onstop = async ()=>{
+      clearTimeout(GEMINI_TIMER);
+      stream.getTracks().forEach(t=>t.stop());
+      setGeminiState('Sending audio...');
+      try{
+        await sendGeminiAudio(new Blob(GEMINI_CHUNKS,{type:rec.mimeType || 'audio/webm'}));
+      }catch(e){
+        setGeminiState(e.message || 'Could not read the audio.');
+      }finally{
+        GEMINI_RECORDER = null;
+      }
+    };
+    rec.start();
+    setGeminiState('Recording... say one name and mark.',true);
+    GEMINI_TIMER = setTimeout(()=>{ if(rec.state==='recording') rec.stop(); },7000);
+  }catch(e){
+    setGeminiState('Microphone permission blocked.');
+  }
 };
 window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); saveDraft(); };
 function renderEMRoster(){
   const el = document.getElementById('emRoster');
   if(!EM.rows.length){
-    el.innerHTML = `<div class="muted small" style="padding:14px 0">No students in this class &amp; section yet. Add them in the <a class="link" href="#" onclick="event.preventDefault();window.navHavRoster()">Students</a> tab, or pick a name below.</div>`;
-    renderPicker(); recountEM(); return;
+    el.innerHTML = `<div class="muted small" style="padding:14px 0">No students found for this class and section. Add students in the <a class="link" href="#" onclick="event.preventDefault();window.navHavRoster()">Students</a> tab.</div>`;
+    recountEM(); return;
   }
   el.innerHTML = EM.rows.map((r,i)=>`
     <div class="listrow" style="${r.na?'opacity:.55':''}">
@@ -1158,7 +1204,6 @@ function renderEMRoster(){
       <button style="min-width:58px" class="${r.na?'on':''}" title="Did not take this subject (optional)" onclick="toggleNA(${i})">${r.na?'N.A. ✓':'N.A.'}</button>
       <button class="ghost" title="Remove from this test" onclick="removeRow(${i})">✕</button>
     </div>`).join('');
-  renderPicker();
   recountEM();
 }
 window.setFull = f=>{ EM.full=f; document.getElementById('f20').classList.toggle('on',f===20); document.getElementById('f25').classList.toggle('on',f===25); document.getElementById('fmLabel').textContent=f; EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;}); renderEMRoster(); saveDraft(); };
