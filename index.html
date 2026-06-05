@@ -466,6 +466,7 @@ function simplePdf(lines){
 const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
+const FULL_MARK_OPTIONS = [20,25,30];
 const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 const currentSession = () => SESSIONS[0];
 const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||currentSession())?'selected':''}>${s}</option>`).join('');
@@ -473,6 +474,7 @@ const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'sel
 const classFilterOptions = sel => '<option value="All">All classes</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(sel)?'selected':''}>Class ${c}</option>`).join('');
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
+const fullMarkButtons = sel => FULL_MARK_OPTIONS.map(f=>`<button id="f${f}" class="${Number(sel)===f?'on':''}" onclick="setFull(${f})">${f}</button>`).join('');
 const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
 const OPTIONAL = ['N.A.','Hindi','English','Sanskrit','None'];
 function normalizeOptional(v){
@@ -533,6 +535,14 @@ const bandMeta = p => bandConfig().find(b=>b.grade===band(p)) || {grade:'D',min:
 const supportBand = () => bandConfig().slice().sort((a,b)=>a.min-b.min)[0] || {grade:'D',min:0,max:39,label:'Needs Support'};
 const needsSupport = p => band(p)===supportBand().grade;
 const bandRangeLabel = b => b.max>=100 ? `${b.min}–100` : b.min<=0 ? `<${b.max+1}` : `${b.min}–${b.max}`;
+function parentMessageName(name){
+  const parts = normalizeText(name).split(/\s+/).filter(Boolean);
+  if(!parts.length) return 'Student';
+  const first = parts[0];
+  const initials = first.replace(/\./g,'');
+  const isInitials = /^[A-Za-z]{1,4}$/.test(initials) && (first.includes('.') || /^[A-Za-z]\.[A-Za-z]/.test(first));
+  return isInitials && parts[1] ? `${first} ${parts[1]}` : first;
+}
 function perfBand(p){
   const meta = bandMeta(p);
   if(meta.grade==='A') return {label:meta.label, emoji:'🌟', line:n=>`Great effort by ${n}. Keep it up!`};
@@ -840,7 +850,7 @@ async function enterMarks(testId){
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
         <div class="field"><label>Test type</label><select><option>Chapter End Test</option><option>Class Test</option></select></div>
         <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
-          <div class="seg"><button id="f20" class="${EM.full===20?'on':''}" onclick="setFull(20)">20</button><button id="f25" class="${EM.full===25?'on':''}" onclick="setFull(25)">25</button></div>
+          <div class="seg">${fullMarkButtons(EM.full)}</div>
         </div>
         <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>
       </div>
@@ -857,7 +867,7 @@ async function enterMarks(testId){
         <button id="geminiRecordBtn" onclick="toggleGeminiRecording()">Record</button>
         <span id="geminiState" class="small muted"></span>
       </div>
-      <div class="row between" style="margin-bottom:8px"><span class="eyebrow">Roster</span><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
+      <div class="row between" style="margin-bottom:8px;justify-content:flex-end"><span class="small muted">Marks out of <b id="fmLabel">${EM.full}</b></span></div>
       <div id="emRoster"></div>
       <div class="row between" style="background:#f8faf7;border-radius:11px;padding:12px 14px;margin-top:14px;flex-wrap:wrap;gap:12px">
         <div class="row" style="gap:22px">
@@ -905,7 +915,7 @@ window.loadEMRoster = async ()=>{
   EM.classStudents = all.filter(s=> String(s.class_level)===String(cls) && (s.academic_session||currentSession())===session);
   if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(cls));
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
-  EM.rows = match.map(s=>({student_id:s.id,name:s.name,gender:s.gender,marks:null,present:true,na:false}));
+  EM.rows = match.map(s=>({student_id:s.id,name:s.name,section:s.section||'',gender:s.gender,marks:null,present:true,na:false}));
   recountEM(); renderEMRoster(); saveDraft();
 };
 window.loadEMChapters = async ()=>{
@@ -914,12 +924,16 @@ window.loadEMChapters = async ()=>{
   const cls = parseInt(val('emClass'));
   const subject = val('emSub');
   EM.chapters = await DB.listChapters(cls,subject);
-  const previous = EM.selectedChapterId || (EM.editTest && String(EM.editTest.class_level)===String(cls) && EM.editTest.subject===subject ? EM.editTest.chapter_id : '');
+  const previous = EM.pendingChapterId || EM.selectedChapterId || (EM.editTest && String(EM.editTest.class_level)===String(cls) && EM.editTest.subject===subject ? EM.editTest.chapter_id : '');
   const options = ['<option value="">Select chapter</option>']
-    .concat(EM.chapters.map(c=>`<option value="${c.id}" ${c.id===previous?'selected':''}>${chapterOptionLabel(c)}</option>`))
+    .concat(EM.chapters.map(c=>`<option value="${c.id}" ${String(c.id)===String(previous)?'selected':''}>${chapterOptionLabel(c)}</option>`))
     .concat('<option value="__new__">+ Add new chapter</option>');
   sel.innerHTML = options.join('');
+  if(previous && EM.chapters.some(c=>String(c.id)===String(previous))){
+    sel.value = previous;
+  }
   EM.selectedChapterId = sel.value;
+  EM.pendingChapterId = '';
   toggleNewChapter();
   saveDraft();
 };
@@ -938,8 +952,14 @@ window.addEMChapter = async ()=>{
   if(!title){ alert('Enter a chapter title.'); return; }
   const existing = (EM.chapters||[]).find(c=>Number(c.chapter_no)===Number(no) || normalizeText(c.title).toLowerCase()===title.toLowerCase());
   const chapter = existing || await DB.addChapter({class_level:cls,subject,chapter_no:no,title});
+  if(!chapter?.id){ alert('Chapter was not saved. Please try again.'); return; }
+  EM.pendingChapterId = chapter.id;
   EM.selectedChapterId = chapter.id;
   await loadEMChapters();
+  const noEl = document.getElementById('newChapNo');
+  const titleEl = document.getElementById('newChapTitle');
+  if(noEl) noEl.value = '';
+  if(titleEl) titleEl.value = '';
 };
 async function loadEMExisting(test){
   const cls = parseInt(val('emClass')), sec = val('emSec'), session = val('emSession');
@@ -954,7 +974,7 @@ async function loadEMExisting(test){
     .filter(s=>s && !match.some(m=>m.id===s.id));
   EM.rows = [...match, ...extra].map(s=>{
     const r = byStudent.get(s.id);
-    return {student_id:s.id,name:s.name,gender:s.gender,marks:r?(r.marks??null):null,present:r?(!!r.present):true,na:r?(!!r.na):false};
+    return {student_id:s.id,name:s.name,section:s.section||'',gender:s.gender,marks:r?(r.marks??null):null,present:r?(!!r.present):true,na:r?(!!r.na):false};
   });
   recountEM(); renderEMRoster(); saveDraft();
 }
@@ -964,18 +984,20 @@ async function loadEMDraft(draft){
   if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(parseInt(val('emClass'))));
   EM.rows = (draft.rows||[]).map(r=>{
     const s = all.find(x=>x.id===r.student_id) || {};
-    return {...r,name:r.name||s.name||'Student',gender:r.gender||s.gender};
+    return {...r,name:r.name||s.name||'Student',section:r.section||s.section||'',gender:r.gender||s.gender};
   });
   recountEM(); renderEMRoster();
 }
 window.downloadMarksCSVTemplate = ()=>{
-  const sourceRows = EM.rows.length ? EM.rows : (EM.classStudents||[]).map(s=>({student_id:s.id,name:s.name,marks:null,present:true,na:false}));
+  const sourceRows = EM.rows.length ? EM.rows : (EM.classStudents||[]).map(s=>({student_id:s.id,name:s.name,section:s.section||'',marks:null,present:true,na:false}));
+  const selectedSection = val('emSec') || 'All';
+  const selectedSubject = val('emSub') || '';
   const rows = [
-    ['student_id','student_name','marks','status'],
-    ...(sourceRows.length ? sourceRows.map(r=>[r.student_id,r.name,resultValue(r),r.na?'N.A.':r.present===false?'Absent':'Present']) : [
-      ['student-id-from-roster','Aditya','20','Present'],
-      ['student-id-from-roster','Devanshi','','Absent'],
-      ['student-id-from-roster','Rudra','N.A.','N.A.']
+    ['student_name','section','subject','marks','status'],
+    ...(sourceRows.length ? sourceRows.map(r=>[r.name,r.section||selectedSection,selectedSubject,resultValue(r),r.na?'N.A.':r.present===false?'Absent':'Present']) : [
+      ['Aditya',selectedSection,selectedSubject,'20','Present'],
+      ['Devanshi',selectedSection,selectedSubject,'','Absent'],
+      ['Rudra',selectedSection,selectedSubject,'N.A.','N.A.']
     ])
   ];
   const subject = val('emSub') || 'marks';
@@ -987,20 +1009,34 @@ window.importMarksCSV = async file=>{
   try{
     const rows = await readCSVFile(file);
     const all = await DB.listStudents();
-    const classStudents = EM.classStudents?.length ? EM.classStudents : all.filter(s=>s.class_level===parseInt(val('emClass')) && (s.academic_session||currentSession())===val('emSession'));
-    const byId = new Map(classStudents.map(s=>[String(s.id),s]));
-    const byName = new Map(classStudents.map(s=>[normalizeText(s.name).toLowerCase(),s]));
+    const classStudents = EM.classStudents?.length ? EM.classStudents : all.filter(s=>String(s.class_level)===String(parseInt(val('emClass'))) && (s.academic_session||currentSession())===val('emSession'));
     let changed = 0;
     const warnings = [];
     rows.forEach((r,i)=>{
       const rowNo = i+2;
-      const id = r.student_id || r.id;
       const name = r.student_name || r.name;
-      const student = (id && byId.get(String(id))) || (name && byName.get(normalizeText(name).toLowerCase()));
-      if(!student){ warnings.push(`Row ${rowNo}: student not found (${name||id||'blank'}).`); return; }
+      const rowSection = r.section ? normalizeText(r.section) : '';
+      const rowSubject = r.subject ? normalizeText(r.subject) : '';
+      if(rowSubject && rowSubject.toLowerCase() !== normalizeText(val('emSub')).toLowerCase()){
+        warnings.push(`Row ${rowNo}: subject is ${rowSubject}, but selected subject is ${val('emSub')}.`);
+        return;
+      }
+      if(rowSection && rowSection!=='All' && val('emSec')!=='All' && rowSection.toUpperCase()!==val('emSec')){
+        warnings.push(`Row ${rowNo}: section is ${rowSection}, but selected section is ${val('emSec')}.`);
+        return;
+      }
+      const matches = classStudents.filter(s=>normalizeText(s.name).toLowerCase()===normalizeText(name).toLowerCase());
+      const student = rowSection && rowSection!=='All'
+        ? matches.find(s=>(s.section||'').toUpperCase()===rowSection.toUpperCase())
+        : matches[0];
+      if(matches.length>1 && !rowSection){
+        warnings.push(`Row ${rowNo}: multiple students named ${name}; add section in CSV.`);
+        return;
+      }
+      if(!student){ warnings.push(`Row ${rowNo}: student not found (${name||'blank'}).`); return; }
       let row = EM.rows.find(x=>x.student_id===student.id);
       if(!row){
-        row = {student_id:student.id,name:student.name,gender:student.gender,marks:null,present:true,na:false};
+        row = {student_id:student.id,name:student.name,section:student.section||'',gender:student.gender,marks:null,present:true,na:false};
         EM.rows.push(row);
       }
       const status = normalizeText(r.status || r.attendance || '').toLowerCase();
@@ -1206,7 +1242,14 @@ function renderEMRoster(){
     </div>`).join('');
   recountEM();
 }
-window.setFull = f=>{ EM.full=f; document.getElementById('f20').classList.toggle('on',f===20); document.getElementById('f25').classList.toggle('on',f===25); document.getElementById('fmLabel').textContent=f; EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;}); renderEMRoster(); saveDraft(); };
+window.setFull = f=>{
+  EM.full=f;
+  FULL_MARK_OPTIONS.forEach(x=>document.getElementById('f'+x)?.classList.toggle('on',f===x));
+  document.getElementById('fmLabel').textContent=f;
+  EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;});
+  renderEMRoster();
+  saveDraft();
+};
 window.setMark = (i,v)=>{ let n=parseFloat(v); if(isNaN(n)){EM.rows[i].marks=null;} else {n=Math.max(0,Math.min(EM.full,n)); EM.rows[i].marks=n;} recountEM(); saveDraft(); };
 window.toggleAbsent = i=>{ if(EM.rows[i].na) return; EM.rows[i].present=!EM.rows[i].present; if(!EM.rows[i].present)EM.rows[i].marks=null; renderEMRoster(); saveDraft(); };
 window.toggleNA = i=>{ EM.rows[i].na=!EM.rows[i].na; if(EM.rows[i].na){ EM.rows[i].marks=null; EM.rows[i].present=true; } renderEMRoster(); saveDraft(); };
@@ -1537,19 +1580,20 @@ async function renderParents(tests){
   let rows='';
   rs.filter(r=>!r.na&&r.present&&r.marks!=null && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
+    const shortName = parentMessageName(s.name);
     const p = pct(r.marks,test.full_marks);
     const pb = perfBand(p);
     const msg = encodeURIComponent(
 `Dear Parents,
 
-Aveti's Chapter End Test (CET) Report for ${s.name}:
+Aveti's Chapter End Test (CET) Report for ${shortName}:
 
 • Subject: ${test.subject} (${chapterLabel(test)})
 • Student Score: ${r.marks} / ${test.full_marks} (${p}%)
 • Class Average: ${avg}%
 • Performance: ${pb.label}
 
-${pb.line(s.name)}
+${pb.line(shortName)}
 
 Thanks,
 ${CONFIG.CENTRE.name}`);
