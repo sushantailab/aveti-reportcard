@@ -367,11 +367,24 @@ const supaDB = {
     return data;
   },
   async listTests(){ const {data}=await supa.from('tests').select(TEST_COLS).order('test_date',{ascending:false}); return (data||[]).map(t=>t.chapter?{...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title}:t); },
-  async addTest(t){ const {data}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single(); return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data; },
-  async updateTest(id,patch){ const {data}=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single(); return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data; },
+  async addTest(t){
+    const {data,error}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single();
+    if(error) throw error;
+    return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data;
+  },
+  async updateTest(id,patch){
+    const {data,error}=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single();
+    if(error) throw error;
+    return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data;
+  },
   async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
   async allResults(){ const {data}=await supa.from('results').select(RESULT_COLS); return data||[]; },
-  async saveResults(testId,rows){ await supa.from('results').delete().eq('test_id',testId); await supa.from('results').insert(rows.map(r=>({test_id:testId,...r}))); },
+  async saveResults(testId,rows){
+    const deleted = await supa.from('results').delete().eq('test_id',testId);
+    if(deleted.error) throw deleted.error;
+    const inserted = await supa.from('results').insert(rows.map(r=>({test_id:testId,...r})));
+    if(inserted.error) throw inserted.error;
+  },
   async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
 };
 
@@ -385,11 +398,13 @@ function invalidateResults(testId){ resultsCache.delete(testId); }
 const LS_LAST_ENTRY = 'aveti:last-entry';
 const LS_MARK_DRAFT = 'aveti:mark-draft';
 const LS_PARENT_SENT = 'aveti:parent-cards-sent';
+const LS_WHATSAPP_APP = 'aveti:whatsapp-app';
 const readJSON = (key,fallback=null) => { try { return JSON.parse(localStorage.getItem(key)||'null') ?? fallback; } catch(e){ return fallback; } };
 const writeJSON = (key,value) => localStorage.setItem(key, JSON.stringify(value));
 const clearJSON = key => localStorage.removeItem(key);
 const parentSentKey = (testId,studentId) => `${testId}:${studentId}`;
 const parentCardWasSent = (testId,studentId) => !!readJSON(LS_PARENT_SENT,{})[parentSentKey(testId,studentId)];
+const preferredWhatsAppApp = () => localStorage.getItem(LS_WHATSAPP_APP) || 'personal';
 function updateSaveState(state,msg){
   const el=document.getElementById('saveState');
   const btn=document.getElementById('saveBtn');
@@ -1376,8 +1391,9 @@ window.saveTest = async ()=>{
       `Class ${test.class_level}${test.section?(' '+test.section):' (all sections)'} · ${test.subject} · ${chapterLabel(test)}<br>${test.full_marks} marks · ${fmtDate(testDate(test))}<br><br><b>${entered}</b> appeared of <b>${EM.rows.length}</b> enrolled · <b>${abs}</b> absent · <b>${naC}</b> N.A. · class avg <b>${avg??'—'}%</b>`;
     document.getElementById('saveOverlay').classList.add('show');
   }catch(e){
-    updateSaveState('failed','Save failed. Your marks are still here. Check connection and retry.');
-    alert('Save failed. Your entered marks were kept as a local draft. Please check the connection and click Retry save.');
+    const reason = normalizeText(e?.message || e?.details || 'Please check the connection.');
+    updateSaveState('failed',`Save failed: ${reason} Your marks are still here.`);
+    alert(`Save failed: ${reason}\n\nYour entered marks were kept as a local draft. Please correct the issue and click Retry save.`);
   }
 };
 
@@ -1594,6 +1610,7 @@ window.exportTeacherPDF = async testId=>{
 
 /* ---------- PARENT SHARE ---------- */
 let PARENT_FILTER = { cls:'', section:'', subject:'', testId:'', student:'All' };
+let PARENT_BULK_ITEMS = [];
 
 async function openParents(testId){
   const tests = await DB.listTests();
@@ -1668,6 +1685,7 @@ async function renderParents(tests){
   const avg = await classAverage(test);
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
+  PARENT_BULK_ITEMS = [];
   let rows='';
   rs.filter(r=>(r.na || !r.present || r.marks!=null) && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
@@ -1709,11 +1727,12 @@ ${CONFIG.CENTRE.name}`;
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
     const sent = parentCardWasSent(test.id,r.student_id);
+    if(phone && !sent) PARENT_BULK_ITEMS.push({phone,message:msg,studentId:r.student_id});
     rows += `<div class="listrow">
       ${avatar(s.gender,s.name)}
       <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${p==null?(isNA?'N.A. · Did not appear':'Absent · Did not appear'):`${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`}</div></div>
       ${phone
-        ? `<a class="link small" style="margin-right:6px">${phone}</a><a href="https://wa.me/91${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>
+        ? `<a class="link small" style="margin-right:6px">${phone}</a><button class="primary" style="padding:7px 12px" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button>
            <label class="small muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer"><input type="checkbox" style="width:auto" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${r.student_id}',this.checked)"> Sent</label>`
         : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
     </div>`;
@@ -1723,6 +1742,15 @@ ${CONFIG.CENTRE.name}`;
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <label class="small muted" style="display:flex;align-items:center;gap:8px">Send with
+            <select style="width:auto;min-width:170px" onchange="setWhatsAppApp(this.value)">
+              <option value="personal" ${preferredWhatsAppApp()==='personal'?'selected':''}>WhatsApp</option>
+              <option value="business" ${preferredWhatsAppApp()==='business'?'selected':''}>WhatsApp Business</option>
+            </select>
+          </label>
+          <button class="primary" onclick="sendAllParentCards()" ${PARENT_BULK_ITEMS.length?'':'disabled'}>Send all unsent (${PARENT_BULK_ITEMS.length})</button>
+        </div>
       </div>
       <div class="banner" style="margin-bottom:14px">🔒 Each parent receives only their own child's result — never the class list or rank.</div>
       <div class="small muted" style="margin-bottom:4px">Recipients</div>
@@ -1732,12 +1760,51 @@ ${CONFIG.CENTRE.name}`;
   `);
 }
 
-window.setParentCardSent = (testId,studentId,checked)=>{
+window.setParentCardSent = async (testId,studentId,checked)=>{
   const sent = readJSON(LS_PARENT_SENT,{});
   const key = parentSentKey(testId,studentId);
   if(checked) sent[key] = new Date().toISOString();
   else delete sent[key];
   writeJSON(LS_PARENT_SENT,sent);
+  renderParents(await DB.listTests());
+};
+
+window.setWhatsAppApp = value=>{
+  localStorage.setItem(LS_WHATSAPP_APP,value==='business'?'business':'personal');
+};
+
+window.openParentWhatsApp = (phone,message)=>{
+  const fallback = `https://wa.me/91${phone}?text=${message}`;
+  if(!/Android/i.test(navigator.userAgent)){
+    window.open(fallback,'_blank','noopener');
+    return;
+  }
+  const packageName = preferredWhatsAppApp()==='business' ? 'com.whatsapp.w4b' : 'com.whatsapp';
+  window.location.href = `intent://send?phone=91${phone}&text=${message}#Intent;scheme=whatsapp;package=${packageName};S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+};
+
+window.sendAllParentCards = ()=>{
+  const items = PARENT_BULK_ITEMS.slice();
+  if(!items.length){
+    alert('No unsent parent cards with valid phone numbers.');
+    return;
+  }
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+    alert('WhatsApp mobile can open only one private chat at a time. Please use each Send button so every parent receives the correct private message.');
+    return;
+  }
+  if(!confirm(`Open ${items.length} separate private WhatsApp chats? Your browser may ask you to allow pop-ups.`)) return;
+  let openedCount = 0;
+  items.forEach(item=>{
+    const popup = window.open('about:blank','_blank');
+    if(!popup) return;
+    popup.opener = null;
+    popup.location.href = `https://wa.me/91${item.phone}?text=${item.message}`;
+    openedCount++;
+  });
+  if(openedCount<items.length){
+    alert(`Opened ${openedCount} of ${items.length} chats. Allow pop-ups for this website, then try Send all unsent again.`);
+  }
 };
 
 window.setParentFilter = async (key,value)=>{
