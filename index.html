@@ -77,6 +77,7 @@
   .metric .n{font-family:'Bricolage Grotesque';font-size:22px;font-weight:700}
   .bands{display:flex;gap:6px;margin:8px 0 4px}
   .band{flex:1;border-radius:10px;padding:8px 10px}
+  .report-highlight{display:inline-block;background:var(--green-soft);color:var(--green-d);border:1px solid #c9dfb6;border-radius:6px;padding:2px 7px;font-weight:600}
   .num{font-family:'Bricolage Grotesque';font-weight:700}
   .screen{display:none;animation:fade .25s ease}
   .screen.active{display:block}
@@ -106,12 +107,13 @@
     .recent-actions{grid-column:1/-1;justify-content:flex-start}
   }
   @media print{
-    @page{margin:12mm}
+    @page{size:A4 portrait;margin:12mm}
     body,
     .band,
     .bar>span,
     .metric,
     .brandlogo,
+    .report-highlight,
     .pill,
     .banner,
     .demoflag,
@@ -133,6 +135,24 @@
     .screen.active{display:block;animation:none}
     .card{box-shadow:none;margin:0!important;page-break-inside:avoid}
     .card.pad{padding:0}
+    .teacher-report{
+      border:0;
+      border-radius:0;
+      zoom:.78;
+      width:128.2%;
+      font-size:12px;
+      line-height:1.25;
+    }
+    .teacher-report .report-head{padding-bottom:7px!important;margin-bottom:8px!important}
+    .teacher-report .brandlogo{height:28px!important}
+    .teacher-report .metric{padding:7px 9px;min-width:90px;border-radius:7px}
+    .teacher-report .metric .n{font-size:18px}
+    .teacher-report .bands{margin:5px 0 2px}
+    .teacher-report .band{padding:5px 8px;border-radius:6px}
+    .teacher-report .listrow{padding:5px 0;gap:8px;break-inside:avoid}
+    .teacher-report .bar{height:6px}
+    .teacher-report .pill{padding:2px 7px;font-size:9px}
+    .teacher-report .report-section-label{margin-top:8px!important}
   }
 </style>
 </head>
@@ -594,17 +614,22 @@ const demoNote = CONFIG.USE_SUPABASE ? '' :
   '<div class="demoflag">Demo mode — sample data, nothing is saved permanently. Set <b>USE_SUPABASE = true</b> in the file and add your keys to go live.</div>';
 
 /* ---------- HOME ---------- */
-let HOME_CLASS_FILTER = 'All', HOME_SHOW_ALL = false;
+let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
 async function home(){
   setCrumb('Home');
   const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
-  const filteredTests = HOME_CLASS_FILTER==='All'
-    ? tests
-    : tests.filter(t=>String(t.class_level)===String(HOME_CLASS_FILTER));
+  const filteredTests = tests.filter(t=>
+    (HOME_CLASS_FILTER==='All' || String(t.class_level)===String(HOME_CLASS_FILTER)) &&
+    (HOME_SUBJECT_FILTER==='All' || t.subject===HOME_SUBJECT_FILTER)
+  );
   const visibleTests = HOME_SHOW_ALL ? filteredTests : filteredTests.slice(0,4);
   const testClasses = [...new Set(tests.map(t=>String(t.class_level)))].sort((a,b)=>Number(a)-Number(b));
+  const testSubjects = [...new Set(tests.map(t=>t.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const homeClassOptions = ['<option value="All">All classes</option>']
     .concat(testClasses.map(c=>`<option value="${c}" ${String(HOME_CLASS_FILTER)===c?'selected':''}>Class ${c}</option>`))
+    .join('');
+  const homeSubjectOptions = ['<option value="All">All subjects</option>']
+    .concat(testSubjects.map(s=>`<option value="${s}" ${HOME_SUBJECT_FILTER===s?'selected':''}>${s}</option>`))
     .join('');
   let recent='';
   for(const t of visibleTests){
@@ -664,14 +689,16 @@ async function home(){
         </div>
         <div class="test-list-tools">
           <select onchange="setHomeClassFilter(this.value)">${homeClassOptions}</select>
+          <select onchange="setHomeSubjectFilter(this.value)">${homeSubjectOptions}</select>
           <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
         </div>
       </div>
-      <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
+      <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests found for this selection.</div>'}</div>
     </div>
   `);
 }
 window.setHomeClassFilter = value=>{ HOME_CLASS_FILTER=value; home(); };
+window.setHomeSubjectFilter = value=>{ HOME_SUBJECT_FILTER=value; home(); };
 window.toggleHomeTests = ()=>{ HOME_SHOW_ALL=!HOME_SHOW_ALL; home(); };
 
 /* ---------- ROSTER ---------- */
@@ -1423,14 +1450,14 @@ async function renderTeacher(tests){
   const naCount = rows.filter(r=>r.na).length;
   const absentRows = rows.filter(r=>!r.na && !r.present).sort((a,b)=>a.name.localeCompare(b.name));
   const absentList = absentRows.length ? `
-    <div class="small muted" style="margin:16px 0 4px">Absent students</div>
+    <div class="small muted report-section-label" style="margin:16px 0 4px">Absent students</div>
     <div class="listrow" style="align-items:flex-start">
       <div class="pill warn">${absentRows.length} absent</div>
       <div style="flex:1">${absentRows.map(r=>r.name).join(', ')}</div>
     </div>` : '';
   const naRows = rows.filter(r=>r.na).sort((a,b)=>a.name.localeCompare(b.name));
   const naList = naRows.length ? `
-    <div class="small muted" style="margin:16px 0 4px">N.A. students</div>
+    <div class="small muted report-section-label" style="margin:16px 0 4px">N.A. students</div>
     <div class="listrow" style="align-items:flex-start">
       <div class="pill">${naRows.length} N.A.</div>
       <div style="flex:1">${naRows.map(r=>r.name).join(', ')}</div>
@@ -1454,9 +1481,9 @@ async function renderTeacher(tests){
     </div>`).join('');
   show(`
     ${teacherFilterBar(tests)}
-    <div class="card pad">
-      <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${chapterDetail(test)} · ${appearedCount} of ${enrolled} appeared</div></div></div>
+    <div class="card pad teacher-report">
+      <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -1470,7 +1497,7 @@ async function renderTeacher(tests){
       <div class="bands">
         ${bandCards}
       </div>
-      <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
+      <div class="small muted report-section-label" style="margin:14px 0 4px">Ranked results</div>
       ${list}
       ${absentList}
       ${naList}
@@ -1478,7 +1505,7 @@ async function renderTeacher(tests){
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
         <button onclick="exportTeacherPDF('${test.id}')">Download PDF</button>
-        <button onclick="window.print()">🖨 Print / PDF</button>
+        <button onclick="printTeacherReport()">🖨 Print / PDF</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
     </div>
@@ -1504,6 +1531,11 @@ window.setTeacherFilter = async (key,value)=>{
     if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
   }
   renderTeacher(tests);
+};
+
+window.printTeacherReport = ()=>{
+  alert('For a clean one-page report: choose A4, open More settings, and turn off Headers and footers. This removes the date, website URL, report title, and page numbers added by the browser.');
+  window.print();
 };
 
 window.exportTeacherCSV = async testId=>{
