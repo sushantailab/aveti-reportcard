@@ -1483,7 +1483,7 @@ async function renderTeacher(tests){
     ${teacherFilterBar(tests)}
     <div class="card pad teacher-report">
       <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">Teacher / Class Report</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
+        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="aveti-logo.png"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address} · Ph ${CONFIG.CENTRE.phone}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -1548,6 +1548,7 @@ window.exportTeacherCSV = async testId=>{
   const naNames = rows.filter(r=>r.na).map(r=>r.name).join(', ');
   const lines = [
     ['Teacher / Class Report'],
+    [CONFIG.CENTRE.name, CONFIG.CENTRE.address, `Ph ${CONFIG.CENTRE.phone}`],
     [`Class ${test.class_level}`,`Section ${test.section||'All'}`,test.subject,chapterDetail(test),fmtDate(testDate(test))],
     [`Appeared ${appeared} of ${enrolled}`,`Absent ${absent}`,`N.A. ${na}`,`Class average ${avg??'—'}%`],
     [`Absent students`, absentNames || 'None'],
@@ -1570,13 +1571,14 @@ window.exportTeacherPDF = async testId=>{
   const lines = [
     {text:'Teacher / Class Report',x:40,y:800,size:18},
     {text:`${CONFIG.CENTRE.name}`,x:40,y:778,size:11},
-    {text:`Class ${test.class_level} | Section ${test.section||'All'} | ${test.subject} | ${chapterDetail(test)}`,x:40,y:758,size:11},
-    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(testDate(test))}`,x:40,y:742,size:11},
-    {text:`Appeared ${appeared} of ${enrolled} | Absent ${absent} | N.A. ${na} | Class average ${avg??'—'}%`,x:40,y:720,size:12},
-    {text:'Ranked results',x:40,y:690,size:13},
-    {text:'Rank  Student                    Marks      Percent   Band   Note',x:40,y:672,size:10}
+    {text:`${CONFIG.CENTRE.address} | Ph ${CONFIG.CENTRE.phone}`,x:40,y:762,size:9},
+    {text:`Class ${test.class_level} | Section ${test.section||'All'} | ${test.subject} | ${chapterDetail(test)}`,x:40,y:742,size:11},
+    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(testDate(test))}`,x:40,y:726,size:11},
+    {text:`Appeared ${appeared} of ${enrolled} | Absent ${absent} | N.A. ${na} | Class average ${avg??'—'}%`,x:40,y:704,size:12},
+    {text:'Ranked results',x:40,y:674,size:13},
+    {text:'Rank  Student                    Marks      Percent   Band   Note',x:40,y:656,size:10}
   ];
-  let y=654;
+  let y=638;
   ranked.slice(0,28).forEach((r,i)=>{
     const note = r.support ? 'Needs support' : band(r.p)==='A' ? 'Top performer' : '';
     lines.push({text:`${String(i+1).padEnd(5)} ${r.name.slice(0,24).padEnd(26)} ${String(r.marks+'/'+test.full_marks).padEnd(10)} ${String(r.p+'%').padEnd(9)} ${String(r.grade).padEnd(5)} ${note}`,x:40,y,size:10});
