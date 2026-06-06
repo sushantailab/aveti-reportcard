@@ -384,9 +384,12 @@ async function cachedResults(testId){
 function invalidateResults(testId){ resultsCache.delete(testId); }
 const LS_LAST_ENTRY = 'aveti:last-entry';
 const LS_MARK_DRAFT = 'aveti:mark-draft';
+const LS_PARENT_SENT = 'aveti:parent-cards-sent';
 const readJSON = (key,fallback=null) => { try { return JSON.parse(localStorage.getItem(key)||'null') ?? fallback; } catch(e){ return fallback; } };
 const writeJSON = (key,value) => localStorage.setItem(key, JSON.stringify(value));
 const clearJSON = key => localStorage.removeItem(key);
+const parentSentKey = (testId,studentId) => `${testId}:${studentId}`;
+const parentCardWasSent = (testId,studentId) => !!readJSON(LS_PARENT_SENT,{})[parentSentKey(testId,studentId)];
 function updateSaveState(state,msg){
   const el=document.getElementById('saveState');
   const btn=document.getElementById('saveBtn');
@@ -1705,11 +1708,13 @@ Thanks,
 ${CONFIG.CENTRE.name}`;
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
+    const sent = parentCardWasSent(test.id,r.student_id);
     rows += `<div class="listrow">
       ${avatar(s.gender,s.name)}
       <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${p==null?(isNA?'N.A. · Did not appear':'Absent · Did not appear'):`${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`}</div></div>
       ${phone
-        ? `<a class="link small" style="margin-right:6px">${phone}</a><a href="https://wa.me/91${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>`
+        ? `<a class="link small" style="margin-right:6px">${phone}</a><a href="https://wa.me/91${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>
+           <label class="small muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer"><input type="checkbox" style="width:auto" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${r.student_id}',this.checked)"> Sent</label>`
         : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
     </div>`;
   });
@@ -1726,6 +1731,14 @@ ${CONFIG.CENTRE.name}`;
     </div>
   `);
 }
+
+window.setParentCardSent = (testId,studentId,checked)=>{
+  const sent = readJSON(LS_PARENT_SENT,{});
+  const key = parentSentKey(testId,studentId);
+  if(checked) sent[key] = new Date().toISOString();
+  else delete sent[key];
+  writeJSON(LS_PARENT_SENT,sent);
+};
 
 window.setParentFilter = async (key,value)=>{
   const tests = await DB.listTests();
