@@ -64,6 +64,9 @@
   .recent-field .value{font-size:12px;font-weight:600;color:var(--ink);line-height:1.22}
   .recent-field:first-child .value{white-space:nowrap}
   .recent-field .value.strong{font-family:'Bricolage Grotesque';font-size:16px;font-weight:700}
+  .new-tag{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:99px;background:#dff3d3;color:#2f6f12;font-size:9px;font-weight:700;letter-spacing:.04em;vertical-align:1px}
+  .test-list-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .test-list-tools select{width:auto;min-width:130px}
   .recent-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
   .recent-actions button{padding:7px 9px;font-size:11px;white-space:nowrap}
   .action.teacher{border-color:#bcd7f4;color:#1e5d99;background:#f4f9ff}
@@ -466,7 +469,7 @@ function simplePdf(lines){
 const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
-const FULL_MARK_OPTIONS = [20,25,30];
+const FULL_MARK_OPTIONS = [20,25,30,35];
 const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 const currentSession = () => SESSIONS[0];
 const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||currentSession())?'selected':''}>${s}</option>`).join('');
@@ -561,6 +564,15 @@ function fmtDate(d){
   return date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
 const testDate = t => t?.test_date || t?.date || t?.created_at || '';
+function isNewTest(t){
+  const raw = testDate(t);
+  if(!raw) return false;
+  const date = new Date(String(raw).slice(0,10)+'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const days = Math.floor((today-date)/(24*60*60*1000));
+  return days>=0 && days<=5;
+}
 
 async function classAverage(test){
   const rs = (await cachedResults(test.id)).filter(r=>!r.na && r.present && r.marks!=null);
@@ -582,17 +594,27 @@ const demoNote = CONFIG.USE_SUPABASE ? '' :
   '<div class="demoflag">Demo mode — sample data, nothing is saved permanently. Set <b>USE_SUPABASE = true</b> in the file and add your keys to go live.</div>';
 
 /* ---------- HOME ---------- */
+let HOME_CLASS_FILTER = 'All', HOME_SHOW_ALL = false;
 async function home(){
   setCrumb('Home');
-  const tests = await DB.listTests();
+  const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  const filteredTests = HOME_CLASS_FILTER==='All'
+    ? tests
+    : tests.filter(t=>String(t.class_level)===String(HOME_CLASS_FILTER));
+  const visibleTests = HOME_SHOW_ALL ? filteredTests : filteredTests.slice(0,4);
+  const testClasses = [...new Set(tests.map(t=>String(t.class_level)))].sort((a,b)=>Number(a)-Number(b));
+  const homeClassOptions = ['<option value="All">All classes</option>']
+    .concat(testClasses.map(c=>`<option value="${c}" ${String(HOME_CLASS_FILTER)===c?'selected':''}>Class ${c}</option>`))
+    .join('');
   let recent='';
-  for(const t of tests.slice(0,4)){
+  for(const t of visibleTests){
     const avg = await classAverage(t);
     const rs = await cachedResults(t.id);
     const appeared = rs.filter(r=>!r.na && r.present).length;
+    const newTag = isNewTest(t) ? '<span class="new-tag">NEW</span>' : '';
     recent += `<div class="recent-test">
       <div class="recent-grid">
-        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}</div></div>
+        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}${newTag}</div></div>
         <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
         <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
@@ -635,11 +657,22 @@ async function home(){
     </div>
 
     <div class="card">
-      <div class="pad row between" style="padding-bottom:6px"><span class="section-title">Recent Test</span></div>
+      <div class="pad row between" style="padding-bottom:6px;gap:12px;flex-wrap:wrap">
+        <div>
+          <span class="section-title">${HOME_SHOW_ALL?'All Tests':'Recent Tests'}</span>
+          <div class="tiny faint">${filteredTests.length} test${filteredTests.length===1?'':'s'} · newest first</div>
+        </div>
+        <div class="test-list-tools">
+          <select onchange="setHomeClassFilter(this.value)">${homeClassOptions}</select>
+          <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
+        </div>
+      </div>
       <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests yet.</div>'}</div>
     </div>
   `);
 }
+window.setHomeClassFilter = value=>{ HOME_CLASS_FILTER=value; home(); };
+window.toggleHomeTests = ()=>{ HOME_SHOW_ALL=!HOME_SHOW_ALL; home(); };
 
 /* ---------- ROSTER ---------- */
 let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();
@@ -1388,6 +1421,20 @@ async function renderTeacher(tests){
   const appearedCount = rows.filter(r=>!r.na && r.present).length;
   const absentCount = rows.filter(r=>!r.na && !r.present).length;
   const naCount = rows.filter(r=>r.na).length;
+  const absentRows = rows.filter(r=>!r.na && !r.present).sort((a,b)=>a.name.localeCompare(b.name));
+  const absentList = absentRows.length ? `
+    <div class="small muted" style="margin:16px 0 4px">Absent students</div>
+    <div class="listrow" style="align-items:flex-start">
+      <div class="pill warn">${absentRows.length} absent</div>
+      <div style="flex:1">${absentRows.map(r=>r.name).join(', ')}</div>
+    </div>` : '';
+  const naRows = rows.filter(r=>r.na).sort((a,b)=>a.name.localeCompare(b.name));
+  const naList = naRows.length ? `
+    <div class="small muted" style="margin:16px 0 4px">N.A. students</div>
+    <div class="listrow" style="align-items:flex-start">
+      <div class="pill">${naRows.length} N.A.</div>
+      <div style="flex:1">${naRows.map(r=>r.name).join(', ')}</div>
+    </div>` : '';
   const present = rows.filter(r=>!r.na && r.present && r.p!=null).sort((a,b)=>b.p-a.p);
   const avg = present.length?Math.round(present.reduce((a,r)=>a+r.p,0)/present.length*10)/10:null;
   const counts={}; bandConfig().forEach(b=>counts[b.grade]=0); present.forEach(r=>counts[band(r.p)]++);
@@ -1416,7 +1463,8 @@ async function renderTeacher(tests){
         <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
         <div class="metric"><div class="tiny muted">Highest</div><div class="n">${hi?hi.p+'%':'—'}</div><div class="tiny faint">${hi?hi.name:''}</div></div>
         <div class="metric"><div class="tiny muted">Lowest</div><div class="n">${lo?lo.p+'%':'—'}</div><div class="tiny faint">${lo?lo.name:''}</div></div>
-        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${appearedCount} of ${enrolled}</div><div class="tiny faint">${absentCount} absent · ${naCount} N.A.</div></div>
+        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${appearedCount} of ${enrolled}</div><div class="tiny faint">${naCount} N.A.</div></div>
+        <div class="metric"><div class="tiny muted">Absent</div><div class="n">${absentCount}</div><div class="tiny faint">${absentCount?absentRows.map(r=>r.name).slice(0,2).join(', '):'None'}${absentCount>2?' +' + (absentCount-2):''}</div></div>
       </div>
       <div class="small muted">Score bands</div>
       <div class="bands">
@@ -1424,6 +1472,8 @@ async function renderTeacher(tests){
       </div>
       <div class="small muted" style="margin:14px 0 4px">Ranked results</div>
       ${list}
+      ${absentList}
+      ${naList}
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
@@ -1462,10 +1512,14 @@ window.exportTeacherCSV = async testId=>{
   const {test,rows,avg,enrolled,appeared,absent,na} = data;
   const header = ['Rank','Student','Status','Marks','Full marks','Percent','Band','Needs support'];
   const rankedIds = new Map(data.ranked.map((r,i)=>[r.student_id,i+1]));
+  const absentNames = rows.filter(r=>!r.na&&!r.present).map(r=>r.name).join(', ');
+  const naNames = rows.filter(r=>r.na).map(r=>r.name).join(', ');
   const lines = [
     ['Teacher / Class Report'],
     [`Class ${test.class_level}`,`Section ${test.section||'All'}`,test.subject,chapterDetail(test),fmtDate(testDate(test))],
     [`Appeared ${appeared} of ${enrolled}`,`Absent ${absent}`,`N.A. ${na}`,`Class average ${avg??'—'}%`],
+    [`Absent students`, absentNames || 'None'],
+    [`N.A. students`, naNames || 'None'],
     [],
     header
   ];
@@ -1578,12 +1632,30 @@ async function renderParents(tests){
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
   let rows='';
-  rs.filter(r=>!r.na&&r.present&&r.marks!=null && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
+  rs.filter(r=>(r.na || !r.present || r.marks!=null) && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
     const shortName = parentMessageName(s.name);
-    const p = pct(r.marks,test.full_marks);
-    const pb = perfBand(p);
-    const msg = encodeURIComponent(
+    const isNA = !!r.na;
+    const isAbsent = !isNA && !r.present;
+    const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;
+    const pb = p==null ? null : perfBand(p);
+    const attendanceLine = isNA
+      ? 'Did not appear.'
+      : 'Absent from exam.';
+    const message = p==null
+      ? `Dear Parents,
+
+Aveti's Chapter End Test (CET) Report for ${shortName}:
+
+• Subject: ${test.subject} (${chapterLabel(test)})
+• Attendance: ${attendanceLine}
+• Class Average: ${avg}%
+
+Please contact the centre if you need any clarification.
+
+Thanks,
+${CONFIG.CENTRE.name}`
+      :
 `Dear Parents,
 
 Aveti's Chapter End Test (CET) Report for ${shortName}:
@@ -1596,11 +1668,12 @@ Aveti's Chapter End Test (CET) Report for ${shortName}:
 ${pb.line(shortName)}
 
 Thanks,
-${CONFIG.CENTRE.name}`);
+${CONFIG.CENTRE.name}`;
+    const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
     rows += `<div class="listrow">
       ${avatar(s.gender,s.name)}
-      <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}</div></div>
+      <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${p==null?(isNA?'N.A. · Did not appear':'Absent · Did not appear'):`${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`}</div></div>
       ${phone
         ? `<a class="link small" style="margin-right:6px">${phone}</a><a href="https://wa.me/91${phone}?text=${msg}" target="_blank"><button class="primary" style="padding:7px 12px">Send</button></a>`
         : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
