@@ -1,5 +1,8 @@
 /* ---------- GROWTH ---------- */
 let GR = { mode:'class', student:null, cls:'', section:'All', subject:'' };
+const growthSectionMatches = (testSection, selectedSection) =>
+  selectedSection === 'All' || sectionKey(testSection) === sectionKey(selectedSection);
+
 async function growth(){
   setCrumb('Growth tracker');
   const allTests = await DB.listTests();
@@ -12,10 +15,17 @@ async function growth(){
   if(!GR.cls) GR.cls = '1';
   if(!GR.section) GR.section = 'All';
   if(!GR.subject) GR.subject = SUBJECTS[0];
-  const classStudents = students.filter(s=>String(s.class_level)===String(GR.cls));
+  const classStudents = students.filter(s=>
+    String(s.class_level)===String(GR.cls) &&
+    growthSectionMatches(s.section, GR.section)
+  );
   if(!classStudents.some(s=>s.id===GR.student)) GR.student = classStudents[0] ? classStudents[0].id : null;
   const tests = allTests
-    .filter(t=>String(t.class_level)===String(GR.cls) && (t.section||'All')===GR.section && t.subject===GR.subject)
+    .filter(t=>
+      String(t.class_level)===String(GR.cls) &&
+      growthSectionMatches(t.section, GR.section) &&
+      t.subject===GR.subject
+    )
     .sort((a,b)=>(Number(a.chapter_no)||0)-(Number(b.chapter_no)||0));
   const filterBar = growthFilterBar();
   const controls = `
