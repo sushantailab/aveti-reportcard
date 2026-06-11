@@ -5,7 +5,7 @@ document.getElementById('saveToTeacher').onclick=()=>{document.getElementById('s
 document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');growth();};
 document.getElementById('navHome').onclick=home;
 document.getElementById('navRoster').onclick=roster;
-window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.enterMarks=enterMarks;
+window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.enterMarks=enterMarks;
 
 /* =============================================================
    AUTH (Supabase email/password). Demo mode skips login entirely.

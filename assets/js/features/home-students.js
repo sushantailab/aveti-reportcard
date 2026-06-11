@@ -77,6 +77,10 @@ async function home(){
         <h3>📈 Growth tracker</h3>
         <div class="muted small">Chapter-to-chapter trend, class vs individual.</div>
       </div>
+      <div class="tile insights" onclick="classInsights()">
+        <h3>Class insights</h3>
+        <div class="muted small">Subject leaderboard, students below 40% and attendance risks.</div>
+      </div>
     </div>
 
     <div class="card">

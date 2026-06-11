@@ -34,6 +34,10 @@ function normalizeIndianPhone(phone){
   return d.length===10 && /^[6-9]\d{9}$/.test(d) ? d : null;
 }
 const sectionKey = s => s || 'All';
+const selectedSectionMatches = (itemSection, selectedSection) =>
+  selectedSection === 'All' || sectionKey(itemSection) === sectionKey(selectedSection);
+const selectedTestSectionMatches = (testSection, selectedSection) =>
+  selectedSection === 'All' || sectionKey(testSection) === 'All' || sectionKey(testSection) === sectionKey(selectedSection);
 function sameClassSectionName(a,b){
   return normalizeText(a.name).toLowerCase()===normalizeText(b.name).toLowerCase() &&
     (a.academic_session||currentSession())===(b.academic_session||currentSession()) &&

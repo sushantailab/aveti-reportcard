@@ -1,7 +1,5 @@
 /* ---------- GROWTH ---------- */
 let GR = { mode:'class', student:null, cls:'', section:'All', subject:'' };
-const growthSectionMatches = (testSection, selectedSection) =>
-  selectedSection === 'All' || sectionKey(testSection) === sectionKey(selectedSection);
 
 async function growth(){
   setCrumb('Growth tracker');
@@ -17,13 +15,13 @@ async function growth(){
   if(!GR.subject) GR.subject = SUBJECTS[0];
   const classStudents = students.filter(s=>
     String(s.class_level)===String(GR.cls) &&
-    growthSectionMatches(s.section, GR.section)
+    selectedSectionMatches(s.section, GR.section)
   );
   if(!classStudents.some(s=>s.id===GR.student)) GR.student = classStudents[0] ? classStudents[0].id : null;
   const tests = allTests
     .filter(t=>
       String(t.class_level)===String(GR.cls) &&
-      growthSectionMatches(t.section, GR.section) &&
+      selectedTestSectionMatches(t.section, GR.section) &&
       t.subject===GR.subject
     )
     .sort((a,b)=>(Number(a.chapter_no)||0)-(Number(b.chapter_no)||0));
@@ -42,6 +40,7 @@ async function growth(){
       <div class="card pad">
         ${controls}
         <div class="muted" style="margin-top:8px">Add one more chapter test for ${GR.subject} to see the trend.</div>
+        <div style="margin-top:12px"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
       </div>
     `);
     return;
@@ -63,6 +62,7 @@ async function growth(){
     <div class="card pad">
       ${controls}
       ${lineChartSVG(labels, series)}
+      <div style="margin-top:12px"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
     </div>
   `);
 }
