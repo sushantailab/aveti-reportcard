@@ -1,6 +1,40 @@
 /* ---------- TEACHER REPORT ---------- */
 let TEACHER_FILTER = { cls:'', section:'', subject:'', testId:'' };
 
+function parentMessageChapter(test){
+  const no = String(test.chapter_no||'').trim();
+  const name = normalizeText(test.chapter_name);
+  if(!name) return `Chapter ${no}`;
+  const compact = name.toLowerCase().replace(/[\s-]/g,'');
+  if(compact===`ch${no}` || compact===`chapter${no}`) return `Chapter ${no}`;
+  return `Chapter ${no}: ${name}`;
+}
+
+function parentWhatsAppMessage(test, studentName, result, classAvg){
+  const isNA = !!result.na;
+  const isAbsent = !isNA && !result.present;
+  const score = isAbsent
+    ? 'Absent 🔴'
+    : isNA
+      ? 'N.A.'
+      : `${result.marks}/${test.full_marks} (${pct(result.marks,test.full_marks)}%)`;
+  const lines = [
+    '*Aveti CET (Test) Report*',
+    '',
+    `• Student: ${studentName||'Student'}`,
+    `• Subject: ${test.subject}`,
+    `• ${parentMessageChapter(test)}`,
+    `• Score: ${score}`
+  ];
+  if(!isNA && !isAbsent){
+    const p = pct(result.marks,test.full_marks);
+    lines.push(`• Class Average: ${classAvg}%`);
+    lines.push(`• Performance: ${perfBand(p).label}`);
+  }
+  lines.push('',CONFIG.CENTRE.name);
+  return lines.join('\n');
+}
+
 async function openTeacher(testId){
   const tests = await DB.listTests();
   setCrumb('Teacher report');
@@ -290,41 +324,10 @@ async function renderParents(tests){
   let rows='';
   rs.filter(r=>(r.na || !r.present || r.marks!=null) && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id)||{};
-    const shortName = parentMessageName(s.name);
     const isNA = !!r.na;
     const isAbsent = !isNA && !r.present;
     const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;
-    const pb = p==null ? null : perfBand(p);
-    const attendanceLine = isNA
-      ? 'Did not appear.'
-      : 'Absent from exam.';
-    const message = p==null
-      ? `Dear Parents,
-
-Aveti's Chapter End Test (CET) Report for ${shortName}:
-
-• Subject: ${test.subject} (${chapterLabel(test)})
-• Attendance: ${attendanceLine}
-• Class Average: ${avg}%
-
-Please contact the centre if you need any clarification.
-
-Thanks,
-${CONFIG.CENTRE.name}`
-      :
-`Dear Parents,
-
-Aveti's Chapter End Test (CET) Report for ${shortName}:
-
-• Subject: ${test.subject} (${chapterLabel(test)})
-• Student Score: ${r.marks} / ${test.full_marks} (${p}%)
-• Class Average: ${avg}%
-• Performance: ${pb.label}
-
-${pb.line(shortName)}
-
-Thanks,
-${CONFIG.CENTRE.name}`;
+    const message = parentWhatsAppMessage(test,s.name,r,avg);
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
     const sent = parentCardWasSent(test.id,r.student_id);
