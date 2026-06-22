@@ -51,8 +51,11 @@ function certEventForm(event){
   return `
     <div class="card pad" style="margin-bottom:14px">
       <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
-        <div><h2 style="font-size:18px">Training event</h2><div class="muted small">Create one event, upload teachers, then generate certificates.</div></div>
-        <button class="primary" onclick="saveTrainingEvent()">${CERT.event?'Save event':'Create event'}</button>
+        <div><h2 style="font-size:18px">Training event</h2><div class="muted small">Create or edit one teacher PD event, then upload participants.</div></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          ${CERT.event?'<button onclick="newTrainingEvent()">New event</button>':''}
+          <button class="primary" onclick="saveTrainingEvent()">${CERT.event?'Save event':'Create event'}</button>
+        </div>
       </div>
       <div class="wrap-fields">
         ${eventOptions}
@@ -66,10 +69,10 @@ function certEventForm(event){
         <div class="field"><label>Certificate prefix</label><input id="certPrefix" value="${escapeHTML(e.certificate_prefix)}"></div>
       </div>
       <div class="wrap-fields" style="margin-top:10px">
-        <div class="field"><label>Signatory 1 name</label><input id="certSig1Name" value="${escapeHTML(e.signatory_1_name)}"></div>
-        <div class="field"><label>Signatory 1 title</label><input id="certSig1Title" value="${escapeHTML(e.signatory_1_title)}"></div>
-        <div class="field"><label>Signatory 2 name</label><input id="certSig2Name" value="${escapeHTML(e.signatory_2_name)}"></div>
-        <div class="field"><label>Signatory 2 title</label><input id="certSig2Title" value="${escapeHTML(e.signatory_2_title)}"></div>
+        <div class="field"><label>Left signature name</label><input id="certSig1Name" value="${escapeHTML(e.signatory_1_name)}"></div>
+        <div class="field"><label>Left signature title</label><input id="certSig1Title" value="${escapeHTML(e.signatory_1_title)}"></div>
+        <div class="field"><label>Right signature name</label><input id="certSig2Name" value="${escapeHTML(e.signatory_2_name)}"></div>
+        <div class="field"><label>Right signature title</label><input id="certSig2Title" value="${escapeHTML(e.signatory_2_title)}"></div>
       </div>
       <div class="field" style="margin-top:10px"><label>Session focus points, one per line</label><textarea id="certFocus" rows="5">${escapeHTML(e.focus_points)}</textarea></div>
     </div>`;
@@ -83,9 +86,9 @@ function certParticipantsPanel(){
       <div style="flex:1;min-width:0"><b>${escapeHTML(p.name)}</b><div class="tiny faint">${escapeHTML(p.school||'School not set')} · ${escapeHTML(p.email||'No email')}</div></div>
       <div class="small muted">${escapeHTML(p.whatsapp||p.phone||'No phone')}</div>
       <button onclick="selectCertParticipant('${p.id}')">Preview</button>
-      <button onclick="downloadCertificatePDF('${p.id}')">PDF</button>
-      <button class="primary" onclick="sendCertificateWhatsApp('${p.id}')">${p.whatsapp_sent_at?'Sent again':'WhatsApp'}</button>
-    </div>`).join('') : '<div class="muted small" style="padding:8px 0">No participants uploaded yet.</div>';
+      <button onclick="downloadCertificatePDF('${p.id}')">Download PDF</button>
+      <button class="primary" onclick="sendCertificateWhatsApp('${p.id}')">${p.whatsapp_sent_at?'Open WhatsApp again':'Open WhatsApp'}</button>
+    </div>`).join('') : '<div class="cert-empty"><b>No participants yet.</b><br>Upload a CSV to generate certificate IDs, preview real certificates, download PDFs, and open WhatsApp messages.</div>';
   return `
     <div class="card pad" style="margin-bottom:14px">
       <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
@@ -98,38 +101,46 @@ function certParticipantsPanel(){
         </div>
       </div>
       ${rows}
-      <div class="tiny faint" style="margin-top:10px">WhatsApp opens a ready message. Attach the downloaded PDF manually in MVP; API-based attachment/link delivery can come next.</div>
+      <div class="tiny faint" style="margin-top:10px">Current WhatsApp button opens a ready text message. Download the PDF first, then attach it manually. Automatic PDF delivery needs a WhatsApp API + hosted certificate link.</div>
     </div>`;
 }
 
 function certificatePreview(event, participant){
   if(!event) return '<div class="card pad"><div class="muted">Create or select a training event to preview the certificate.</div></div>';
-  const p = participant || {name:'Teacher Name',school:'School Name',certificate_id:`${event.certificate_prefix||'AVT-PD'}-000001`};
-  const points = eventFocusPoints(event).slice(0,5);
+  if(!participant) return `
+    <div class="card pad">
+      <div class="row between" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
+        <div><h2 style="font-size:18px">Certificate preview</h2><div class="muted small">Upload participants to generate real certificates.</div></div>
+        <button disabled>Download PDF</button>
+      </div>
+      <div class="cert-empty cert-empty-large">No teacher selected yet. Upload the CSV and the first certificate will appear here.</div>
+    </div>`;
+  const p = participant;
   return `
     <div class="card pad">
       <div class="row between" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
         <div><h2 style="font-size:18px">Certificate preview</h2><div class="muted small">${escapeHTML(p.certificate_id)}</div></div>
-        <button ${participant?'':'disabled'} onclick="downloadCertificatePDF('${participant?.id||''}')">Download PDF</button>
+        <button onclick="downloadCertificatePDF('${participant.id}')">Download PDF</button>
       </div>
       <div class="certificate-paper">
-        <img class="cert-logo" alt="Aveti Learning" src="assets/images/aveti-logo.png">
+        <div class="cert-top">
+          <img class="cert-logo" alt="Aveti Learning" src="assets/images/aveti-logo.png">
+          <div>
+            <div class="cert-small">Professional Development</div>
+            <div class="cert-org">${escapeHTML(event.organizer_name)}</div>
+          </div>
+        </div>
         <div class="cert-kicker">Certificate of Participation</div>
-        <div class="cert-line">This is to certify that</div>
+        <div class="cert-line">This certifies that</div>
         <div class="cert-name">${escapeHTML(p.name)}</div>
-        <div class="cert-school">${escapeHTML(p.school||'')}</div>
-        <div class="cert-line">has successfully participated in the</div>
+        ${p.school?`<div class="cert-school">${escapeHTML(p.school)}</div>`:''}
+        <div class="cert-line">participated in</div>
         <div class="cert-subtitle">${escapeHTML(event.subtitle)}</div>
         <div class="cert-title">${escapeHTML(event.title)}</div>
-        <div class="cert-organizer">organized by <b>${escapeHTML(event.organizer_name)}</b></div>
-        <div class="cert-focus">
-          ${points.map(point=>`<span>${escapeHTML(point)}</span>`).join('')}
-        </div>
         <div class="cert-meta">
           <div><b>Date</b><br>${fmtDate(event.event_date)}</div>
           <div><b>PD Hours</b><br>${escapeHTML(event.duration_hours)} Hour${Number(event.duration_hours)===1?'':'s'}</div>
           <div><b>Certificate ID</b><br>${escapeHTML(p.certificate_id)}</div>
-          <div class="cert-qr"><b>QR</b><br>${escapeHTML(p.certificate_id).slice(-6)}</div>
         </div>
         <div class="cert-thanks">Thank you for your commitment to continuous learning and educational excellence.</div>
         <div class="cert-signatures">
@@ -184,6 +195,13 @@ window.selectTrainingEvent = async id=>{
   renderCertificates();
 };
 
+window.newTrainingEvent = ()=>{
+  CERT.event = null;
+  CERT.participants = [];
+  CERT.selectedId = null;
+  renderCertificates();
+};
+
 window.downloadCertificateCSVTemplate = ()=>{
   const rows = [
     ['name','phone','whatsapp','email','school'],
@@ -234,24 +252,21 @@ window.selectCertParticipant = id=>{ CERT.selectedId=id; renderCertificates(); }
 
 function certificatePdfLines(event, participant){
   const yStart = 790;
-  const points = eventFocusPoints(event).slice(0,5);
   const lines = [
     {text:'AVETI LEARNING',x:236,y:yStart,size:18},
     {text:'CERTIFICATE OF PARTICIPATION',x:170,y:748,size:20},
-    {text:'This is to certify that',x:226,y:712,size:12},
+    {text:'This certifies that',x:232,y:712,size:12},
     {text:participant.name,x:190,y:684,size:24},
     {text:participant.school||'',x:210,y:664,size:11},
-    {text:'has successfully participated in the',x:196,y:636,size:12},
+    {text:'participated in',x:246,y:636,size:12},
     {text:event.subtitle,x:160,y:612,size:15},
     {text:event.title,x:90,y:586,size:14},
-    {text:`Organized by ${event.organizer_name}`,x:204,y:560,size:11},
-    {text:'The session focused on:',x:70,y:526,size:12},
-    ...points.map((point,i)=>({text:`- ${point}`,x:90,y:506-(i*18),size:10})),
-    {text:`Date: ${fmtDate(event.event_date)}`,x:70,y:374,size:11},
-    {text:`Professional Development Hours: ${event.duration_hours}`,x:70,y:354,size:11},
-    {text:`Certificate ID: ${participant.certificate_id}`,x:70,y:334,size:11},
-    {text:`Verify: ${certificateVerifyURL(participant)}`,x:70,y:314,size:8},
-    {text:'Thank you for your commitment to continuous learning and educational excellence.',x:92,y:272,size:10},
+    {text:`Organized by ${event.organizer_name}`,x:204,y:556,size:11},
+    {text:`Date: ${fmtDate(event.event_date)}`,x:80,y:496,size:11},
+    {text:`Professional Development Hours: ${event.duration_hours}`,x:80,y:476,size:11},
+    {text:`Certificate ID: ${participant.certificate_id}`,x:80,y:456,size:11},
+    {text:`Verify: ${certificateVerifyURL(participant)}`,x:80,y:436,size:8},
+    {text:'Thank you for your commitment to continuous learning and educational excellence.',x:92,y:360,size:10},
     {text:event.signatory_1_name,x:80,y:176,size:11},
     {text:event.signatory_1_title,x:80,y:160,size:9}
   ];
