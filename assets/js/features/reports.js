@@ -10,26 +10,106 @@ function parentMessageChapter(test){
   return `Chapter ${no}: ${name}`;
 }
 
-function parentWhatsAppMessage(test, studentName, result, classAvg){
+function parentNotificationContext(test, studentId, tests, results){
+  const currentDate = new Date(testDate(test)).getTime();
+  const earlierTests = tests
+    .filter(t=>
+      t.id!==test.id &&
+      String(t.class_level)===String(test.class_level) &&
+      t.subject===test.subject &&
+      new Date(testDate(t)).getTime()<currentDate
+    )
+    .sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  for(const earlier of earlierTests){
+    const result = results.find(r=>
+      r.test_id===earlier.id &&
+      r.student_id===studentId &&
+      !r.na &&
+      r.present &&
+      r.marks!=null
+    );
+    if(result) return {previousPercent:pct(result.marks,earlier.full_marks)};
+  }
+  return {previousPercent:null};
+}
+
+function parentInsightCopy(studentName, percent, classAvg, previousPercent){
+  const name = parentMessageName(studentName);
+  if(previousPercent!=null){
+    const change = Math.round((percent-previousPercent)*10)/10;
+    if(change>=5){
+      if(percent<40){
+        return {
+          insight:`${name} improved by ${change} percentage points and is moving in the right direction.`,
+          action:'Revisit the lesson notes and practise 5 basic questions. Contact the centre if support is needed.'
+        };
+      }
+      if(percent<60){
+        return {
+          insight:`${name} improved by ${change} percentage points from the previous test.`,
+          action:'Build on this progress by revising the key concepts and completing 5 practice questions.'
+        };
+      }
+      return {
+        insight:`${name} improved by ${change} percentage points from the previous test.`,
+        action:'Keep the momentum: review missed questions and practise 5 similar ones.'
+      };
+    }
+  }
+  const classGap = classAvg==null ? null : Math.round((percent-classAvg)*10)/10;
+  if(percent>=80){
+    return {
+      insight:`Strong understanding${classGap>0?`; ${classGap} points above the class average`:''}.`,
+      action:'Review any missed question and explain one key idea at home.'
+    };
+  }
+  if(percent>=60){
+    return {
+      insight:'A solid result with a good grasp of the chapter.',
+      action:'Review missed questions once and practise 3 similar questions.'
+    };
+  }
+  if(percent>=40){
+    return {
+      insight:'The basics are developing, with clear room to improve.',
+      action:'Revise the key concepts and complete 5 practice questions this week.'
+    };
+  }
+  return {
+    insight:'This chapter needs more practice. Focused revision can build confidence.',
+    action:'Revisit the lesson notes and practise 5 basic questions. Contact the centre if support is needed.'
+  };
+}
+
+function parentWhatsAppMessage(test, studentName, result, classAvg, context={}){
   const isNA = !!result.na;
   const isAbsent = !isNA && !result.present;
+  const name = studentName||'Student';
   const score = isAbsent
     ? 'Absent 🔴'
     : isNA
       ? 'N.A.'
       : `${result.marks}/${test.full_marks} (${pct(result.marks,test.full_marks)}%)`;
   const lines = [
-    '*Aveti CET (Test) Report*',
+    '*Aveti CET Learning Update*',
     '',
-    `• Student: ${studentName||'Student'}`,
+    `• Student: ${name}`,
     `• Subject: ${test.subject}`,
     `• ${parentMessageChapter(test)}`,
     `• Score: ${score}`
   ];
-  if(!isNA && !isAbsent){
+  if(isAbsent){
+    lines.push(`• Insight: No score was recorded because ${parentMessageName(name)} was absent.`);
+    lines.push('• Next step: Complete the chapter catch-up and contact the centre to arrange the next assessment.');
+  }else if(isNA){
+    lines.push('• Insight: This test was marked not applicable.');
+    lines.push('• Next step: No action is needed unless this seems incorrect.');
+  }else{
     const p = pct(result.marks,test.full_marks);
-    lines.push(`• Class Average: ${classAvg}%`);
-    lines.push(`• Performance: ${perfBand(p).label}`);
+    const copy = parentInsightCopy(name,p,classAvg,context.previousPercent);
+    if(classAvg!=null) lines.push(`• Class Average: ${classAvg}%`);
+    lines.push(`• Insight: ${copy.insight}`);
+    lines.push(`• Next step: ${copy.action}`);
   }
   lines.push('',CONFIG.CENTRE.name);
   return lines.join('\n');
@@ -317,6 +397,7 @@ async function renderParents(tests){
   }
   CURRENT_TEST = test.id;
   const rs = await cachedResults(test.id);
+  const allResults = await DB.allResults();
   const avg = await classAverage(test);
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
@@ -327,16 +408,19 @@ async function renderParents(tests){
     const isNA = !!r.na;
     const isAbsent = !isNA && !r.present;
     const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;
-    const message = parentWhatsAppMessage(test,s.name,r,avg);
+    const context = parentNotificationContext(test,r.student_id,tests,allResults);
+    const message = parentWhatsAppMessage(test,s.name,r,avg,context);
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
     const sent = parentCardWasSent(test.id,r.student_id);
-    if(phone && !sent) PARENT_BULK_ITEMS.push({phone,message:msg,studentId:r.student_id});
+    if(phone && !sent && !isNA) PARENT_BULK_ITEMS.push({phone,message:msg,studentId:r.student_id});
     rows += `<div class="listrow">
       ${avatar(s.gender,s.name)}
       <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${p==null?(isNA?'N.A. · Did not appear':'Absent · Did not appear'):`${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`}</div></div>
-      ${phone
-        ? `<a class="link small" style="margin-right:6px">${phone}</a><button class="primary" style="padding:7px 12px" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button>
+      ${isNA
+        ? '<span class="pill">No notification needed</span>'
+        : phone
+        ? `<a class="link small" style="margin-right:6px">${phone}</a><button style="padding:7px 12px" data-message="${msg}" onclick="previewParentMessage(this.dataset.message)">Preview</button><button class="primary" style="padding:7px 12px" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button>
            <label class="small muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer"><input type="checkbox" style="width:auto" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${r.student_id}',this.checked)"> Sent</label>`
         : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
     </div>`;
@@ -356,7 +440,7 @@ async function renderParents(tests){
           <button class="primary" onclick="sendAllParentCards()" ${PARENT_BULK_ITEMS.length?'':'disabled'}>Send all unsent (${PARENT_BULK_ITEMS.length})</button>
         </div>
       </div>
-      <div class="banner" style="margin-bottom:14px">🔒 Each parent receives only their own child's result — never the class list or rank.</div>
+      <div class="banner" style="margin-bottom:14px">Each message highlights progress and one practical next step. N.A. results are not sent.</div>
       <div class="small muted" style="margin-bottom:4px">Recipients</div>
       ${rows||'<div class="muted small" style="padding:8px 0">No student result found for this selection.</div>'}
       <div class="tiny faint" style="margin-top:12px">Tap <b>Send</b> to open that parent's WhatsApp with the message ready. (In demo, links open real WhatsApp web — they won't send by themselves.)</div>
@@ -375,6 +459,10 @@ window.setParentCardSent = async (testId,studentId,checked)=>{
 
 window.setWhatsAppApp = value=>{
   localStorage.setItem(LS_WHATSAPP_APP,value==='business'?'business':'personal');
+};
+
+window.previewParentMessage = message=>{
+  alert(decodeURIComponent(message));
 };
 
 window.openParentWhatsApp = (phone,message)=>{

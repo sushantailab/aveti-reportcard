@@ -81,6 +81,10 @@ async function home(){
         <h3>Class insights</h3>
         <div class="muted small">Subject leaderboard, students below 40% and attendance risks.</div>
       </div>
+      <div class="tile certificates" onclick="certificates()">
+        <h3>Certificates</h3>
+        <div class="muted small">Generate teacher training certificates from CSV and send by WhatsApp.</div>
+      </div>
     </div>
 
     <div class="card">

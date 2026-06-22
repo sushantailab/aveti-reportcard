@@ -49,6 +49,26 @@ const demo = {
     {id:'r29',test_id:'t8',student_id:'s1',marks:16.5,present:true},{id:'r30',test_id:'t8',student_id:'s2',marks:null,present:false},{id:'r31',test_id:'t8',student_id:'s3',marks:17,present:true},{id:'r32',test_id:'t8',student_id:'s4',marks:12,present:true},
     {id:'r33',test_id:'t9',student_id:'s1',marks:18,present:true},{id:'r34',test_id:'t9',student_id:'s2',marks:15,present:true},{id:'r35',test_id:'t9',student_id:'s3',marks:18.5,present:true},{id:'r36',test_id:'t9',student_id:'s4',marks:13,present:true},
   ],
+  training_events: [
+    {
+      id:'ev1',
+      title:'NEP 2020 and Competency-Based Teaching Practices',
+      subtitle:'One-Hour Professional Development Webinar',
+      event_date:'2026-06-22',
+      duration_hours:1,
+      organizer_name:'AVETI LEARNING',
+      focus_points:'Understanding the vision of NEP 2020\nIntroduction to Competency-Based Education\nClassroom implementation strategies\nEffective lesson planning and assessment practices\nDigital tools and teaching resources for improved learning outcomes',
+      certificate_prefix:'AVT-PD-2026',
+      signatory_1_name:'Sushant Kumar Mahapatra',
+      signatory_1_title:'Co-Founder & Chief Academic Officer',
+      signatory_2_name:'',
+      signatory_2_title:''
+    }
+  ],
+  training_participants: [
+    {id:'tp1',event_id:'ev1',sequence_no:1,certificate_id:'AVT-PD-2026-000001',name:'Priya Sharma',phone:'9876543210',whatsapp:'9876543210',email:'priya@gmail.com',school:'DAV Public School',whatsapp_sent_at:null,verified_at:null},
+    {id:'tp2',event_id:'ev1',sequence_no:2,certificate_id:'AVT-PD-2026-000002',name:'Rakesh Kumar',phone:'9123456789',whatsapp:'9123456789',email:'rakesh@gmail.com',school:'OAV Bhubaneswar',whatsapp_sent_at:null,verified_at:null}
+  ],
 };
 
 const normalizeText = s => (s||'').trim().replace(/\s+/g,' ');
@@ -81,6 +101,16 @@ const memoryDB = {
   async allResults(){ return demo.results; },
   async saveResults(testId,rows){ demo.results=demo.results.filter(r=>r.test_id!==testId); rows.forEach(r=>demo.results.push({id:uid(),test_id:testId,...r})); },
   async addEditLogs(rows){ demo.edit_logs = demo.edit_logs || []; rows.forEach(r=>demo.edit_logs.push({id:uid(),...r})); },
+  async listTrainingEvents(){ return [...demo.training_events].sort((a,b)=>new Date(b.event_date)-new Date(a.event_date)); },
+  async addTrainingEvent(event){ const r={id:uid(),...event}; demo.training_events.push(r); return r; },
+  async updateTrainingEvent(id,patch){ const event=demo.training_events.find(x=>x.id===id); Object.assign(event,patch); return event; },
+  async listTrainingParticipants(eventId){ return demo.training_participants.filter(p=>p.event_id===eventId).sort((a,b)=>a.sequence_no-b.sequence_no); },
+  async saveTrainingParticipants(eventId,rows){
+    demo.training_participants = demo.training_participants.filter(p=>p.event_id!==eventId);
+    rows.forEach((r,i)=>demo.training_participants.push({id:uid(),event_id:eventId,sequence_no:i+1,...r}));
+    return this.listTrainingParticipants(eventId);
+  },
+  async updateTrainingParticipant(id,patch){ const p=demo.training_participants.find(x=>x.id===id); Object.assign(p,patch); return p; },
 };
 
 /* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
@@ -92,6 +122,8 @@ const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_
 const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
+const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
+const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
 const stripSession = obj => {
@@ -157,6 +189,32 @@ const supaDB = {
     if(inserted.error) throw inserted.error;
   },
   async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
+  async listTrainingEvents(){ const {data}=await supa.from('training_events').select(TRAINING_EVENT_COLS).order('event_date',{ascending:false}); return data||[]; },
+  async addTrainingEvent(event){
+    const {data,error}=await supa.from('training_events').insert({...event,centre_id:CENTRE_ID}).select(TRAINING_EVENT_COLS).single();
+    if(error) throw error;
+    return data;
+  },
+  async updateTrainingEvent(id,patch){
+    const {data,error}=await supa.from('training_events').update(patch).eq('id',id).select(TRAINING_EVENT_COLS).single();
+    if(error) throw error;
+    return data;
+  },
+  async listTrainingParticipants(eventId){ const {data}=await supa.from('training_participants').select(TRAINING_PARTICIPANT_COLS).eq('event_id',eventId).order('sequence_no'); return data||[]; },
+  async saveTrainingParticipants(eventId,rows){
+    const deleted = await supa.from('training_participants').delete().eq('event_id',eventId);
+    if(deleted.error) throw deleted.error;
+    if(rows.length){
+      const inserted = await supa.from('training_participants').insert(rows.map((r,i)=>({...r,event_id:eventId,centre_id:CENTRE_ID,sequence_no:i+1})));
+      if(inserted.error) throw inserted.error;
+    }
+    return this.listTrainingParticipants(eventId);
+  },
+  async updateTrainingParticipant(id,patch){
+    const {data,error}=await supa.from('training_participants').update(patch).eq('id',id).select(TRAINING_PARTICIPANT_COLS).single();
+    if(error) throw error;
+    return data;
+  },
 };
 
 const DB = CONFIG.USE_SUPABASE ? supaDB : memoryDB;

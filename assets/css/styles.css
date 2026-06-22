@@ -39,6 +39,7 @@
   .tile.parent{border-left-color:var(--green);background:#f6fbf2}
   .tile.growth{border-left-color:#8b5cf6;background:#faf7ff}
   .tile.insights{border-left-color:#ef9f27;background:#fffaf1}
+  .tile.certificates{border-left-color:#0f766e;background:#f0fdfa}
   .tile:hover{border-color:var(--green);box-shadow:var(--shadow);transform:translateY(-1px)}
   .tile h3{font-size:16px;margin-bottom:4px}
   .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -77,6 +78,25 @@
   .risk-row{display:grid;grid-template-columns:minmax(130px,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
   .risk-row:last-child{border-bottom:none}
   .empty-good{font-size:12px;color:var(--green-d);background:var(--green-soft);border-radius:10px;padding:11px 12px}
+  .cert-id{font-family:'Bricolage Grotesque';font-weight:700;color:#0f766e;min-width:140px}
+  .certificate-paper{background:#fff;border:1px solid #d9e2dc;border-radius:12px;min-height:620px;padding:36px 46px;text-align:center;box-shadow:inset 0 0 0 7px #f4f8f5}
+  .cert-logo{height:38px;margin-bottom:18px}
+  .cert-kicker{font-family:'Bricolage Grotesque';font-size:32px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-d)}
+  .cert-line{font-size:14px;color:var(--muted);margin-top:16px}
+  .cert-name{font-family:'Bricolage Grotesque';font-size:34px;font-weight:700;color:var(--ink);margin-top:4px}
+  .cert-school{font-size:13px;color:var(--faint)}
+  .cert-subtitle{font-size:16px;font-weight:600;margin-top:6px}
+  .cert-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;margin:8px auto 0;max-width:720px;color:#0f4f43}
+  .cert-organizer{font-size:13px;color:var(--muted);margin-top:8px}
+  .cert-focus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:22px 0;text-align:left}
+  .cert-focus span{background:#f8faf7;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;color:var(--muted)}
+  .cert-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+  .cert-meta>div{border:1px solid var(--line);border-radius:10px;padding:9px;font-size:12px;background:#fbfcfa}
+  .cert-qr{font-family:'Bricolage Grotesque';color:#0f766e}
+  .cert-thanks{font-size:13px;color:var(--muted);margin:18px 0}
+  .cert-signatures{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:38px;text-align:center}
+  .sig-line{border-top:1px solid var(--ink);margin-bottom:8px}
+  .cert-signatures span{font-size:11px;color:var(--muted)}
   .bands{display:flex;gap:6px;margin:8px 0 4px}
   .band{flex:1;border-radius:10px;padding:8px 10px}
   .report-highlight{display:inline-block;background:var(--green-soft);color:var(--green-d);border:1px solid #c9dfb6;border-radius:6px;padding:2px 7px;font-weight:600}
@@ -111,6 +131,9 @@
     .insight-row{grid-template-columns:38px minmax(130px,1fr) minmax(90px,.8fr)}
     .insight-row>div:nth-child(4),.insight-row>div:nth-child(5),.insight-row>div:nth-child(6){display:none}
     .insight-risk-grid{grid-template-columns:1fr}
+    .cert-focus,.cert-meta{grid-template-columns:1fr}
+    .cert-signatures{gap:24px}
+    .certificate-paper{padding:26px 20px}
   }
   @media (max-width:560px){
     .insight-metrics{grid-template-columns:1fr 1fr}
