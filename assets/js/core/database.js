@@ -105,6 +105,12 @@ const memoryDB = {
   async addTrainingEvent(event){ const r={id:uid(),...event}; demo.training_events.push(r); return r; },
   async updateTrainingEvent(id,patch){ const event=demo.training_events.find(x=>x.id===id); Object.assign(event,patch); return event; },
   async listTrainingParticipants(eventId){ return demo.training_participants.filter(p=>p.event_id===eventId).sort((a,b)=>a.sequence_no-b.sequence_no); },
+  async verifyTrainingCertificate(certificateId){
+    const participant = demo.training_participants.find(p=>p.certificate_id===certificateId);
+    if(!participant) return null;
+    const event = demo.training_events.find(e=>e.id===participant.event_id);
+    return event ? {...participant,event} : null;
+  },
   async saveTrainingParticipants(eventId,rows){
     demo.training_participants = demo.training_participants.filter(p=>p.event_id!==eventId);
     rows.forEach((r,i)=>demo.training_participants.push({id:uid(),event_id:eventId,sequence_no:i+1,...r}));
@@ -201,6 +207,30 @@ const supaDB = {
     return data;
   },
   async listTrainingParticipants(eventId){ const {data}=await supa.from('training_participants').select(TRAINING_PARTICIPANT_COLS).eq('event_id',eventId).order('sequence_no'); return data||[]; },
+  async verifyTrainingCertificate(certificateId){
+    const {data,error}=await supa.from('public_certificate_verifications')
+      .select('certificate_id,name,school,verified_at,title,subtitle,event_date,duration_hours,organizer_name,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title')
+      .eq('certificate_id',certificateId)
+      .maybeSingle();
+    if(error) throw error;
+    return data ? {
+      certificate_id:data.certificate_id,
+      name:data.name,
+      school:data.school,
+      verified_at:data.verified_at,
+      event:{
+        title:data.title,
+        subtitle:data.subtitle,
+        event_date:data.event_date,
+        duration_hours:data.duration_hours,
+        organizer_name:data.organizer_name,
+        signatory_1_name:data.signatory_1_name,
+        signatory_1_title:data.signatory_1_title,
+        signatory_2_name:data.signatory_2_name,
+        signatory_2_title:data.signatory_2_title
+      }
+    } : null;
+  },
   async saveTrainingParticipants(eventId,rows){
     const deleted = await supa.from('training_participants').delete().eq('event_id',eventId);
     if(deleted.error) throw deleted.error;

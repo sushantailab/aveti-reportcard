@@ -69,6 +69,8 @@ document.getElementById('navSignout').onclick = async ()=>{
 };
 
 async function init(){
+  const verifyId = new URLSearchParams(location.search).get('verify');
+  if(verifyId){ await verifyCertificate(verifyId); return; }
   if(!CONFIG.USE_SUPABASE){ home(); return; }          // demo mode: no login
   renderAuthMode();
   const { data:{ session } } = await supa.auth.getSession();
