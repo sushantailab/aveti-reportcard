@@ -85,6 +85,10 @@ async function home(){
         <h3>Certificates</h3>
         <div class="muted small">Generate teacher training certificates from CSV and send by WhatsApp.</div>
       </div>
+      <div class="tile activation" onclick="teacherActivation()">
+        <h3>Teacher Activation</h3>
+        <div class="muted small">Onboard teachers through the Prepare → Teach loop.</div>
+      </div>
     </div>
 
     <div class="card">

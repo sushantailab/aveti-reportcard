@@ -69,6 +69,21 @@ const demo = {
     {id:'tp1',event_id:'ev1',sequence_no:1,certificate_id:'AVT-PD-2026-000001',name:'Priya Sharma',phone:'9876543210',whatsapp:'9876543210',email:'priya@gmail.com',school:'DAV Public School',whatsapp_sent_at:null,verified_at:null},
     {id:'tp2',event_id:'ev1',sequence_no:2,certificate_id:'AVT-PD-2026-000002',name:'Rakesh Kumar',phone:'9123456789',whatsapp:'9123456789',email:'rakesh@gmail.com',school:'OAV Bhubaneswar',whatsapp_sent_at:null,verified_at:null}
   ],
+  tah_teachers: [
+    {id:'tah1',name:'Priya Sharma',mobile:'9876543210',school_name:'DAV Public School',class_level:'8',subject:'Science',board:'CBSE',language:'en',enrollment_date:'2026-06-23',journey_day:2,prepared:true,taught:false,loop_completed:false,nps_score:null,feedback_sentiment:null,status:'preparing',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'priya01',testimonial_consent:false,testimonial_sent:false,opted_out:false},
+    {id:'tah2',name:'Rakesh Kumar',mobile:'9123456789',school_name:'OAV Bhubaneswar',class_level:'7',subject:'Mathematics',board:'Odisha Board',language:'od',enrollment_date:'2026-06-23',journey_day:8,prepared:true,taught:true,loop_completed:true,nps_score:9,feedback_sentiment:'promoter',status:'activated',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'rakesh01',testimonial_consent:true,testimonial_sent:false,opted_out:false}
+  ],
+  tah_message_templates: [
+    {id:'tmpl1',day_key:'D1',language:'en',category:'activation',app_target:'both',title:'Welcome + loop',body:'Dear {name}, welcome to Aveti! 🎉 Here’s how teachers get the best results: 1) Prepare your Class {class} {subject} lesson in the Teachers App, 2) Teach it live in the Smart Class App. ▶️ 30-sec overview: {video_link}  Start here: {app_link}',video_url:'',active:true},
+    {id:'tmpl2',day_key:'D1',language:'od',category:'activation',app_target:'both',title:'Welcome + loop',body:'ପ୍ରିୟ {name}, Aveti କୁ ସ୍ୱାଗତ! 🎉 ଶିକ୍ଷକମାନେ ସବୁଠୁ ଭଲ ଫଳ ଏମିତି ପାଆନ୍ତି: ୧) Teachers App ରେ ଆପଣଙ୍କ ଶ୍ରେଣୀ {class} {subject} ପାଠ ପ୍ରସ୍ତୁତ କରନ୍ତୁ, ୨) Smart Class App ରେ ତାହା ଶ୍ରେଣୀରେ ପଢ଼ାନ୍ତୁ। ▶️ ୩୦ ସେକେଣ୍ଡର ଝଲକ: {video_link}  ଆରମ୍ଭ କରନ୍ତୁ: {app_link}',video_url:'',active:true},
+    {id:'tmpl3',day_key:'D2',language:'en',category:'activation',app_target:'both',title:'Lesson plan',body:'Dear {name}, today start with one ready lesson plan. Open the Teachers App and prepare your Class {class} {subject} lesson plan. It will help you teach with better flow and less preparation time. ▶️ Guide: {video_link}  Open Teachers App: {app_link} …Prepared it? Now teach it live in the Smart Class App ▶️ {sc_video}',video_url:'',active:true},
+    {id:'tmpl4',day_key:'D2',language:'od',category:'activation',app_target:'both',title:'Lesson plan',body:'ପ୍ରିୟ {name}, ଆଜି ଗୋଟିଏ ready lesson plan ରୁ ଆରମ୍ଭ କରନ୍ତୁ। Teachers App ଖୋଲି ଆପଣଙ୍କ ଶ୍ରେଣୀ {class} {subject} ପାଠର lesson plan ପ୍ରସ୍ତୁତ କରନ୍ତୁ। ଏହା କମ୍ ସମୟରେ ଭଲ ଭାବେ ପଢ଼ାଇବାରେ ସାହାଯ୍ୟ କରିବ। ▶️ Guide: {video_link}  Teachers App: {app_link} …ପ୍ରସ୍ତୁତ କଲେ? ବର୍ତ୍ତମାନ Smart Class App ରେ ଶ୍ରେଣୀରେ ପଢ଼ାନ୍ତୁ ▶️ {sc_video}',video_url:'',active:true},
+    {id:'tmpl5',day_key:'D5',language:'en',category:'teach',app_target:'smartclass',title:'Smart Class nudge',body:'Dear {name}, you’ve prepared your resources — now bring them alive in class! Open the Smart Class App and teach your Class {class} {subject} lesson. ▶️ How (30s): {sc_video}  Open Smart Class: {smartclass_link}',video_url:'',active:true},
+    {id:'tmpl6',day_key:'D5',language:'od',category:'teach',app_target:'smartclass',title:'Smart Class nudge',body:'ପ୍ରିୟ {name}, ଆପଣ ସମ୍ବଳ ପ୍ରସ୍ତୁତ କରିସାରିଛନ୍ତି — ବର୍ତ୍ତମାନ ସେଗୁଡ଼ିକୁ ଶ୍ରେଣୀରେ ଜୀବନ୍ତ କରନ୍ତୁ! Smart Class App ଖୋଲି ଆପଣଙ୍କ ଶ୍ରେଣୀ {class} {subject} ପାଠ ପଢ଼ାନ୍ତୁ। ▶️ କିପରି (୩୦ ସେକେଣ୍ଡ): {sc_video}  Smart Class ଖୋଲନ୍ତୁ: {smartclass_link}',video_url:'',active:true},
+    {id:'tmpl7',day_key:'D8',language:'en',category:'confirm',app_target:'smartclass',title:'Smart Class confirmation',body:'Dear {name}, quick check 👇 Have you taught a class using the Smart Class App this week? Reply *YES* or *NOT YET*. (Teachers who prepare in the Teachers App AND teach in Smart Class see the best results for their students!)',video_url:'',active:true},
+    {id:'tmpl8',day_key:'D8',language:'od',category:'confirm',app_target:'smartclass',title:'Smart Class confirmation',body:'ପ୍ରିୟ {name}, ଗୋଟିଏ ଛୋଟ ପ୍ରଶ୍ନ 👇 ଏ ସପ୍ତାହ ଆପଣ Smart Class App ବ୍ୟବହାର କରି କୌଣସି ଶ୍ରେଣୀ ପଢ଼ାଇଛନ୍ତି କି? *YES* କିମ୍ବା *NOT YET* reply କରନ୍ତୁ। (ଯେଉଁ ଶିକ୍ଷକ Teachers App ରେ ପ୍ରସ୍ତୁତ କରି Smart Class ରେ ପଢ଼ାନ୍ତି, ସେମାନଙ୍କ ଛାତ୍ରମାନେ ସବୁଠୁ ଭଲ ଫଳ ପାଆନ୍ତି!)',video_url:'',active:true}
+  ],
+  tah_message_logs: [],
 };
 
 const normalizeText = s => (s||'').trim().replace(/\s+/g,' ');
@@ -117,6 +132,26 @@ const memoryDB = {
     return this.listTrainingParticipants(eventId);
   },
   async updateTrainingParticipant(id,patch){ const p=demo.training_participants.find(x=>x.id===id); Object.assign(p,patch); return p; },
+  async listTahTeachers(){ return [...demo.tah_teachers].sort((a,b)=>a.name.localeCompare(b.name)); },
+  async saveTahTeachers(rows){
+    rows.forEach(r=>{
+      const existing = demo.tah_teachers.find(t=>cleanPhone(t.mobile)===cleanPhone(r.mobile));
+      if(existing) Object.assign(existing,r);
+      else demo.tah_teachers.push({id:uid(),journey_day:0,prepared:false,taught:false,loop_completed:false,rated:false,referrals_sent:0,referral_conversions:0,referral_code:uid(),testimonial_consent:false,testimonial_sent:false,opted_out:false,...r});
+    });
+    return this.listTahTeachers();
+  },
+  async updateTahTeacher(id,patch){
+    const t=demo.tah_teachers.find(x=>x.id===id);
+    Object.assign(t,patch);
+    if(patch.prepared && !t.prepared_at) t.prepared_at = new Date().toISOString();
+    if(patch.taught && !t.taught_at) t.taught_at = new Date().toISOString();
+    if(patch.loop_completed && !t.loop_completed_at) t.loop_completed_at = new Date().toISOString();
+    t.status = t.loop_completed ? 'activated' : t.taught ? 'teaching' : t.prepared ? 'preparing' : 'not_started';
+    return t;
+  },
+  async listTahTemplates(){ return [...demo.tah_message_templates]; },
+  async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
 };
 
 /* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
@@ -130,6 +165,9 @@ const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
 const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
+const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,created_at,updated_at';
+const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
+const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
 const stripSession = obj => {
@@ -242,6 +280,28 @@ const supaDB = {
   },
   async updateTrainingParticipant(id,patch){
     const {data,error}=await supa.from('training_participants').update(patch).eq('id',id).select(TRAINING_PARTICIPANT_COLS).single();
+    if(error) throw error;
+    return data;
+  },
+  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
+  async saveTahTeachers(rows){
+    if(!rows.length) return this.listTahTeachers();
+    const {error}=await supa.from('tah_teachers').upsert(rows.map(r=>({...r,centre_id:CENTRE_ID})),{onConflict:'mobile'});
+    if(error) throw error;
+    return this.listTahTeachers();
+  },
+  async updateTahTeacher(id,patch){
+    const payload = {...patch};
+    if(patch.prepared) payload.prepared_at = new Date().toISOString();
+    if(patch.taught) payload.taught_at = new Date().toISOString();
+    if(patch.loop_completed) payload.loop_completed_at = new Date().toISOString();
+    const {data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS).single();
+    if(error) throw error;
+    return data;
+  },
+  async listTahTemplates(){ const {data,error}=await supa.from('tah_message_templates').select(TAH_TEMPLATE_COLS).eq('active',true).order('day_key'); if(error) throw error; return data||[]; },
+  async addTahMessageLog(log){
+    const {data,error}=await supa.from('tah_message_logs').insert(log).select(TAH_LOG_COLS).single();
     if(error) throw error;
     return data;
   },
