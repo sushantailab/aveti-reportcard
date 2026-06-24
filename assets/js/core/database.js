@@ -383,7 +383,13 @@ function downloadBlob(filename,type,content){
   a.href = url; a.download = filename; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+function csvDelimiter(text){
+  const firstLine = String(text||'').split(/\r?\n/).find(line=>normalizeText(line)) || '';
+  const counts = [',','\t',';'].map(delimiter=>({delimiter,count:(firstLine.match(new RegExp(delimiter==='\t'?'\\t':delimiter,'g'))||[]).length}));
+  return counts.sort((a,b)=>b.count-a.count)[0]?.delimiter || ',';
+}
 function parseCSV(text){
+  const delimiter = csvDelimiter(text);
   const rows=[]; let row=[], cell='', q=false;
   for(let i=0;i<text.length;i++){
     const ch=text[i], next=text[i+1];
@@ -392,7 +398,7 @@ function parseCSV(text){
       else if(ch==='"') q=false;
       else cell+=ch;
     }else if(ch==='"') q=true;
-    else if(ch===','){ row.push(cell); cell=''; }
+    else if(ch===delimiter){ row.push(cell); cell=''; }
     else if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
     else if(ch==='\r'){}
     else cell+=ch;
