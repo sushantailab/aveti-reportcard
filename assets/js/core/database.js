@@ -155,6 +155,11 @@ const memoryDB = {
     demo.tah_message_logs = demo.tah_message_logs.filter(l=>l.teacher_id!==id);
   },
   async listTahTemplates(){ return [...demo.tah_message_templates]; },
+  async updateTahTemplate(id,patch){
+    const t=demo.tah_message_templates.find(x=>x.id===id);
+    Object.assign(t,patch,{updated_at:new Date().toISOString()});
+    return t;
+  },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
 };
 
@@ -170,7 +175,8 @@ const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_m
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
 const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
 const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,created_at,updated_at';
-const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
+const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
+const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
@@ -307,7 +313,32 @@ const supaDB = {
     const {error}=await supa.from('tah_teachers').delete().eq('id',id);
     if(error) throw error;
   },
-  async listTahTemplates(){ const {data,error}=await supa.from('tah_message_templates').select(TAH_TEMPLATE_COLS).eq('active',true).order('day_key'); if(error) throw error; return data||[]; },
+  async listTahTemplates(){
+    const res = await supa.from('tah_message_templates').select(TAH_TEMPLATE_COLS).eq('active',true).order('day_key');
+    if(res.error && String(res.error.message||'').toLowerCase().includes('image_url')){
+      const fallback = await supa.from('tah_message_templates').select(TAH_TEMPLATE_COLS_LEGACY).eq('active',true).order('day_key');
+      if(fallback.error) throw fallback.error;
+      return (fallback.data||[]).map(t=>({...t,image_url:''}));
+    }
+    if(res.error) throw res.error;
+    return res.data||[];
+  },
+  async updateTahTemplate(id,patch){
+    const payload = {...patch,updated_at:new Date().toISOString()};
+    const {data,error}=await supa.from('tah_message_templates').update(payload).eq('id',id).select(TAH_TEMPLATE_COLS).single();
+    if(error && String(error.message||'').toLowerCase().includes('image_url')){
+      if(!patch.image_url){
+        const legacyPayload = {...payload};
+        delete legacyPayload.image_url;
+        const legacy = await supa.from('tah_message_templates').update(legacyPayload).eq('id',id).select(TAH_TEMPLATE_COLS_LEGACY).single();
+        if(legacy.error) throw legacy.error;
+        return {...legacy.data,image_url:''};
+      }
+      throw new Error('Run supabase/migrations/20260624_tah_template_image_url.sql first, then save the template again.');
+    }
+    if(error) throw error;
+    return data;
+  },
   async addTahMessageLog(log){
     const {data,error}=await supa.from('tah_message_logs').insert(log).select(TAH_LOG_COLS).single();
     if(error) throw error;
