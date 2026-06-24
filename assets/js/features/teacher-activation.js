@@ -1,5 +1,5 @@
 /* ---------- TEACHER ACTIVATION HUB ---------- */
-let TAH = { teachers:[], templates:[], selectedDay:'D1', filter:'All' };
+let TAH = { teachers:[], templates:[], selectedDay:'D1', filter:'All', showAdd:false };
 
 const TAH_DAYS = ['D1','D2','D3','D4','D5','D6','D7','D8'];
 const TAH_GROWTH = ['rating','referral','testimonial','detractor','reactivation'];
@@ -66,9 +66,26 @@ function tahCSVPanel(){
       <div class="row between" style="gap:10px;flex-wrap:wrap">
         <div><h2 style="font-size:18px">Upload teachers</h2><div class="muted small">Required columns: Teacher Name, Mobile Number, School Name, Class, Subject, Board, Enrollment Date.</div></div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button onclick="toggleTahAddTeacher()">${TAH.showAdd?'Hide form':'+ Add teacher'}</button>
           <button onclick="downloadTahCSVTemplate()">Download sample CSV</button>
           <button class="primary" onclick="document.getElementById('tahCsvInput').click()">Upload CSV</button>
           <input id="tahCsvInput" type="file" accept=".csv,text/csv" style="display:none" onchange="importTahCSV(this.files[0]);this.value=''">
+        </div>
+      </div>
+      <div class="tah-add-form" style="display:${TAH.showAdd?'block':'none'}">
+        <div class="cert-form-grid">
+          <div class="field"><label>Teacher name</label><input id="tahAddName" placeholder="Priya Sharma"></div>
+          <div class="field"><label>Mobile number</label><input id="tahAddMobile" placeholder="9876543210"></div>
+          <div class="field"><label>Board</label><select id="tahAddBoard"><option>CBSE</option><option>Odisha Board</option></select></div>
+        </div>
+        <div class="cert-form-grid cert-form-grid-3">
+          <div class="field"><label>School name</label><input id="tahAddSchool" placeholder="DAV Public School"></div>
+          <div class="field"><label>Class</label><input id="tahAddClass" placeholder="8"></div>
+          <div class="field"><label>Subject</label><input id="tahAddSubject" placeholder="Science"></div>
+        </div>
+        <div class="row" style="justify-content:flex-end;margin-top:10px">
+          <button onclick="toggleTahAddTeacher()">Cancel</button>
+          <button class="primary" onclick="addTahTeacherManual()">Save teacher</button>
         </div>
       </div>
     </div>`;
@@ -105,6 +122,7 @@ function tahTeachersTable(){
         <button onclick="markTahPrepared('${t.id}')">Prepared</button>
         <button onclick="markTahReply('${t.id}','YES')">YES</button>
         <button onclick="markTahReply('${t.id}','NOT YET')">NOT YET</button>
+        <button style="color:var(--red)" onclick="deleteTahTeacher('${t.id}')">Delete</button>
       </div>
     </div>`).join('') : '<div class="muted small">No teachers found for this filter.</div>';
   return `
@@ -176,6 +194,28 @@ async function tahRefresh(){
 
 window.setTahDay = day=>{ TAH.selectedDay=day; renderTeacherActivation(); };
 window.setTahFilter = filter=>{ TAH.filter=filter; renderTeacherActivation(); };
+window.toggleTahAddTeacher = ()=>{ TAH.showAdd = !TAH.showAdd; renderTeacherActivation(); };
+
+window.addTahTeacherManual = async ()=>{
+  const name = normalizeText(val('tahAddName'));
+  const mobile = cleanPhone(val('tahAddMobile'));
+  const board = normalizeText(val('tahAddBoard')) || 'CBSE';
+  if(!name){ alert('Enter teacher name.'); return; }
+  if(!normalizeIndianPhone(mobile)){ alert('Enter a valid Indian 10-digit mobile number.'); return; }
+  if(TAH.teachers.some(t=>cleanPhone(t.mobile)===mobile)){ alert('This mobile number already exists.'); return; }
+  await DB.saveTahTeachers([{
+    name,
+    mobile,
+    board:['Odisha Board','CBSE'].includes(board) ? board : 'CBSE',
+    language:tahLanguageForBoard(board),
+    school_name:normalizeText(val('tahAddSchool')),
+    class_level:normalizeText(val('tahAddClass')),
+    subject:normalizeText(val('tahAddSubject')),
+    enrollment_date:new Date().toISOString().slice(0,10)
+  }]);
+  TAH.showAdd = false;
+  await tahRefresh();
+};
 
 window.downloadTahCSVTemplate = ()=>{
   const rows = [
@@ -256,6 +296,14 @@ window.markTahReply = async (id, reply)=>{
   }
   await DB.addTahMessageLog({teacher_id:id,day_key:'D8',language:teacher.language,reply_text:reply,status:'replied',rendered_body:`Manual reply: ${reply}`,sent_by:CURRENT_USER_ID});
   await DB.updateTahTeacher(id,patch);
+  await tahRefresh();
+};
+
+window.deleteTahTeacher = async id=>{
+  const teacher = TAH.teachers.find(t=>t.id===id);
+  if(!teacher) return;
+  if(!confirm(`Delete ${teacher.name} from Teacher Activation Hub? Message logs for this teacher will also be removed.`)) return;
+  await DB.deleteTahTeacher(id);
   await tahRefresh();
 };
 

@@ -150,6 +150,10 @@ const memoryDB = {
     t.status = t.loop_completed ? 'activated' : t.taught ? 'teaching' : t.prepared ? 'preparing' : 'not_started';
     return t;
   },
+  async deleteTahTeacher(id){
+    demo.tah_teachers = demo.tah_teachers.filter(t=>t.id!==id);
+    demo.tah_message_logs = demo.tah_message_logs.filter(l=>l.teacher_id!==id);
+  },
   async listTahTemplates(){ return [...demo.tah_message_templates]; },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
 };
@@ -298,6 +302,10 @@ const supaDB = {
     const {data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS).single();
     if(error) throw error;
     return data;
+  },
+  async deleteTahTeacher(id){
+    const {error}=await supa.from('tah_teachers').delete().eq('id',id);
+    if(error) throw error;
   },
   async listTahTemplates(){ const {data,error}=await supa.from('tah_message_templates').select(TAH_TEMPLATE_COLS).eq('active',true).order('day_key'); if(error) throw error; return data||[]; },
   async addTahMessageLog(log){
