@@ -206,7 +206,7 @@ async function renderTeacher(tests){
       <div class="num" style="color:${i===0?'#04342c':i===1?'#173404':i===2?'#412402':'var(--faint)'}">${counts[b.grade]||0}</div>
     </div>`).join('');
   const list = present.map((r,i)=>`
-    <div class="listrow">
+    <div class="listrow rank-row">
       <div style="width:20px" class="tiny faint">${i+1}</div>
       <div style="flex:1">${r.name}${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
       <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>

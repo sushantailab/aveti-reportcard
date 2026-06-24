@@ -265,6 +265,10 @@
     .teacher-report .bands{margin:5px 0 2px}
     .teacher-report .band{padding:5px 8px;border-radius:6px}
     .teacher-report .listrow{padding:5px 0;gap:8px;break-inside:avoid}
+    .teacher-report .rank-row{display:grid;grid-template-columns:20px minmax(250px,1fr) minmax(260px,.9fr) 64px 48px;align-items:center}
+    .teacher-report .rank-row>div{width:auto!important;min-width:0}
+    .teacher-report .rank-row>div:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .teacher-report .rank-row .num{font-size:13px;text-align:right!important}
     .teacher-report .bar{height:6px}
     .teacher-report .pill{padding:2px 7px;font-size:9px}
     .teacher-report .report-section-label{margin-top:8px!important}
