@@ -361,6 +361,18 @@ window.downloadTahCSVTemplate = ()=>{
   downloadBlob('aveti-teacher-activation-template.csv','text/csv;charset=utf-8',rows.map(csvLine).join('\n'));
 };
 
+const tahCsvValue = (row, keys) => keys.map(k=>row[k]).find(v=>normalizeText(v));
+function tahCsvDate(value){
+  const text = normalizeText(value);
+  if(!text) return new Date().toISOString().slice(0,10);
+  const slash = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if(slash){
+    const year = slash[3].length===2 ? `20${slash[3]}` : slash[3];
+    return `${year}-${slash[2].padStart(2,'0')}-${slash[1].padStart(2,'0')}`;
+  }
+  return text;
+}
+
 window.importTahCSV = async file=>{
   if(!file) return;
   try{
@@ -369,9 +381,9 @@ window.importTahCSV = async file=>{
     const seen = new Set(TAH.teachers.map(t=>cleanPhone(t.mobile)));
     const teachers = rows.map((r,i)=>{
       const rowNo = i+2;
-      const name = normalizeText(r['Teacher Name'] || r.teacher_name || r.name);
-      const mobile = cleanPhone(r['Mobile Number'] || r.mobile || r.phone);
-      const board = normalizeText(r.Board || r.board || 'CBSE');
+      const name = normalizeText(tahCsvValue(r,['teacher_name','teacher','name','eacher_name']));
+      const mobile = cleanPhone(tahCsvValue(r,['mobile_number','mobile','phone','whatsapp','contact_number','contact']));
+      const board = normalizeText(tahCsvValue(r,['board']) || 'CBSE');
       if(!name || !mobile){ warnings.push(`Row ${rowNo}: missing teacher name or mobile.`); return null; }
       if(seen.has(mobile)){ warnings.push(`Row ${rowNo}: duplicate mobile (${mobile}).`); return null; }
       if(!['Odisha Board','CBSE'].includes(board)) warnings.push(`Row ${rowNo}: unknown board, using CBSE/English.`);
@@ -379,12 +391,12 @@ window.importTahCSV = async file=>{
       return {
         name,
         mobile,
-        school_name:normalizeText(r['School Name'] || r.school_name || r.school),
-        class_level:normalizeText(r.Class || r.class || r.class_level),
-        subject:normalizeText(r.Subject || r.subject),
+        school_name:normalizeText(tahCsvValue(r,['school_name','school'])),
+        class_level:normalizeText(tahCsvValue(r,['class','class_level','grade'])),
+        subject:normalizeText(tahCsvValue(r,['subject','subjects'])),
         board:['Odisha Board','CBSE'].includes(board) ? board : 'CBSE',
         language:tahLanguageForBoard(board),
-        enrollment_date:r['Enrollment Date'] || r.enrollment_date || new Date().toISOString().slice(0,10)
+        enrollment_date:tahCsvDate(tahCsvValue(r,['enrollment_date','enrolment_date','date']))
       };
     }).filter(Boolean);
     if(!teachers.length){ alert(`No teachers imported.\n${warnings.join('\n')}`); return; }
