@@ -207,11 +207,11 @@ async function renderTeacher(tests){
     </div>`).join('');
   const list = present.map((r,i)=>`
     <div class="listrow rank-row">
-      <div style="width:20px" class="tiny faint">${i+1}</div>
-      <div style="flex:1">${r.name}${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
+      <div class="rank-no" style="width:20px">${i+1}</div>
+      <div class="rank-student" style="flex:1">${r.name}<span class="print-score"> · ${r.marks}/${test.full_marks} · ${r.p}%</span>${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
       <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>
-      <div class="num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
-      <div class="muted small" style="width:42px;text-align:right">${r.p}%</div>
+      <div class="rank-marks num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
+      <div class="rank-percent muted small" style="width:42px;text-align:right">${r.p}%</div>
     </div>`).join('');
   show(`
     ${teacherFilterBar(tests)}
