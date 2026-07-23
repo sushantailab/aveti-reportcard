@@ -45,7 +45,8 @@
   .chapter-picker.open .chapter-picker-menu{display:block}
   .chapter-check{display:flex;gap:9px;align-items:flex-start;padding:9px 8px;border-radius:7px;cursor:pointer}
   .chapter-check:hover{background:#f4f8f2}
-  .chapter-check input{margin-top:3px;accent-color:#5f9d42}
+  .chapter-check input{flex:0 0 auto;margin:3px 0 0;accent-color:#5f9d42}
+  .chapter-check span{flex:1;min-width:0}
   .tile.insights{border-left-color:#ef9f27;background:#fffaf1}
   .tile.certificates{border-left-color:#0f766e;background:#f0fdfa}
   .tile.activation{border-left-color:#d97706;background:#fff7ed}

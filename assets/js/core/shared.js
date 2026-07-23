@@ -55,15 +55,15 @@ async function warnStudentDuplicates(student, ignoreId){
   }
   return true;
 }
-const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
+const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ((t.chapter_no||'')+'.');
 function chapterDetail(t){
   if(Array.isArray(t.chapter_names) && t.chapter_names.length) return t.chapter_names.join(', ');
   const name = (t.chapter_name||'').trim();
   const no = String(t.chapter_no||'').trim();
-  if(!name) return 'Chapter '+no;
+  if(!name) return no ? no+'.' : '—';
   const compact = name.toLowerCase().replace(/[\s-]/g,'');
-  if(no && (compact===('ch'+no) || compact===('chapter'+no))) return 'Chapter '+no;
-  return `Chapter ${no} — ${name}`;
+  if(no && (compact===('ch'+no) || compact===('chapter'+no))) return no+'.';
+  return `${no}. ${name}`;
 }
 const chapterOptionLabel = c => chapterDetail({chapter_no:c.chapter_no, chapter_name:c.title});
 const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(testDate(t))}`;
