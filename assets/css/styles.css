@@ -38,6 +38,14 @@
   .tile.teacher{border-left-color:#378ADD;background:#f5f9ff}
   .tile.parent{border-left-color:var(--green);background:#f6fbf2}
   .tile.growth{border-left-color:#8b5cf6;background:#faf7ff}
+  .chapter-picker{position:relative}
+  .chapter-picker-button{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;background:#fff;border:1px solid #dfe5df;border-radius:11px;padding:12px 14px;font:inherit;color:var(--ink);min-height:46px}
+  .chapter-picker.open .chapter-picker-button{border-color:#75a95b}
+  .chapter-picker-menu{display:none;position:absolute;z-index:20;left:0;right:0;top:calc(100% + 5px);max-height:230px;overflow:auto;background:#fff;border:1px solid #dfe5df;border-radius:11px;box-shadow:0 8px 24px rgba(30,50,35,.14);padding:6px}
+  .chapter-picker.open .chapter-picker-menu{display:block}
+  .chapter-check{display:flex;gap:9px;align-items:flex-start;padding:9px 8px;border-radius:7px;cursor:pointer}
+  .chapter-check:hover{background:#f4f8f2}
+  .chapter-check input{margin-top:3px;accent-color:#5f9d42}
   .tile.insights{border-left-color:#ef9f27;background:#fffaf1}
   .tile.certificates{border-left-color:#0f766e;background:#f0fdfa}
   .tile.activation{border-left-color:#d97706;background:#fff7ed}

@@ -26,7 +26,7 @@ async function enterMarks(testId){
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
         <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptions(selectedSubject)}</select></div>
-        <div class="field" style="flex:2"><label>Chapter(s) <span class="tiny muted">(up to 3)</span></label><select id="emChap" multiple size="3" onchange="toggleNewChapter()"></select></div>
+        <div class="field" style="flex:2"><label>Chapter(s) <span class="tiny muted">(up to 3)</span></label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
         <div class="field"><label>Chapter no.</label><input id="newChapNo" type="number" min="1" step="1" placeholder="1"></div>
@@ -117,15 +117,35 @@ window.loadEMChapters = async ()=>{
     .concat('<option value="__new__">+ Add new chapter</option>');
   sel.innerHTML = options.join('');
   EM.selectedChapterIds = Array.from(sel.selectedOptions).map(o=>o.value);
+  renderChapterPicker();
   EM.pendingChapterId = '';
   toggleNewChapter();
   saveDraft();
 };
+window.toggleChapterPicker = ()=>document.getElementById('emChapterPicker')?.classList.toggle('open');
+window.updateChapterPicker = (id,checked)=>{
+  const sel=document.getElementById('emChap');
+  const option=Array.from(sel?.options||[]).find(o=>o.value===id);
+  if(!option) return;
+  const selected=Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value);
+  if(checked && selected.length>=3){ renderChapterPicker(); alert('You can select up to 3 chapters.'); return; }
+  option.selected=checked;
+  EM.selectedChapterIds=Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value);
+  renderChapterPicker(); saveDraft();
+};
+function renderChapterPicker(){
+  const sel=document.getElementById('emChap'), menu=document.getElementById('emChapterMenu'), summary=document.getElementById('emChapterSummary');
+  if(!sel||!menu) return;
+  const selected=Array.from(sel.selectedOptions).filter(o=>o.value);
+  summary.textContent=selected.length ? selected.map(o=>o.textContent).join(', ') : 'Select chapter';
+  menu.innerHTML=Array.from(sel.options).filter(o=>o.value).map(o=>`<label class="chapter-check"><input type="checkbox" ${o.selected?'checked':''} onchange="updateChapterPicker('${o.value}',this.checked)"><span>${o.textContent}</span></label>`).join('');
+}
 window.toggleNewChapter = ()=>{
   const selected = val('emChap');
   EM.selectedChapterIds = Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value);
   const box = document.getElementById('newChapterBox');
   if(box) box.style.display = selected==='__new__' ? 'flex' : 'none';
+  renderChapterPicker();
 };
 window.addEMChapter = async ()=>{
   const cls = parseInt(val('emClass'));
