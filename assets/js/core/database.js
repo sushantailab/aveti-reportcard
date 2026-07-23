@@ -170,6 +170,7 @@ const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,option
 const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
+const TEST_COLS_LEGACY = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
@@ -185,6 +186,9 @@ const stripSession = obj => {
   delete copy.academic_session;
   return copy;
 };
+const missingPeriodicColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
+const stripPeriodicColumns = obj => { const copy={...obj}; delete copy.chapter_ids; delete copy.chapter_names; return copy; };
+const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
 const supaDB = {
   async listStudents(){
     const res = await supa.from('students').select(STUDENT_COLS).order('name');
@@ -223,16 +227,24 @@ const supaDB = {
     if(error) throw error;
     return data;
   },
-  async listTests(){ const {data}=await supa.from('tests').select(TEST_COLS).order('test_date',{ascending:false}); return (data||[]).map(t=>t.chapter?{...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title}:t); },
+  async listTests(){
+    let res=await supa.from('tests').select(TEST_COLS).order('test_date',{ascending:false});
+    if(res.error && missingPeriodicColumns(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).order('test_date',{ascending:false});
+    return (res.data||[]).map(normalizeTest);
+  },
   async addTest(t){
-    const {data,error}=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single();
+    let res=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single();
+    if(res.error && missingPeriodicColumns(res.error)) res=await supa.from('tests').insert({...stripPeriodicColumns(t), centre_id:CENTRE_ID}).select(TEST_COLS_LEGACY).single();
+    const {data,error}=res;
     if(error) throw error;
-    return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data;
+    return normalizeTest(data);
   },
   async updateTest(id,patch){
-    const {data,error}=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single();
+    let res=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single();
+    if(res.error && missingPeriodicColumns(res.error)) res=await supa.from('tests').update(stripPeriodicColumns(patch)).eq('id',id).select(TEST_COLS_LEGACY).single();
+    const {data,error}=res;
     if(error) throw error;
-    return data?.chapter?{...data,chapter_no:data.chapter.chapter_no,chapter_name:data.chapter.title}:data;
+    return normalizeTest(data);
   },
   async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
   async allResults(){ const {data}=await supa.from('results').select(RESULT_COLS); return data||[]; },
