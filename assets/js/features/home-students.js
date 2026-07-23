@@ -5,11 +5,20 @@ const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
 let CURRENT_TEST = null;
 
-function setCrumb(t){ crumb.textContent = t; }
+function setCrumb(t){
+  crumb.textContent = t;
+  const route = ({
+    'Home':'home','Students':'students','Enter test marks':'marks','Teacher report':'teacher',
+    'Parent report':'parent','Growth tracker':'growth','Class insights':'insights',
+    'Certificates':'certificates','Teacher Activation':'activation'
+  })[t];
+  if(route) document.querySelectorAll('[data-route]').forEach(el=>el.classList.toggle('active',el.dataset.route===route));
+}
 function show(html){ app.innerHTML = '<div class="screen active">'+html+'</div>'; }
 
 const demoNote = CONFIG.USE_SUPABASE ? '' :
   '<div class="demoflag">Demo mode — sample data, nothing is saved permanently. Set <b>USE_SUPABASE = true</b> in the file and add your keys to go live.</div>';
+const toolGlyph = symbol => `<span class="tool-glyph" aria-hidden="true">${symbol}</span>`;
 
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
@@ -53,7 +62,7 @@ async function home(){
   }
   show(`
     ${demoNote}
-    <div class="card pad" style="margin-bottom:16px">
+    <div class="centre-hero card pad" style="margin-bottom:16px">
       <div class="row between" style="flex-wrap:wrap;gap:10px">
         <div class="brandbar">
           <img class="brandlogo" style="height:24px" alt="Aveti Learning" src="assets/images/aveti-logo.png">
@@ -63,30 +72,30 @@ async function home(){
       </div>
     </div>
 
-    <div class="eyebrow" style="margin:4px 2px 8px">Open a report</div>
+    <div class="section-heading"><div><div class="eyebrow">Workspace</div><h2>Open a report or tool</h2></div></div>
     <div class="tiles" style="margin-bottom:20px">
       <div class="tile teacher" onclick="openTeacher()">
-        <h3>📋 Teacher report</h3>
+        <div class="tile-icon">${toolGlyph('▤')}</div><h3>Teacher report</h3>
         <div class="muted small">Class marks, ranking, bands and who needs support.</div>
       </div>
       <div class="tile parent" onclick="openParents()">
-        <h3>👪 Parent report</h3>
+        <div class="tile-icon">${toolGlyph('◌')}</div><h3>Parent report</h3>
         <div class="muted small">A card per student — send to parents on WhatsApp.</div>
       </div>
       <div class="tile growth" onclick="growth()">
-        <h3>📈 Growth tracker</h3>
+        <div class="tile-icon">${toolGlyph('⌁')}</div><h3>Growth tracker</h3>
         <div class="muted small">Chapter-to-chapter trend, class vs individual.</div>
       </div>
       <div class="tile insights" onclick="classInsights()">
-        <h3>Class insights</h3>
+        <div class="tile-icon">${toolGlyph('◫')}</div><h3>Class insights</h3>
         <div class="muted small">Subject leaderboard, students below 40% and attendance risks.</div>
       </div>
       <div class="tile certificates" onclick="certificates()">
-        <h3>Certificates</h3>
+        <div class="tile-icon">${toolGlyph('◇')}</div><h3>Certificates</h3>
         <div class="muted small">Generate teacher training certificates from CSV and send by WhatsApp.</div>
       </div>
       <div class="tile activation" onclick="teacherActivation()">
-        <h3>Teacher Activation</h3>
+        <div class="tile-icon">${toolGlyph('↗')}</div><h3>Teacher Activation</h3>
         <div class="muted small">Onboard teachers through the Prepare → Teach loop.</div>
       </div>
     </div>

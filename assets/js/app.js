@@ -6,6 +6,14 @@ document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('sa
 document.getElementById('navHome').onclick=home;
 document.getElementById('navRoster').onclick=roster;
 window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks;
+window.appNavigate = route => ({home,marks:enterMarks,students:roster,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home)();
+window.toggleSidebar = ()=>document.querySelector('.app-shell')?.classList.toggle('sidebar-collapsed');
+window.toggleMoreMenu = ()=>{
+  const menu=document.getElementById('moreMenu');
+  if(!menu) return;
+  const open=menu.classList.toggle('show');
+  menu.setAttribute('aria-hidden',String(!open));
+};
 
 /* =============================================================
    AUTH (Supabase email/password). Demo mode skips login entirely.
@@ -39,7 +47,7 @@ async function ensureCentre(){
 
 async function afterLogin(){
   loginOverlay.classList.remove('show');
-  document.getElementById('navSignout').style.display='';
+  document.querySelectorAll('[data-signout]').forEach(el=>el.style.display='');
   try { const {data:{user}} = await supa.auth.getUser(); CURRENT_USER_ID = user?.id || 'unknown-user'; } catch(e){}
   try { await ensureCentre(); } catch(e){ /* RLS/setup issue surfaces on first action */ }
   home();
@@ -63,10 +71,10 @@ document.getElementById('authSubmit').onclick = async ()=>{
   await afterLogin();
 };
 
-document.getElementById('navSignout').onclick = async ()=>{
+document.querySelectorAll('[data-signout]').forEach(button=>button.onclick = async ()=>{
   if(supa){ await supa.auth.signOut(); }
   location.reload();
-};
+});
 
 async function init(){
   const verifyId = new URLSearchParams(location.search).get('verify');

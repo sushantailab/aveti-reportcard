@@ -7,30 +7,53 @@
 <link rel="icon" href="assets/images/aveti-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase client (used only when USE_SUPABASE = true below) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260624-5">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260724-1">
 </head>
 <body>
 
 <script src="assets/js/config.js"></script>
 
-<div class="topnav">
-  <div class="wrap">
-    <div class="brandbar">
-      <img class="brandlogo" alt="Aveti Learning" src="assets/images/aveti-logo.png">
-      <div class="crumb" id="crumb" style="margin-left:2px">Home</div>
-    </div>
-    <div class="row">
-      <button class="ghost" id="navHome">Home</button>
-      <button class="ghost" id="navRoster">Students</button>
-      <button class="ghost" id="navSignout" style="display:none">Sign out</button>
-    </div>
-  </div>
+<div class="app-shell">
+  <aside class="app-sidebar" id="appSidebar" aria-label="Primary navigation">
+    <div class="sidebar-brand"><img class="brandlogo" alt="Aveti Learning" src="assets/images/aveti-logo.png"><button class="sidebar-collapse" type="button" onclick="toggleSidebar()" aria-label="Collapse navigation">‹</button></div>
+    <div class="sidebar-label">Workspace</div>
+    <nav class="sidebar-nav">
+      <button data-route="home" class="nav-item active" onclick="appNavigate('home')"><span class="nav-icon">⌂</span><span>Home</span></button>
+      <button data-route="marks" class="nav-item" onclick="appNavigate('marks')"><span class="nav-icon">＋</span><span>Enter marks</span></button>
+      <button data-route="students" class="nav-item" onclick="appNavigate('students')"><span class="nav-icon">◎</span><span>Students</span></button>
+    </nav>
+    <div class="sidebar-label">Reports & tools</div>
+    <nav class="sidebar-nav">
+      <button data-route="teacher" class="nav-item" onclick="appNavigate('teacher')"><span class="nav-icon">▤</span><span>Teacher report</span></button>
+      <button data-route="parent" class="nav-item" onclick="appNavigate('parent')"><span class="nav-icon">◌</span><span>Parent report</span></button>
+      <button data-route="growth" class="nav-item" onclick="appNavigate('growth')"><span class="nav-icon">⌁</span><span>Growth tracker</span></button>
+      <button data-route="insights" class="nav-item" onclick="appNavigate('insights')"><span class="nav-icon">◫</span><span>Class insights</span></button>
+      <button data-route="certificates" class="nav-item" onclick="appNavigate('certificates')"><span class="nav-icon">◇</span><span>Certificates</span></button>
+      <button data-route="activation" class="nav-item" onclick="appNavigate('activation')"><span class="nav-icon">↗</span><span>Teacher Activation</span></button>
+    </nav>
+    <button class="sidebar-signout" data-signout type="button" style="display:none">Sign out</button>
+  </aside>
+  <main class="app-main">
+    <header class="topnav">
+      <div class="topnav-inner">
+        <button class="mobile-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open navigation">☰</button>
+        <div><div class="topbar-kicker">Aveti Learning</div><div class="crumb" id="crumb">Home</div></div>
+        <div class="topnav-actions"><button class="ghost top-home" id="navHome">Home</button><button class="ghost top-students" id="navRoster">Students</button><button class="primary top-enter" onclick="enterMarks()">Enter marks</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
+      </div>
+    </header>
+    <div class="app-content" id="app"></div>
+  </main>
 </div>
-
-<div class="wrap" id="app"></div>
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+  <button data-route="home" class="active" onclick="appNavigate('home')"><span>⌂</span>Home</button>
+  <button data-route="marks" onclick="appNavigate('marks')"><span>＋</span>Marks</button>
+  <button data-route="students" onclick="appNavigate('students')"><span>◎</span>Students</button>
+  <button onclick="toggleMoreMenu()"><span>•••</span>More</button>
+</nav>
+<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button onclick="appNavigate('activation');toggleMoreMenu()">Teacher Activation</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
 
 <!-- Save confirmation modal -->
 <div class="overlay" id="saveOverlay">
@@ -67,13 +90,13 @@
 
 <script src="assets/js/core/database.js?v=20260624-3"></script>
 <script src="assets/js/core/shared.js?v=20260611-2"></script>
-<script src="assets/js/features/home-students.js?v=20260623-2"></script>
+<script src="assets/js/features/home-students.js?v=20260724-1"></script>
 <script src="assets/js/features/marks.js"></script>
 <script src="assets/js/features/reports.js?v=20260624-2"></script>
 <script src="assets/js/features/growth.js?v=20260611-2"></script>
 <script src="assets/js/features/insights.js?v=20260611-2"></script>
 <script src="assets/js/features/certificates.js?v=20260623-3"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
-<script src="assets/js/app.js?v=20260623-4"></script>
+<script src="assets/js/app.js?v=20260724-1"></script>
 </body>
 </html>
