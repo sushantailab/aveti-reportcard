@@ -15,7 +15,7 @@ async function enterMarks(testId){
   const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
   const selectedSection = editTest ? (editTest.section||'All') : (useDraft ? draft.section : (defaultEntry.section||'All'));
   const selectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
-  const selectedChapterId = editTest ? (editTest.chapter_id||'') : (useDraft ? draft.chapter_id : '');
+  const selectedChapterIds = editTest ? (editTest.chapter_ids||[editTest.chapter_id].filter(Boolean)) : (useDraft ? (draft.chapter_ids||[draft.chapter_id].filter(Boolean)) : []);
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   show(`
     ${demoNote}
@@ -26,7 +26,7 @@ async function enterMarks(testId){
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
         <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptions(selectedSubject)}</select></div>
-        <div class="field" style="flex:2"><label>Chapter</label><select id="emChap" onchange="toggleNewChapter()"></select></div>
+        <div class="field" style="flex:2"><label>Chapter(s) <span class="tiny muted">(up to 3)</span></label><select id="emChap" multiple size="3" onchange="toggleNewChapter()"></select></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
         <div class="field"><label>Chapter no.</label><input id="newChapNo" type="number" min="1" step="1" placeholder="1"></div>
@@ -34,7 +34,7 @@ async function enterMarks(testId){
         <button onclick="addEMChapter()">Add chapter</button>
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
-        <div class="field"><label>Test type</label><select><option>Chapter End Test</option><option>Class Test</option></select></div>
+        <div class="field"><label>Test type</label><select id="emType"><option value="CET" ${(!editTest||editTest.test_type==='CET')?'selected':''}>Chapter End Test</option><option value="PET1" ${editTest?.test_type==='PET1'?'selected':''}>Periodic Test 1</option></select></div>
         <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
           <div class="seg">${fullMarkButtons(EM.full)}</div>
         </div>
@@ -69,7 +69,7 @@ async function enterMarks(testId){
       </div>
     </div>
   `);
-  EM.selectedChapterId = selectedChapterId;
+  EM.selectedChapterIds = selectedChapterIds;
   if(editTest) await loadEMExisting(editTest);
   else if(useDraft) await loadEMDraft(draft);
   else await loadEMRoster();
@@ -86,7 +86,8 @@ function snapshotDraft(){
     academic_session:val('emSession'),
     section:val('emSec'),
     subject:val('emSub'),
-    chapter_id:val('emChap'),
+    chapter_ids:Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(Boolean),
+    test_type:val('emType')||'CET',
     test_date:document.getElementById('emDate')?.value,
     rows:EM.rows
   };
@@ -110,22 +111,19 @@ window.loadEMChapters = async ()=>{
   const cls = parseInt(val('emClass'));
   const subject = val('emSub');
   EM.chapters = await DB.listChapters(cls,subject);
-  const previous = EM.pendingChapterId || EM.selectedChapterId || (EM.editTest && String(EM.editTest.class_level)===String(cls) && EM.editTest.subject===subject ? EM.editTest.chapter_id : '');
+  const previous = EM.pendingChapterId ? [EM.pendingChapterId] : (EM.selectedChapterIds || (EM.editTest && String(EM.editTest.class_level)===String(cls) && EM.editTest.subject===subject ? (EM.editTest.chapter_ids||[EM.editTest.chapter_id].filter(Boolean)) : []));
   const options = ['<option value="">Select chapter</option>']
-    .concat(EM.chapters.map(c=>`<option value="${c.id}" ${String(c.id)===String(previous)?'selected':''}>${chapterOptionLabel(c)}</option>`))
+    .concat(EM.chapters.map(c=>`<option value="${c.id}" ${previous.map(String).includes(String(c.id))?'selected':''}>${chapterOptionLabel(c)}</option>`))
     .concat('<option value="__new__">+ Add new chapter</option>');
   sel.innerHTML = options.join('');
-  if(previous && EM.chapters.some(c=>String(c.id)===String(previous))){
-    sel.value = previous;
-  }
-  EM.selectedChapterId = sel.value;
+  EM.selectedChapterIds = Array.from(sel.selectedOptions).map(o=>o.value);
   EM.pendingChapterId = '';
   toggleNewChapter();
   saveDraft();
 };
 window.toggleNewChapter = ()=>{
   const selected = val('emChap');
-  EM.selectedChapterId = selected;
+  EM.selectedChapterIds = Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value);
   const box = document.getElementById('newChapterBox');
   if(box) box.style.display = selected==='__new__' ? 'flex' : 'none';
 };
@@ -453,18 +451,21 @@ window.saveTest = async ()=>{
   const blank = eligible.find(r=>r.present && r.marks==null);
   if(blank){ if(!confirm(blank.name+' has no marks. Save anyway? (Cancel to go back and mark absent or N.A.)')) return; }
   const clsNum = parseInt(val('emClass'));
-  const chapterId = val('emChap');
-  if(!chapterId || chapterId==='__new__'){ alert('Select a chapter, or add the new chapter first.'); return; }
-  const chapter = (EM.chapters||[]).find(c=>c.id===chapterId) || (await DB.listChapters(clsNum,val('emSub'))).find(c=>c.id===chapterId);
-  if(!chapter){ alert('Chapter not found. Please select the chapter again.'); return; }
+  const chapterIds = Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(id=>id!=='__new__');
+  if(!chapterIds.length || chapterIds.length>3){ alert('Select between 1 and 3 chapters.'); return; }
+  const chapters = chapterIds.map(id=>(EM.chapters||[]).find(c=>c.id===id)).filter(Boolean);
+  if(chapters.length!==chapterIds.length){ alert('Chapter not found. Please select the chapters again.'); return; }
+  const chapter = chapters[0];
   const secVal = val('emSec');
   const testData = {
     class_level: clsNum, section: secVal==='All'?null:secVal,
     subject: val('emSub'),
     chapter_id: chapter.id,
+    chapter_ids: chapterIds,
     chapter_no: chapter.chapter_no,
     chapter_name: chapter.title,
-    test_type:'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
+    chapter_names: chapters.map(c=>c.title),
+    test_type:val('emType')||'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
   };
   const resultRows = EM.rows.map(r=>({student_id:r.student_id,marks:(r.present&&!r.na)?r.marks:null,present:r.na?false:r.present,na:!!r.na}));
   const oldRows = EM.editId ? await cachedResults(EM.editId) : [];

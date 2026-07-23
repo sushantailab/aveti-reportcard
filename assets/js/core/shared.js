@@ -2,7 +2,7 @@
 const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
-const FULL_MARK_OPTIONS = [20,25,30,35];
+const FULL_MARK_OPTIONS = [20,25,30,35,40];
 const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 const currentSession = () => SESSIONS[0];
 const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||currentSession())?'selected':''}>${s}</option>`).join('');
@@ -57,6 +57,7 @@ async function warnStudentDuplicates(student, ignoreId){
 }
 const chapterLabel = t => (t.chapter_name && t.chapter_name.trim()) ? t.chapter_name : ('Chapter '+(t.chapter_no||''));
 function chapterDetail(t){
+  if(Array.isArray(t.chapter_names) && t.chapter_names.length) return t.chapter_names.join(', ');
   const name = (t.chapter_name||'').trim();
   const no = String(t.chapter_no||'').trim();
   if(!name) return 'Chapter '+no;
