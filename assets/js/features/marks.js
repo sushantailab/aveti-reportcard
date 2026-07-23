@@ -17,6 +17,7 @@ async function enterMarks(testId){
   const selectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
   const selectedChapterIds = editTest ? (editTest.chapter_ids||[editTest.chapter_id].filter(Boolean)) : (useDraft ? (draft.chapter_ids||[draft.chapter_id].filter(Boolean)) : []);
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
+  const selectedTime = editTest?.duration_minutes || (useDraft ? draft.duration_minutes : 60) || 60;
   show(`
     ${demoNote}
     <div class="card pad">
@@ -35,9 +36,8 @@ async function enterMarks(testId){
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
         <div class="field"><label>Test type</label><select id="emType"><option value="CET" ${(!editTest||editTest.test_type==='CET')?'selected':''}>Chapter End Test</option><option value="PET1" ${editTest?.test_type==='PET1'?'selected':''}>Periodic Test 1</option></select></div>
-        <div><label class="tiny muted" style="display:block;margin-bottom:4px">Full marks</label>
-          <div class="seg">${fullMarkButtons(EM.full)}</div>
-        </div>
+        <div class="field"><label>Full marks</label><select id="emFull" onchange="setFull(Number(this.value))">${FULL_MARK_OPTIONS.map(mark=>`<option value="${mark}" ${Number(EM.full)===mark?'selected':''}>${mark}</option>`).join('')}</select></div>
+        <div class="field"><label>Time</label><select id="emTime" onchange="saveDraft()">${[30,40,60,90,120].map(minutes=>`<option value="${minutes}" ${Number(selectedTime)===minutes?'selected':''}>${minutes} min</option>`).join('')}</select></div>
         <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>
       </div>
       <div class="csv-tools" style="margin-bottom:12px">
@@ -88,6 +88,7 @@ function snapshotDraft(){
     subject:val('emSub'),
     chapter_ids:Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(Boolean),
     test_type:val('emType')||'CET',
+    duration_minutes:Number(val('emTime'))||60,
     test_date:document.getElementById('emDate')?.value,
     rows:EM.rows
   };
@@ -457,7 +458,8 @@ function renderEMRoster(){
 }
 window.setFull = f=>{
   EM.full=f;
-  FULL_MARK_OPTIONS.forEach(x=>document.getElementById('f'+x)?.classList.toggle('on',f===x));
+  const fullSelect=document.getElementById('emFull');
+  if(fullSelect) fullSelect.value=String(f);
   document.getElementById('fmLabel').textContent=f;
   EM.rows.forEach(r=>{if(r.marks!=null&&r.marks>f)r.marks=f;});
   renderEMRoster();
@@ -494,7 +496,9 @@ window.saveTest = async ()=>{
     chapter_no: chapter.chapter_no,
     chapter_name: chapter.title,
     chapter_names: chapters.map(c=>c.title),
-    test_type:val('emType')||'CET', full_marks:EM.full, test_date:document.getElementById('emDate').value
+    test_type:val('emType')||'CET', full_marks:EM.full,
+    duration_minutes:Number(val('emTime'))||60,
+    test_date:document.getElementById('emDate').value
   };
   const resultRows = EM.rows.map(r=>({student_id:r.student_id,marks:(r.present&&!r.na)?r.marks:null,present:r.na?false:r.present,na:!!r.na}));
   const oldRows = EM.editId ? await cachedResults(EM.editId) : [];
