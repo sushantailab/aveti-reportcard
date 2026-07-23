@@ -47,6 +47,7 @@
   .chapter-check:hover{background:#f4f8f2}
   .chapter-check input{flex:0 0 auto;margin:3px 0 0;accent-color:#5f9d42}
   .chapter-check span{flex:1;min-width:0}
+  .chapter-add{width:100%;margin-top:4px;text-align:left;border:none;background:transparent;color:var(--green-d);padding:9px 8px}
   .tile.insights{border-left-color:#ef9f27;background:#fffaf1}
   .tile.certificates{border-left-color:#0f766e;background:#f0fdfa}
   .tile.activation{border-left-color:#d97706;background:#fff7ed}

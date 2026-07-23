@@ -138,8 +138,17 @@ function renderChapterPicker(){
   if(!sel||!menu) return;
   const selected=Array.from(sel.selectedOptions).filter(o=>o.value);
   summary.textContent=selected.length ? selected.map(o=>o.textContent).join(', ') : 'Select chapter';
-  menu.innerHTML=Array.from(sel.options).filter(o=>o.value).map(o=>`<label class="chapter-check"><input type="checkbox" ${o.selected?'checked':''} onchange="updateChapterPicker('${o.value}',this.checked)"><span>${o.textContent}</span></label>`).join('');
+  const chapters=Array.from(sel.options).filter(o=>o.value && o.value!=='__new__');
+  menu.innerHTML=chapters.map(o=>`<label class="chapter-check"><input type="checkbox" ${o.selected?'checked':''} onchange="updateChapterPicker('${o.value}',this.checked)"><span>${o.textContent}</span></label>`).join('') + '<button type="button" class="chapter-add" onclick="selectNewChapter()">+ Add new chapter</button>';
 }
+window.selectNewChapter = ()=>{
+  const sel=document.getElementById('emChap');
+  if(!sel) return;
+  Array.from(sel.options).forEach(o=>o.selected=o.value==='__new__');
+  EM.selectedChapterIds=[];
+  document.getElementById('emChapterPicker')?.classList.remove('open');
+  toggleNewChapter();
+};
 window.toggleNewChapter = ()=>{
   const selected = val('emChap');
   EM.selectedChapterIds = Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value);
