@@ -43,10 +43,10 @@
   .chapter-picker.open .chapter-picker-button{border-color:#75a95b}
   .chapter-picker-menu{display:none;position:absolute;z-index:20;left:0;right:0;top:calc(100% + 5px);max-height:230px;overflow:auto;background:#fff;border:1px solid #dfe5df;border-radius:11px;box-shadow:0 8px 24px rgba(30,50,35,.14);padding:6px}
   .chapter-picker.open .chapter-picker-menu{display:block}
-  .chapter-check{display:flex;gap:9px;align-items:flex-start;padding:9px 8px;border-radius:7px;cursor:pointer}
-  .chapter-check:hover{background:#f4f8f2}
-  .chapter-check input{flex:0 0 auto;margin:3px 0 0;accent-color:#5f9d42}
-  .chapter-check span{flex:1;min-width:0}
+  .chapter-picker .chapter-check{display:flex;gap:9px;align-items:flex-start;padding:9px 8px;border-radius:7px;cursor:pointer;font-size:inherit;color:var(--ink);margin:0}
+  .chapter-picker .chapter-check:hover{background:#f4f8f2}
+  .chapter-picker .chapter-check input{flex:0 0 auto;margin:3px 0 0;accent-color:#5f9d42}
+  .chapter-picker .chapter-check span{display:block;flex:1;min-width:0}
   .chapter-add{width:100%;margin-top:4px;text-align:left;border:none;background:transparent;color:var(--green-d);padding:9px 8px}
   .tile.insights{border-left-color:#ef9f27;background:#fffaf1}
   .tile.certificates{border-left-color:#0f766e;background:#f0fdfa}
