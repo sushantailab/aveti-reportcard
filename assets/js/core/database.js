@@ -117,7 +117,7 @@ function attachChapter(t){
 }
 
 const memoryDB = {
-  async listStudents(){ return [...demo.students].sort((a,b)=>a.name.localeCompare(b.name)); },
+  async listStudents(){ return demo.students.filter(s=>!s.archived_at).sort((a,b)=>a.name.localeCompare(b.name)); },
   async addStudent(s){ const r={id:uid(),...s}; demo.students.push(r); return r; },
   async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
   async archiveStudent(id){ const s=demo.students.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
@@ -225,9 +225,9 @@ const stripExtendedTestColumns = obj => { const copy={...obj}; delete copy.chapt
 const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
 const supaDB = {
   async listStudents(){
-    const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).order('name');
+    const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
     if(res.error && missingAcademicSession(res.error)){
-      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('name');
+      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
       return withDefaultSession(legacy.data);
     }
     return withDefaultSession(res.data);
