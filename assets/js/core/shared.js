@@ -14,7 +14,7 @@ const subjectsForClass = cls => {
   const n=Number(cls);
   if(n>=1 && n<=5) return ['Mathematics','EVS','Hindi','English'];
   if(n<6 || n>12) return SUBJECTS;
-  const subjects=['Mathematics','Science','Hindi','English','Social Science'];
+  const subjects=['Mathematics','Science','Social Science','English','Hindi'];
   if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);
   return subjects;
 };
