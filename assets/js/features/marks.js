@@ -131,6 +131,10 @@ window.loadEMChapters = async ()=>{
   saveDraft();
 };
 window.toggleChapterPicker = ()=>document.getElementById('emChapterPicker')?.classList.toggle('open');
+document.addEventListener('click',event=>{
+  const picker=document.getElementById('emChapterPicker');
+  if(picker?.classList.contains('open') && !picker.contains(event.target)) picker.classList.remove('open');
+});
 window.updateChapterPicker = (id,checked)=>{
   const sel=document.getElementById('emChap');
   const option=Array.from(sel?.options||[]).find(o=>o.value===id);
