@@ -6,7 +6,11 @@ document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('sa
 document.getElementById('navHome').onclick=home;
 document.getElementById('navRoster').onclick=roster;
 window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks;
-window.appNavigate = route => ({home,marks:enterMarks,students:roster,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home)();
+window.appNavigate = route => {
+  const target = ({home,marks:enterMarks,students:roster,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home);
+  localStorage.setItem('aveti:last-route',route);
+  return target();
+};
 window.toggleSidebar = ()=>document.querySelector('.app-shell')?.classList.toggle('sidebar-collapsed');
 window.toggleMoreMenu = ()=>{
   const menu=document.getElementById('moreMenu');
@@ -65,7 +69,11 @@ async function afterLogin(){
   loginOverlay.classList.remove('show');
   document.querySelectorAll('[data-signout]').forEach(el=>el.style.display='');
   try { const {data:{user}} = await supa.auth.getUser(); CURRENT_USER_ID = user?.id || 'unknown-user'; } catch(e){}
-  try { await loadAccessContext(); home(); }
+  try {
+    await loadAccessContext();
+    const savedRoute=localStorage.getItem('aveti:last-route')||'home';
+    window.appNavigate(savedRoute);
+  }
   catch(e){ loginOverlay.classList.add('show'); authErr(e.message||'Unable to load centre access.'); }
 }
 

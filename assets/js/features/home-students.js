@@ -4,6 +4,7 @@
 const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
 let CURRENT_TEST = null;
+const LS_LAST_ROUTE = 'aveti:last-route';
 
 function setCrumb(t){
   crumb.textContent = t;
@@ -12,6 +13,7 @@ function setCrumb(t){
     'Parent report':'parent','Growth tracker':'growth','Class insights':'insights',
     'Certificates':'certificates','Teacher Activation':'activation','Centre admin':'centre-admin'
   })[t];
+  if(route) localStorage.setItem(LS_LAST_ROUTE,route);
   if(route) document.querySelectorAll('[data-route]').forEach(el=>el.classList.toggle('active',el.dataset.route===route));
 }
 function show(html){ app.innerHTML = '<div class="screen active">'+html+'</div>'; }
