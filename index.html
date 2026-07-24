@@ -24,6 +24,7 @@
       <button data-route="home" class="nav-item active" onclick="appNavigate('home')"><span class="nav-icon">⌂</span><span>Home</span></button>
       <button data-route="marks" class="nav-item" onclick="appNavigate('marks')"><span class="nav-icon">＋</span><span>Enter marks</span></button>
       <button data-route="students" class="nav-item" onclick="appNavigate('students')"><span class="nav-icon">◎</span><span>Students</span></button>
+      <button data-route="centre-admin" data-master-only class="nav-item" onclick="centreAdmin()"><span class="nav-icon">▦</span><span>Centres</span></button>
     </nav>
     <div class="sidebar-label">Reports & tools</div>
     <nav class="sidebar-nav">
@@ -41,7 +42,7 @@
       <div class="topnav-inner">
         <button class="mobile-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open navigation">☰</button>
         <div><div class="topbar-kicker">Aveti Learning</div><div class="crumb" id="crumb">Home</div></div>
-        <div class="topnav-actions"><button class="ghost top-home" id="navHome">Home</button><button class="ghost top-students" id="navRoster">Students</button><button class="primary top-enter" onclick="enterMarks()">Enter marks</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
+        <div class="topnav-actions"><div id="centreSwitcher"></div><button class="ghost top-home" id="navHome">Home</button><button class="ghost top-students" id="navRoster">Students</button><button class="primary top-enter" onclick="enterMarks()">Enter marks</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
       </div>
     </header>
     <div class="app-content" id="app"></div>
@@ -53,7 +54,7 @@
   <button data-route="students" onclick="appNavigate('students')"><span>◎</span>Students</button>
   <button onclick="toggleMoreMenu()"><span>•••</span>More</button>
 </nav>
-<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button onclick="appNavigate('activation');toggleMoreMenu()">Teacher Activation</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
+<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button onclick="appNavigate('activation');toggleMoreMenu()">Teacher Activation</button><button data-master-only onclick="appNavigate('centre-admin');toggleMoreMenu()">Centres</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
 
 <!-- Save confirmation modal -->
 <div class="overlay" id="saveOverlay">
@@ -88,7 +89,7 @@
   </div>
 </div>
 
-<script src="assets/js/core/database.js?v=20260624-3"></script>
+<script src="assets/js/core/database.js?v=20260724-4"></script>
 <script src="assets/js/core/shared.js?v=20260611-2"></script>
 <script src="assets/js/features/home-students.js?v=20260724-1"></script>
 <script src="assets/js/features/marks.js"></script>
@@ -97,6 +98,7 @@
 <script src="assets/js/features/insights.js?v=20260611-2"></script>
 <script src="assets/js/features/certificates.js?v=20260623-3"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
-<script src="assets/js/app.js?v=20260724-1"></script>
+<script src="assets/js/features/centre-admin.js?v=20260724-1"></script>
+<script src="assets/js/app.js?v=20260724-2"></script>
 </body>
 </html>

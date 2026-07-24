@@ -120,6 +120,7 @@ const memoryDB = {
   async listStudents(){ return [...demo.students].sort((a,b)=>a.name.localeCompare(b.name)); },
   async addStudent(s){ const r={id:uid(),...s}; demo.students.push(r); return r; },
   async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
+  async archiveStudent(id){ const s=demo.students.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
   async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
   async listChapters(cls,subject){ return demo.chapters.filter(c=>String(c.class_level)===String(cls) && c.subject===subject).sort((a,b)=>a.chapter_no-b.chapter_no); },
   async addChapter(ch){
@@ -184,11 +185,20 @@ const memoryDB = {
     return t;
   },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
+  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Tuition Centre',address:'',phone:'',status:'active',archived_at:null,role:'master_admin'}]; },
+  async createCentre(payload){ return {id:uid(),...payload,status:'active',archived_at:null}; },
+  async updateCentre(id,patch){ return {id,...patch}; },
+  async deleteCentre(id){ return {id}; },
+  async createCentreAdminLogin(){ return {success:true}; },
+  async listCentreLogins(){ return []; },
+  async setCentreLoginStatus(){ return {success:true}; },
 };
 
 /* Supabase-backed DB (active when USE_SUPABASE = true). Same method names. */
 let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
+let ACCESS_ROLE = 'centre_admin';
+let ACCESS_CENTRES = [];
 const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
@@ -214,9 +224,9 @@ const stripExtendedTestColumns = obj => { const copy={...obj}; delete copy.chapt
 const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
 const supaDB = {
   async listStudents(){
-    const res = await supa.from('students').select(STUDENT_COLS).order('name');
+    const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).order('name');
     if(res.error && missingAcademicSession(res.error)){
-      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).order('name');
+      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('name');
       return withDefaultSession(legacy.data);
     }
     return withDefaultSession(res.data);
@@ -237,8 +247,12 @@ const supaDB = {
     }
     if(res.error) throw res.error;
   },
+  async archiveStudent(id){
+    const {error}=await supa.from('students').update({archived_at:new Date().toISOString()}).eq('id',id);
+    if(error) throw error;
+  },
   async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
-  async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
+  async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('centre_id',CENTRE_ID).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
   async addChapter(ch){
     const title = normalizeText(ch.title);
     const existing = (await this.listChapters(ch.class_level,ch.subject)).find(c=>Number(c.chapter_no)===Number(ch.chapter_no) || normalizeText(c.title).toLowerCase()===title.toLowerCase());
@@ -251,8 +265,8 @@ const supaDB = {
     return data;
   },
   async listTests(){
-    let res=await supa.from('tests').select(TEST_COLS).order('test_date',{ascending:false});
-    if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).order('test_date',{ascending:false});
+    let res=await supa.from('tests').select(TEST_COLS).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
+    if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
     return (res.data||[]).map(normalizeTest);
   },
   async addTest(t){
@@ -270,7 +284,7 @@ const supaDB = {
     return normalizeTest(data);
   },
   async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
-  async allResults(){ const {data}=await supa.from('results').select(RESULT_COLS); return data||[]; },
+  async allResults(){ const testIds=(await this.listTests()).map(t=>t.id); if(!testIds.length) return []; const {data}=await supa.from('results').select(RESULT_COLS).in('test_id',testIds); return data||[]; },
   async saveResults(testId,rows){
     const deleted = await supa.from('results').delete().eq('test_id',testId);
     if(deleted.error) throw deleted.error;
@@ -278,7 +292,7 @@ const supaDB = {
     if(inserted.error) throw inserted.error;
   },
   async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
-  async listTrainingEvents(){ const {data}=await supa.from('training_events').select(TRAINING_EVENT_COLS).order('event_date',{ascending:false}); return data||[]; },
+  async listTrainingEvents(){ const {data}=await supa.from('training_events').select(TRAINING_EVENT_COLS).eq('centre_id',CENTRE_ID).order('event_date',{ascending:false}); return data||[]; },
   async addTrainingEvent(event){
     const {data,error}=await supa.from('training_events').insert({...event,centre_id:CENTRE_ID}).select(TRAINING_EVENT_COLS).single();
     if(error) throw error;
@@ -289,7 +303,7 @@ const supaDB = {
     if(error) throw error;
     return data;
   },
-  async listTrainingParticipants(eventId){ const {data}=await supa.from('training_participants').select(TRAINING_PARTICIPANT_COLS).eq('event_id',eventId).order('sequence_no'); return data||[]; },
+  async listTrainingParticipants(eventId){ const {data}=await supa.from('training_participants').select(TRAINING_PARTICIPANT_COLS).eq('centre_id',CENTRE_ID).eq('event_id',eventId).order('sequence_no'); return data||[]; },
   async verifyTrainingCertificate(certificateId){
     const {data,error}=await supa.from('public_certificate_verifications')
       .select('certificate_id,name,school,verified_at,title,subtitle,event_date,duration_hours,organizer_name,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title')
@@ -328,7 +342,7 @@ const supaDB = {
     if(error) throw error;
     return data;
   },
-  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
+  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
   async saveTahTeachers(rows){
     if(!rows.length) return this.listTahTeachers();
     const {error}=await supa.from('tah_teachers').upsert(rows.map(r=>({...r,centre_id:CENTRE_ID})),{onConflict:'mobile'});
@@ -377,6 +391,56 @@ const supaDB = {
   async addTahMessageLog(log){
     const {data,error}=await supa.from('tah_message_logs').insert(log).select(TAH_LOG_COLS).single();
     if(error) throw error;
+    return data;
+  },
+  async listAccessibleCentres(){
+    const {data:master}=await supa.from('platform_admins').select('user_id').eq('user_id',CURRENT_USER_ID).maybeSingle();
+    if(master){
+      const {data,error}=await supa.from('centres').select('id,name,address,phone,band_config,status,archived_at,owner_user_id').order('created_at');
+      if(error) throw error;
+      ACCESS_ROLE='master_admin';
+      return data||[];
+    }
+    const {data,error}=await supa.from('centre_memberships').select('centre_id,role,active,centres(id,name,address,phone,band_config,status,archived_at,owner_user_id)').eq('user_id',CURRENT_USER_ID).eq('active',true);
+    if(error) throw error;
+    ACCESS_ROLE=data?.[0]?.role||'viewer';
+    return (data||[]).map(row=>({...row.centres,role:row.role})).filter(Boolean);
+  },
+  async createCentre(payload){
+    const {data,error}=await supa.from('centres').insert({...payload,owner_user_id:CURRENT_USER_ID,status:'active'}).select('id,name,address,phone,band_config,status,archived_at,owner_user_id').single();
+    if(error) throw error;
+    return data;
+  },
+  async updateCentre(id,patch){
+    const {data,error}=await supa.from('centres').update(patch).eq('id',id).select('id,name,address,phone,band_config,status,archived_at,owner_user_id').single();
+    if(error) throw error;
+    return data;
+  },
+  async deleteCentre(id){
+    const {error}=await supa.from('centres').delete().eq('id',id);
+    if(error) throw error;
+  },
+  async setCentreMembership(centreId,userId,role='centre_admin',active=true){
+    const {data,error}=await supa.from('centre_memberships').upsert({centre_id:centreId,user_id:userId,role,active}).select().single();
+    if(error) throw error;
+    return data;
+  },
+  async createCentreAdminLogin(centreId,email,password){
+    const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'create_centre_login',centre_id:centreId,email,password}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    return data;
+  },
+  async listCentreLogins(centreId){
+    const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'list_centre_logins',centre_id:centreId}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    return data?.logins||[];
+  },
+  async setCentreLoginStatus(centreId,userId,active){
+    const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'set_centre_login_status',centre_id:centreId,user_id:userId,active}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
     return data;
   },
 };

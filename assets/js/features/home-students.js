@@ -10,7 +10,7 @@ function setCrumb(t){
   const route = ({
     'Home':'home','Students':'students','Enter test marks':'marks','Teacher report':'teacher',
     'Parent report':'parent','Growth tracker':'growth','Class insights':'insights',
-    'Certificates':'certificates','Teacher Activation':'activation'
+    'Certificates':'certificates','Teacher Activation':'activation','Centre admin':'centre-admin'
   })[t];
   if(route) document.querySelectorAll('[data-route]').forEach(el=>el.classList.toggle('active',el.dataset.route===route));
 }
@@ -165,7 +165,7 @@ function studentRow(s){
     <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}</div></div>
     <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
-    <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
+    <button onclick="archiveStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Archive</button>
   </div>`;
 }
 function editRow(s){
@@ -286,7 +286,7 @@ window.saveEdit = async id=>{
   await DB.updateStudent(id,student);
   EDIT_ID=null; roster();
 };
-window.deleteStudent = async (id,name)=>{
-  if(!confirm('Delete '+name+'? This also removes their past marks and cannot be undone.')) return;
-  await DB.deleteStudent(id); resultsCache.clear(); roster();
+window.archiveStudent = async (id,name)=>{
+  if(!confirm('Archive '+name+'? Their record and past marks will be hidden but recoverable by the Master Admin.')) return;
+  await DB.archiveStudent(id); resultsCache.clear(); roster();
 };

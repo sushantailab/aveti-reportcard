@@ -6,7 +6,7 @@ document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('sa
 document.getElementById('navHome').onclick=home;
 document.getElementById('navRoster').onclick=roster;
 window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks;
-window.appNavigate = route => ({home,marks:enterMarks,students:roster,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home)();
+window.appNavigate = route => ({home,marks:enterMarks,students:roster,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home)();
 window.toggleSidebar = ()=>document.querySelector('.app-shell')?.classList.toggle('sidebar-collapsed');
 window.toggleMoreMenu = ()=>{
   const menu=document.getElementById('moreMenu');
@@ -31,26 +31,42 @@ function renderAuthMode(){
 }
 document.getElementById('authToggle').onclick = e=>{ e.preventDefault(); AUTH_MODE = AUTH_MODE==='signin'?'signup':'signin'; renderAuthMode(); };
 
-async function ensureCentre(){
-  let { data } = await supa.from('centres').select('id,name,address,phone,band_config,owner_user_id').limit(1);
-  if (data && data.length){
-    CENTRE_ID = data[0].id;
-    if(Array.isArray(data[0].band_config) && data[0].band_config.length) CONFIG.BANDS = data[0].band_config;
-    return;
+async function loadAccessContext(){
+  const centres = await DB.listAccessibleCentres();
+  if(!centres.length) throw new Error('This login has not been assigned to a tuition centre yet. Ask the Master Admin to create access.');
+  ACCESS_CENTRES = centres;
+  const active = centres.filter(c=>!c.archived_at && c.status!=='archived');
+  if(!active.length) throw new Error('All centres assigned to this login are archived.');
+  const saved = localStorage.getItem('aveti_active_centre');
+  const selected = active.find(c=>c.id===saved) || active[0];
+  CENTRE_ID = selected.id;
+  localStorage.setItem('aveti_active_centre',CENTRE_ID);
+  CONFIG.CENTRE = {...CONFIG.CENTRE,...selected};
+  if(Array.isArray(selected.band_config) && selected.band_config.length) CONFIG.BANDS = selected.band_config;
+  renderAccessChrome();
+}
+
+function renderAccessChrome(){
+  const host=document.getElementById('centreSwitcher');
+  if(host){
+    host.innerHTML=ACCESS_CENTRES.length>1
+      ? `<label class="centre-switcher"><span class="tiny muted">Centre</span><select onchange="switchCentre(this.value)">${ACCESS_CENTRES.filter(c=>!c.archived_at&&c.status!=='archived').map(c=>`<option value="${c.id}" ${c.id===CENTRE_ID?'selected':''}>${c.name}</option>`).join('')}</select></label>`
+      : `<span class="centre-name small">${CONFIG.CENTRE.name}</span>`;
   }
-  const { data:created, error } = await supa.from('centres')
-    .insert({ name:CONFIG.CENTRE.name, address:CONFIG.CENTRE.address, phone:CONFIG.CENTRE.phone, band_config:CONFIG.BANDS })
-    .select('id,name,address,phone,band_config,owner_user_id').single();
-  if (error) throw error;
-  CENTRE_ID = created.id;
+  document.querySelectorAll('[data-master-only]').forEach(el=>{el.style.display=ACCESS_ROLE==='master_admin'?'':'none';});
+}
+window.switchCentre = id=>{
+  if(!ACCESS_CENTRES.some(c=>c.id===id)) return;
+  localStorage.setItem('aveti_active_centre',id);
+  location.reload();
 }
 
 async function afterLogin(){
   loginOverlay.classList.remove('show');
   document.querySelectorAll('[data-signout]').forEach(el=>el.style.display='');
   try { const {data:{user}} = await supa.auth.getUser(); CURRENT_USER_ID = user?.id || 'unknown-user'; } catch(e){}
-  try { await ensureCentre(); } catch(e){ /* RLS/setup issue surfaces on first action */ }
-  home();
+  try { await loadAccessContext(); home(); }
+  catch(e){ loginOverlay.classList.add('show'); authErr(e.message||'Unable to load centre access.'); }
 }
 
 document.getElementById('authSubmit').onclick = async ()=>{
