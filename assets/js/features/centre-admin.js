@@ -3,8 +3,7 @@ async function centreAdmin(){
   if(ACCESS_ROLE!=='master_admin'){ home(); return; }
   setCrumb('Centre admin');
   const centres=await DB.listAccessibleCentres();
-  const loginLists=await Promise.all(centres.map(async c=>[c.id,await DB.listCentreLogins(c.id).catch(()=>[])]));
-  const loginMap=Object.fromEntries(loginLists);
+  const loginMap=await DB.listAllCentreLogins().catch(()=>({}));
   const cards=centres.map(c=>`
     <div class="card pad centre-admin-card">
       <div class="row between" style="gap:10px;align-items:flex-start">

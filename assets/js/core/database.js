@@ -191,6 +191,7 @@ const memoryDB = {
   async deleteCentre(id){ return {id}; },
   async createCentreAdminLogin(){ return {success:true}; },
   async listCentreLogins(){ return []; },
+  async listAllCentreLogins(){ return {}; },
   async setCentreLoginStatus(){ return {success:true}; },
 };
 
@@ -436,6 +437,12 @@ const supaDB = {
     if(error) throw error;
     if(data?.error) throw new Error(data.error);
     return data?.logins||[];
+  },
+  async listAllCentreLogins(){
+    const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'list_all_centre_logins'}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    return data?.logins||{};
   },
   async setCentreLoginStatus(centreId,userId,active){
     const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'set_centre_login_status',centre_id:centreId,user_id:userId,active}});

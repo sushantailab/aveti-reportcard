@@ -20,6 +20,19 @@ Deno.serve(async (request) => {
     if (!master) throw new Error("Only the Master Admin can manage centre logins.");
 
     const body = await request.json();
+    if (body.action === "list_all_centre_logins") {
+      const { data: memberships, error: membershipError } = await admin.from("centre_memberships").select("centre_id,user_id,role,active,created_at").eq("role", "centre_admin");
+      if (membershipError) throw new Error(membershipError.message);
+      const { data: users, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (usersError) throw new Error(usersError.message);
+      const byId = new Map(users.users.map((item) => [item.id, item.email || ""]));
+      const grouped: Record<string, unknown[]> = {};
+      for (const item of memberships || []) {
+        if (!grouped[item.centre_id]) grouped[item.centre_id] = [];
+        grouped[item.centre_id].push({ ...item, email: byId.get(item.user_id) || item.user_id });
+      }
+      return new Response(JSON.stringify({ logins: grouped }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
     const centreId = String(body.centre_id || "");
     if (!centreId) throw new Error("Centre is required.");
     const { data: centre } = await admin.from("centres").select("id").eq("id", centreId).maybeSingle();
