@@ -291,10 +291,10 @@ const supaDB = {
   async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
   async allResults(){ const testIds=(await this.listTests()).map(t=>t.id); if(!testIds.length) return []; const {data}=await supa.from('results').select(RESULT_COLS).in('test_id',testIds); return data||[]; },
   async saveResults(testId,rows){
-    const deleted = await supa.from('results').delete().eq('test_id',testId);
-    if(deleted.error) throw deleted.error;
-    const inserted = await supa.from('results').insert(rows.map(r=>({test_id:testId,...r})));
-    if(inserted.error) throw inserted.error;
+    // Centre Admins are archive-only, so they cannot delete existing result rows.
+    // Upsert safely creates a first mark entry or updates the same student's saved mark.
+    const saved = await supa.from('results').upsert(rows.map(r=>({test_id:testId,...r})),{onConflict:'test_id,student_id'});
+    if(saved.error) throw saved.error;
   },
   async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
   async listTrainingEvents(){ const {data}=await supa.from('training_events').select(TRAINING_EVENT_COLS).eq('centre_id',CENTRE_ID).order('event_date',{ascending:false}); return data||[]; },
