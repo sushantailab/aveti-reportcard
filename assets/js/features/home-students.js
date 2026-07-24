@@ -168,6 +168,7 @@ function studentRow(s){
     <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
     <button onclick="archiveStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Archive</button>
+    <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
   </div>`;
 }
 function editRow(s){
@@ -295,4 +296,13 @@ window.archiveStudent = async (id,name)=>{
     resultsCache.clear();
     roster();
   }catch(e){alert(e.message||'Student could not be archived.');}
+};
+window.deleteStudent = async (id,name)=>{
+  if(!confirm(`Permanently delete ${name}? Their marks and report entries will also be removed.`)) return;
+  if(!confirm('Final confirmation: this cannot be undone.')) return;
+  try{
+    await DB.deleteStudent(id);
+    resultsCache.clear();
+    roster();
+  }catch(e){alert(e.message||'Student could not be deleted.');}
 };

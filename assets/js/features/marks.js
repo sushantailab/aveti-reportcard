@@ -8,8 +8,8 @@ async function enterMarks(testId){
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
   const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
-  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest };
-  if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null};
+  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[] };
+  if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null, removedResultStudentIds:draft.removed_result_student_ids||[]};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
   const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
   const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
@@ -97,7 +97,8 @@ function snapshotDraft(){
     test_type:val('emType')||'CET',
     duration_minutes:Number(val('emTime'))||60,
     test_date:document.getElementById('emDate')?.value,
-    rows:EM.rows
+    rows:EM.rows,
+    removed_result_student_ids:EM.removedResultStudentIds||[]
   };
 }
 function saveDraft(){
@@ -447,7 +448,15 @@ window.toggleGeminiRecording = async ()=>{
     setGeminiState('Microphone permission blocked.');
   }
 };
-window.removeRow = i=>{ EM.rows.splice(i,1); renderEMRoster(); saveDraft(); };
+window.removeRow = i=>{
+  const row=EM.rows[i];
+  if(!row) return;
+  if(EM.editId && row.student_id){
+    if(!confirm(`Delete ${row.name}'s saved mark from this test? This cannot be undone.`)) return;
+    EM.removedResultStudentIds=[...new Set([...(EM.removedResultStudentIds||[]),row.student_id])];
+  }
+  EM.rows.splice(i,1); renderEMRoster(); saveDraft();
+};
 function renderEMRoster(){
   const el = document.getElementById('emRoster');
   if(!EM.rows.length){
@@ -529,7 +538,9 @@ window.saveTest = async ()=>{
     EM.editTest = test;
     EM.saveLabel = '✓ Save changes';
     saveDraft();
+    await DB.deleteResults(test.id,EM.removedResultStudentIds||[]);
     await DB.saveResults(test.id, resultRows);
+    EM.removedResultStudentIds=[];
     if(pendingLogs.length) await DB.addEditLogs(pendingLogs.map(l=>({...l,test_id:test.id})));
     invalidateResults(test.id);
     writeJSON(LS_LAST_ENTRY,{academic_session:val('emSession'),class_level:clsNum,section:secVal,subject:val('emSub')});

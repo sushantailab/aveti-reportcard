@@ -138,7 +138,14 @@ const memoryDB = {
   async updateTest(id,patch){ const t=demo.tests.find(x=>x.id===id); Object.assign(t,patch); return attachChapter(t); },
   async listResults(testId){ return demo.results.filter(r=>r.test_id===testId); },
   async allResults(){ return demo.results; },
-  async saveResults(testId,rows){ demo.results=demo.results.filter(r=>r.test_id!==testId); rows.forEach(r=>demo.results.push({id:uid(),test_id:testId,...r})); },
+  async saveResults(testId,rows){
+    rows.forEach(row=>{
+      const existing=demo.results.find(r=>r.test_id===testId&&r.student_id===row.student_id);
+      if(existing) Object.assign(existing,row);
+      else demo.results.push({id:uid(),test_id:testId,...row});
+    });
+  },
+  async deleteResults(testId,studentIds){ demo.results=demo.results.filter(r=>r.test_id!==testId||!studentIds.includes(r.student_id)); },
   async addEditLogs(rows){ demo.edit_logs = demo.edit_logs || []; rows.forEach(r=>demo.edit_logs.push({id:uid(),...r})); },
   async listTrainingEvents(){ return [...demo.training_events].sort((a,b)=>new Date(b.event_date)-new Date(a.event_date)); },
   async addTrainingEvent(event){ const r={id:uid(),...event}; demo.training_events.push(r); return r; },
@@ -295,6 +302,11 @@ const supaDB = {
     // Upsert safely creates a first mark entry or updates the same student's saved mark.
     const saved = await supa.from('results').upsert(rows.map(r=>({test_id:testId,...r})),{onConflict:'test_id,student_id'});
     if(saved.error) throw saved.error;
+  },
+  async deleteResults(testId,studentIds){
+    if(!studentIds?.length) return;
+    const {error}=await supa.from('results').delete().eq('test_id',testId).in('student_id',studentIds);
+    if(error) throw error;
   },
   async addEditLogs(rows){ if(rows.length) await supa.from('test_result_edits').insert(rows.map(r=>({...r,centre_id:CENTRE_ID}))).select(EDIT_LOG_COLS); },
   async listTrainingEvents(){ const {data}=await supa.from('training_events').select(TRAINING_EVENT_COLS).eq('centre_id',CENTRE_ID).order('event_date',{ascending:false}); return data||[]; },
