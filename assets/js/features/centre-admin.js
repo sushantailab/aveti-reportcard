@@ -16,7 +16,7 @@ async function centreAdmin(){
           ? `<button onclick="restoreCentre('${c.id}')">Restore centre</button><button onclick="permanentlyDeleteCentre('${c.id}')" style="color:var(--red)">Permanently delete</button>`
           : `<button class="primary" onclick="switchCentre('${c.id}')">Open centre</button><button onclick="archiveCentre('${c.id}')">Archive centre</button>`}
       </div>
-      ${(loginMap[c.id]||[]).map(login=>`<div class="centre-login-row"><span><b>${login.email}</b><span class="tiny muted"> · ${login.active?'Active':'Disabled'}</span></span><button onclick="setCentreLoginStatus('${c.id}','${login.user_id}',${!login.active})">${login.active?'Disable':'Enable'}</button></div>`).join('')}
+      ${(loginMap[c.id]||[]).map(login=>`<div class="centre-login-row"><div><b>${login.email}</b><span class="tiny muted"> · ${login.active?'Active':'Disabled'}</span><div class="tiny muted">Password hidden for security</div></div><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end"><button onclick="resetCentreLoginPassword('${c.id}','${login.user_id}')">Set new password</button><button onclick="setCentreLoginStatus('${c.id}','${login.user_id}',${!login.active})">${login.active?'Disable':'Enable'}</button></div></div>`).join('')}
     </div>`).join('');
   show(`
     <div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap"><div><div class="eyebrow">Master workspace</div><h2>Tuition centres</h2><div class="muted small">You control all centres. Centre Admin access is limited to one centre.</div></div></div>
@@ -66,5 +66,14 @@ window.createCentreLoginFromAdmin=async()=>{
 window.setCentreLoginStatus=async(centreId,userId,active)=>{
   try{await DB.setCentreLoginStatus(centreId,userId,active);await centreAdmin();}
   catch(e){alert(e.message||'Login status could not be changed.');}
+};
+window.resetCentreLoginPassword=async(centreId,userId)=>{
+  const password=prompt('Enter a new temporary password (minimum 8 characters). It will be shown once after saving:');
+  if(password===null) return;
+  if(password.length<8){alert('Password must be at least 8 characters.');return;}
+  try{
+    await DB.resetCentreLoginPassword(centreId,userId,password);
+    alert(`New temporary password:\n\n${password}\n\nShare it securely. It will not be shown again here.`);
+  }catch(e){alert(e.message||'Password could not be changed.');}
 };
 window.centreAdmin=centreAdmin;

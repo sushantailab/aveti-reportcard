@@ -443,6 +443,12 @@ const supaDB = {
     if(data?.error) throw new Error(data.error);
     return data;
   },
+  async resetCentreLoginPassword(centreId,userId,password){
+    const {data,error}=await supa.functions.invoke('admin-centre',{body:{action:'reset_centre_login_password',centre_id:centreId,user_id:userId,password}});
+    if(error) throw error;
+    if(data?.error) throw new Error(data.error);
+    return data;
+  },
 };
 
 const DB = CONFIG.USE_SUPABASE ? supaDB : memoryDB;

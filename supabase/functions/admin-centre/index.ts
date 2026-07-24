@@ -42,6 +42,18 @@ Deno.serve(async (request) => {
       await admin.from("audit_log").insert({ centre_id: centreId, actor_user_id: user.id, action: active ? "enable_centre_login" : "disable_centre_login", table_name: "centre_memberships", record_id: userId });
       return new Response(JSON.stringify({ success: true }), { headers: { ...cors, "Content-Type": "application/json" } });
     }
+    if (body.action === "reset_centre_login_password") {
+      const userId = String(body.user_id || "");
+      const password = String(body.password || "");
+      if (!userId || password.length < 8) throw new Error("User and a password of at least 8 characters are required.");
+      const { data: membership, error: membershipError } = await admin.from("centre_memberships").select("user_id,role").eq("centre_id", centreId).eq("user_id", userId).maybeSingle();
+      if (membershipError) throw new Error(membershipError.message);
+      if (!membership || membership.role !== "centre_admin") throw new Error("Only a Centre Admin login can be reset here.");
+      const { error: updateError } = await admin.auth.admin.updateUserById(userId, { password });
+      if (updateError) throw new Error(updateError.message);
+      await admin.from("audit_log").insert({ centre_id: centreId, actor_user_id: user.id, action: "reset_centre_login_password", table_name: "centre_memberships", record_id: userId });
+      return new Response(JSON.stringify({ success: true }), { headers: { ...cors, "Content-Type": "application/json" } });
+    }
     if (body.action !== "create_centre_login") throw new Error("Unsupported action.");
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
