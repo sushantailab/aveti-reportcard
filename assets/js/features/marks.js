@@ -17,6 +17,7 @@ async function enterMarks(testId){
   const rawSelectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
   const selectedSubject = subjectsForClass(selectedClass).includes(rawSelectedSubject) ? rawSelectedSubject : subjectsForClass(selectedClass)[0];
   const selectedChapterIds = editTest ? (editTest.chapter_ids||[editTest.chapter_id].filter(Boolean)) : (useDraft ? (draft.chapter_ids||[draft.chapter_id].filter(Boolean)) : []);
+  const selectedTestType = testTypeLabel(editTest ? editTest.test_type : (useDraft ? draft.test_type : 'Chapter End Test'));
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   const selectedTime = editTest?.duration_minutes || (useDraft ? draft.duration_minutes : 60) || 60;
   show(`
@@ -36,7 +37,7 @@ async function enterMarks(testId){
         <button onclick="addEMChapter()">Add chapter</button>
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
-        <div class="field"><label>Test type</label><select id="emType"><option value="CET" ${(!editTest||editTest.test_type==='CET')?'selected':''}>Chapter End Test</option><option value="PET1" ${editTest?.test_type==='PET1'?'selected':''}>Periodic Test-1</option></select></div>
+        <div class="field"><label>Test type</label><select id="emType"><option value="Chapter End Test" ${selectedTestType==='Chapter End Test'?'selected':''}>Chapter End Test</option><option value="Periodic Test-1" ${selectedTestType==='Periodic Test-1'?'selected':''}>Periodic Test-1</option></select></div>
         <div class="field"><label>Full marks</label><select id="emFull" onchange="setFull(Number(this.value))">${FULL_MARK_OPTIONS.map(mark=>`<option value="${mark}" ${Number(EM.full)===mark?'selected':''}>${mark}</option>`).join('')}</select></div>
         <div class="field"><label>Time</label><select id="emTime" onchange="saveDraft()">${[30,40,60,90,120].map(minutes=>`<option value="${minutes}" ${Number(selectedTime)===minutes?'selected':''}>${minutes} min</option>`).join('')}</select></div>
         <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>
@@ -94,7 +95,7 @@ function snapshotDraft(){
     section:val('emSec'),
     subject:val('emSub'),
     chapter_ids:Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(Boolean),
-    test_type:val('emType')||'CET',
+    test_type:val('emType')||'Chapter End Test',
     duration_minutes:Number(val('emTime'))||60,
     test_date:document.getElementById('emDate')?.value,
     rows:EM.rows,
@@ -516,7 +517,7 @@ window.saveTest = async ()=>{
     chapter_no: chapter.chapter_no,
     chapter_name: chapter.title,
     chapter_names: chapters.map(c=>c.title),
-    test_type:val('emType')||'CET', full_marks:EM.full,
+    test_type:val('emType')||'Chapter End Test', full_marks:EM.full,
     duration_minutes:Number(val('emTime'))||60,
     test_date:document.getElementById('emDate').value
   };
