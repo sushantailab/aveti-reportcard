@@ -1,5 +1,5 @@
 /* ---------- shared options + avatar ---------- */
-const SUBJECTS = ['Mathematics','Science','Hindi','English','Social Science','Geography','History'];
+const SUBJECTS = ['Mathematics','Science','Hindi','English','Social Science','EVS'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
 const FULL_MARK_OPTIONS = [20,25,30,35,40];
@@ -12,8 +12,9 @@ const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
 const subjectsForClass = cls => {
   const n=Number(cls);
-  if(![6,7,8,9].includes(n)) return SUBJECTS;
-  const subjects=['Mathematics','Science','Hindi','English','Social Science','Geography','History'];
+  if(n>=1 && n<=5) return ['Mathematics','EVS','Hindi','English','Social Science'];
+  if(n<6 || n>12) return SUBJECTS;
+  const subjects=['Mathematics','Science','Hindi','English','Social Science'];
   if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);
   return subjects;
 };

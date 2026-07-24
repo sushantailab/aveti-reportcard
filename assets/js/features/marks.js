@@ -14,7 +14,8 @@ async function enterMarks(testId){
   const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
   const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
   const selectedSection = editTest ? (editTest.section||'All') : (useDraft ? draft.section : (defaultEntry.section||'All'));
-  const selectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
+  const rawSelectedSubject = editTest ? editTest.subject : (useDraft ? draft.subject : (defaultEntry.subject||'Hindi'));
+  const selectedSubject = subjectsForClass(selectedClass).includes(rawSelectedSubject) ? rawSelectedSubject : subjectsForClass(selectedClass)[0];
   const selectedChapterIds = editTest ? (editTest.chapter_ids||[editTest.chapter_id].filter(Boolean)) : (useDraft ? (draft.chapter_ids||[draft.chapter_id].filter(Boolean)) : []);
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   const selectedTime = editTest?.duration_minutes || (useDraft ? draft.duration_minutes : 60) || 60;
@@ -79,7 +80,7 @@ window.onEMClassChange = ()=>{
   const cls=Number(val('emClass')), sub=document.getElementById('emSub');
   const allowed=subjectsForClass(cls);
   if(sub && !allowed.includes(sub.value)) sub.value=allowed.includes('Mathematics')?'Mathematics':allowed[0];
-  if(sub && [6,7,8,9].includes(cls)) sub.innerHTML=subjectOptionsForClass(cls,sub.value);
+  if(sub && cls>=1 && cls<=12) sub.innerHTML=subjectOptionsForClass(cls,sub.value);
   loadEMRoster(); loadEMChapters();
 };
 function snapshotDraft(){
