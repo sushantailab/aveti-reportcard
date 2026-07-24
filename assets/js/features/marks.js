@@ -36,7 +36,7 @@ async function enterMarks(testId){
         <button onclick="addEMChapter()">Add chapter</button>
       </div>
       <div class="wrap-fields" style="align-items:flex-end;margin-bottom:18px">
-        <div class="field"><label>Test type</label><select id="emType"><option value="CET" ${(!editTest||editTest.test_type==='CET')?'selected':''}>Chapter End Test</option><option value="PET1" ${editTest?.test_type==='PET1'?'selected':''}>Periodic Test 1</option></select></div>
+        <div class="field"><label>Test type</label><select id="emType"><option value="CET" ${(!editTest||editTest.test_type==='CET')?'selected':''}>Chapter End Test</option><option value="PET1" ${editTest?.test_type==='PET1'?'selected':''}>Periodic Test-1</option></select></div>
         <div class="field"><label>Full marks</label><select id="emFull" onchange="setFull(Number(this.value))">${FULL_MARK_OPTIONS.map(mark=>`<option value="${mark}" ${Number(EM.full)===mark?'selected':''}>${mark}</option>`).join('')}</select></div>
         <div class="field"><label>Time</label><select id="emTime" onchange="saveDraft()">${[30,40,60,90,120].map(minutes=>`<option value="${minutes}" ${Number(selectedTime)===minutes?'selected':''}>${minutes} min</option>`).join('')}</select></div>
         <div class="field"><label>Date</label><input type="date" id="emDate" value="${selectedDate}" onchange="saveDraft()"></div>

@@ -81,6 +81,7 @@ function chapterDetail(t){
   return `${no}. ${name}`;
 }
 const chapterOptionLabel = c => chapterDetail({chapter_no:c.chapter_no, chapter_name:c.title});
+const testTypeLabel = value => ({CET:'Chapter End Test',PET1:'Periodic Test-1'}[value] || value || 'Test');
 const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(testDate(t))}`;
 const bandConfig = () => (CONFIG.BANDS||[]).slice().sort((a,b)=>b.min-a.min);
 const band = p => {

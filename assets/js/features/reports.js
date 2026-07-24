@@ -219,7 +219,7 @@ async function renderTeacher(tests){
     <div class="card pad teacher-report">
       <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
-        <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
+        <div class="small muted" style="text-align:right">${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
@@ -306,7 +306,7 @@ window.exportTeacherPDF = async testId=>{
     {text:`${CONFIG.CENTRE.name}`,x:40,y:778,size:11},
     {text:`${CONFIG.CENTRE.address} | Ph ${CONFIG.CENTRE.phone}`,x:40,y:762,size:9},
     {text:`Class ${test.class_level} | Section ${test.section||'All'} | ${test.subject} | ${chapterDetail(test)}`,x:40,y:742,size:11},
-    {text:`${test.test_type} | ${test.full_marks} marks | ${fmtDate(testDate(test))}`,x:40,y:726,size:11},
+    {text:`${testTypeLabel(test.test_type)} | ${test.full_marks} marks | ${fmtDate(testDate(test))}`,x:40,y:726,size:11},
     {text:`Appeared ${appeared} of ${enrolled} | Absent ${absent} | N.A. ${na} | Class average ${avg??'—'}%`,x:40,y:704,size:12},
     {text:'Ranked results',x:40,y:674,size:13},
     {text:'Rank  Student                    Marks      Percent   Band   Note',x:40,y:656,size:10}
@@ -428,7 +428,7 @@ async function renderParents(tests){
     ${parentFilterBar(tests, students)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:600">Share parent cards · ${CONFIG.CENTRE.name}</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
+        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:600">Share parent cards · ${CONFIG.CENTRE.name}</div><div class="tiny faint">${testOptionLabel(test)} · ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
           <label class="small muted" style="display:flex;align-items:center;gap:8px">Send with
             <select style="width:auto;min-width:170px" onchange="setWhatsAppApp(this.value)">
