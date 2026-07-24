@@ -1,5 +1,5 @@
 /* ---------- shared options + avatar ---------- */
-const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','Social Science','Geography','History'];
+const SUBJECTS = ['Mathematics','Science','Hindi','English','Social Science','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
 const FULL_MARK_OPTIONS = [20,25,30,35,40];
@@ -13,10 +13,16 @@ const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>$
 const subjectsForClass = cls => {
   const n=Number(cls);
   if(![6,7,8,9].includes(n)) return SUBJECTS;
-  const subjects=['Mathematics','Science','Hindi','English','English Grammar','Social Science','Geography','History'];
-  return n>=7 ? subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:[s]) : subjects;
+  const subjects=['Mathematics','Science','Hindi','English','Social Science','Geography','History'];
+  if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);
+  return subjects;
 };
-const subjectDisplayName = (subject,cls) => subject==='Mathematics' && Number(cls)>=7 && Number(cls)<=9 ? 'Mathematics I' : subject;
+const subjectDisplayName = (subject,cls) => {
+  const n=Number(cls);
+  if((n===7 || n===8) && subject==='Mathematics') return 'Mathematics I';
+  if((n===7 || n===8) && subject==='Social Science') return 'Social Science I';
+  return subject;
+};
 const subjectOptionsForClass = (cls,sel) => subjectsForClass(cls).map(s=>`<option value="${s}" ${s===sel?'selected':''}>${subjectDisplayName(s,cls)}</option>`).join('');
 const fullMarkButtons = sel => FULL_MARK_OPTIONS.map(f=>`<button id="f${f}" class="${Number(sel)===f?'on':''}" onclick="setFull(${f})">${f}</button>`).join('');
 const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
