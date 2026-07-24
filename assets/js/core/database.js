@@ -252,7 +252,7 @@ const supaDB = {
     const {error}=await supa.from('students').update({archived_at:new Date().toISOString()}).eq('id',id);
     if(error) throw error;
   },
-  async deleteStudent(id){ await supa.from('students').delete().eq('id',id); },
+  async deleteStudent(id){ const {error}=await supa.from('students').delete().eq('id',id); if(error) throw error; },
   async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('centre_id',CENTRE_ID).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
   async addChapter(ch){
     const title = normalizeText(ch.title);
