@@ -176,8 +176,9 @@ async function renderTeacher(tests){
   CURRENT_TEST = test.id;
   const rs = await cachedResults(test.id);
   const students = await DB.listStudents();
-  const nameOf = id => (students.find(s=>s.id===id)||{}).name||'Unknown student';
-  let rows = rs.map(r=>({name:nameOf(r.student_id),marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
+  const studentById = new Map(students.map(s=>[s.id,s]));
+  // Archived/deleted students remain recoverable in the database, but must not appear in active reports.
+  let rows = rs.filter(r=>studentById.has(r.student_id)).map(r=>({name:studentById.get(r.student_id).name,marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
   const enrolled = rows.length;
   const appearedCount = rows.filter(r=>!r.na && r.present).length;
   const absentCount = rows.filter(r=>!r.na && !r.present).length;
@@ -208,7 +209,7 @@ async function renderTeacher(tests){
   const list = present.map((r,i)=>`
     <div class="listrow rank-row">
       <div class="rank-no" style="width:20px">${i+1}</div>
-      <div class="rank-student" style="flex:1">${r.name}<span class="print-score"> · ${r.marks}/${test.full_marks}</span>${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
+      <div class="rank-student" style="flex:1">${r.name}${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
       <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>
       <div class="rank-marks num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
       <div class="rank-percent muted small" style="width:42px;text-align:right">${r.p}%</div>
