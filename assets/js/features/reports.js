@@ -238,8 +238,7 @@ async function renderTeacher(tests){
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
-        <button onclick="exportTeacherPDF('${test.id}')">Download PDF</button>
-        <button onclick="printTeacherReport()">🖨 Print / PDF</button>
+        <button onclick="printTeacherReport()">🖨 Print / Save as PDF</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
     </div>
@@ -268,7 +267,6 @@ window.setTeacherFilter = async (key,value)=>{
 };
 
 window.printTeacherReport = ()=>{
-  alert('For a clean one-page report: choose A4, open More settings, and turn off Headers and footers. This removes the date, website URL, report title, and page numbers added by the browser.');
   window.print();
 };
 

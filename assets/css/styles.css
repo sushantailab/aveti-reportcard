@@ -275,7 +275,7 @@
     .cert-verify-grid{grid-template-columns:1fr}
   }
   @media print{
-    @page{size:A4 portrait;margin:12mm}
+    @page{size:A4 portrait;margin:8mm}
     body,
     .band,
     .bar>span,
@@ -290,44 +290,46 @@
       -webkit-print-color-adjust:exact;
       print-color-adjust:exact;
     }
+    .app-sidebar,
     .topnav,
-    #navHome,
-    #navRoster,
-    #navSignout,
+    .mobile-bottom-nav,
+    .more-menu,
+    .overlay,
     .teacher-filter,
     .report-actions{
       display:none!important;
     }
-    body{background:#fff}
-    .wrap{max-width:none;margin:0;padding:0}
-    .screen.active{display:block;animation:none}
-    .card{box-shadow:none;margin:0!important;page-break-inside:avoid}
-    .card.pad{padding:0}
+    html,body{width:auto!important;height:auto!important;background:#fff!important}
+    body{padding:0!important}
+    .app-shell,.app-main,.app-content,.wrap,.screen,.screen.active{display:block!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;animation:none!important}
+    .card{box-shadow:none!important;margin:0!important;page-break-inside:avoid}
+    .card.pad{padding:0!important}
     .teacher-report{
-      border:0;
-      border-radius:0;
-      zoom:.78;
-      width:128.2%;
-      font-size:12px;
-      line-height:1.25;
+      border:0!important;
+      border-radius:0!important;
+      width:100%!important;
+      max-width:100%!important;
+      font-size:10pt;
+      line-height:1.2;
+      overflow:visible!important;
     }
-    .teacher-report .report-head{padding-bottom:7px!important;margin-bottom:8px!important}
-    .teacher-report .brandlogo{height:28px!important}
-    .teacher-report .metric{padding:7px 9px;min-width:90px;border-radius:7px}
-    .teacher-report .metric .n{font-size:18px}
-    .teacher-report .bands{margin:5px 0 2px}
-    .teacher-report .band{padding:5px 8px;border-radius:6px}
-    .teacher-report .listrow{padding:5px 0;gap:8px;break-inside:avoid}
-    .teacher-report .rank-row{display:grid!important;grid-template-columns:18px minmax(260px,1fr) minmax(180px,.55fr) 54px 42px;align-items:center}
+    .teacher-report .report-head{padding-bottom:6px!important;margin-bottom:7px!important;gap:6px!important}
+    .teacher-report .brandlogo{height:22px!important}
+    .teacher-report .metric{padding:6px 7px!important;min-width:0!important;flex:1 1 0!important;border-radius:5px}
+    .teacher-report .metric .n{font-size:15pt}
+    .teacher-report .bands{margin:4px 0 2px!important;gap:4px!important}
+    .teacher-report .band{padding:4px 6px!important;border-radius:5px}
+    .teacher-report .listrow{padding:4px 0!important;gap:0!important;break-inside:avoid}
+    .teacher-report .rank-row{display:grid!important;grid-template-columns:5mm minmax(0,1fr) minmax(38mm,1.05fr) 16mm 13mm;column-gap:3mm;align-items:center;width:100%!important}
     .teacher-report .rank-row>div{width:auto!important;min-width:0}
     .teacher-report .rank-student{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .teacher-report .print-score{display:inline;color:var(--ink);font-family:'Bricolage Grotesque';font-weight:700}
     .teacher-report .rank-no{font-size:10px;color:var(--faint)}
-    .teacher-report .rank-row .num{font-size:13px;text-align:right!important}
+    .teacher-report .rank-row .num{font-size:10pt;text-align:right!important}
     .teacher-report .rank-percent{text-align:right!important}
-    .teacher-report .bar{height:6px}
-    .teacher-report .pill{padding:2px 7px;font-size:9px}
-    .teacher-report .report-section-label{margin-top:8px!important}
+    .teacher-report .bar{height:5px;min-width:0}
+    .teacher-report .pill{padding:1px 5px;font-size:8pt}
+    .teacher-report .report-section-label{margin-top:6px!important}
   }
 
 @media screen{
