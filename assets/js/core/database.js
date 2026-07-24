@@ -222,6 +222,7 @@ const stripSession = obj => {
   return copy;
 };
 const missingExtendedTestColumns = error => /chapter_ids|chapter_names|duration_minutes/i.test(String(error?.message||''));
+const missingMultiChapterColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
 const stripExtendedTestColumns = obj => { const copy={...obj}; delete copy.chapter_ids; delete copy.chapter_names; delete copy.duration_minutes; return copy; };
 const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
 const supaDB = {
@@ -273,6 +274,7 @@ const supaDB = {
   },
   async addTest(t){
     let res=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single();
+    if(res.error && missingMultiChapterColumns(res.error)) throw new Error('Multi-chapter saving is not available in this database yet. Refresh and try again after the update finishes.');
     if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').insert({...stripExtendedTestColumns(t), centre_id:CENTRE_ID}).select(TEST_COLS_LEGACY).single();
     const {data,error}=res;
     if(error) throw error;
@@ -280,6 +282,7 @@ const supaDB = {
   },
   async updateTest(id,patch){
     let res=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single();
+    if(res.error && missingMultiChapterColumns(res.error)) throw new Error('Multi-chapter saving is not available in this database yet. Refresh and try again after the update finishes.');
     if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').update(stripExtendedTestColumns(patch)).eq('id',id).select(TEST_COLS_LEGACY).single();
     const {data,error}=res;
     if(error) throw error;
