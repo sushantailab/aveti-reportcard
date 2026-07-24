@@ -185,7 +185,7 @@ const memoryDB = {
     return t;
   },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
-  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Tuition Centre',address:'',phone:'',status:'active',archived_at:null,role:'master_admin'}]; },
+  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Tuition Centre',address:'',phone:'',email:'',centre_head_name:'',logo_url:'',status:'active',archived_at:null,role:'master_admin'}]; },
   async createCentre(payload){ return {id:uid(),...payload,status:'active',archived_at:null}; },
   async updateCentre(id,patch){ return {id,...patch}; },
   async deleteCentre(id){ return {id}; },
@@ -213,6 +213,7 @@ const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,school_name,class_level,subje
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
+const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
 const stripSession = obj => {
@@ -397,29 +398,40 @@ const supaDB = {
   async listAccessibleCentres(){
     const {data:master}=await supa.from('platform_admins').select('user_id').eq('user_id',CURRENT_USER_ID).maybeSingle();
     if(master){
-      const {data,error}=await supa.from('centres').select('id,name,address,phone,band_config,status,archived_at,owner_user_id').order('created_at');
+      const {data,error}=await supa.from('centres').select(CENTRE_COLS).order('created_at');
       if(error) throw error;
       ACCESS_ROLE='master_admin';
       return data||[];
     }
-    const {data,error}=await supa.from('centre_memberships').select('centre_id,role,active,centres(id,name,address,phone,band_config,status,archived_at,owner_user_id)').eq('user_id',CURRENT_USER_ID).eq('active',true);
+    const {data,error}=await supa.from('centre_memberships').select(`centre_id,role,active,centres(${CENTRE_COLS})`).eq('user_id',CURRENT_USER_ID).eq('active',true);
     if(error) throw error;
     ACCESS_ROLE=data?.[0]?.role||'viewer';
     return (data||[]).map(row=>({...row.centres,role:row.role})).filter(Boolean);
   },
   async createCentre(payload){
-    const {data,error}=await supa.from('centres').insert({...payload,owner_user_id:CURRENT_USER_ID,status:'active'}).select('id,name,address,phone,band_config,status,archived_at,owner_user_id').single();
+    const {data,error}=await supa.from('centres').insert({...payload,owner_user_id:CURRENT_USER_ID,status:'active'}).select(CENTRE_COLS).single();
     if(error) throw error;
     return data;
   },
   async updateCentre(id,patch){
-    const {data,error}=await supa.from('centres').update(patch).eq('id',id).select('id,name,address,phone,band_config,status,archived_at,owner_user_id').single();
+    const {data,error}=await supa.from('centres').update(patch).eq('id',id).select(CENTRE_COLS).single();
     if(error) throw error;
     return data;
   },
   async deleteCentre(id){
     const {error}=await supa.from('centres').delete().eq('id',id);
     if(error) throw error;
+  },
+  async uploadCentreLogo(centreId,file){
+    if(!file) return '';
+    if(!['image/png','image/jpeg','image/webp'].includes(file.type)) throw new Error('Use a PNG, JPG, or WebP logo.');
+    if(file.size>2*1024*1024) throw new Error('Logo must be 2 MB or smaller.');
+    const extension=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+    const path=`${centreId}/logo.${extension}`;
+    const {error}=await supa.storage.from('centre-branding').upload(path,file,{upsert:true,cacheControl:'3600',contentType:file.type});
+    if(error) throw error;
+    const {data}=supa.storage.from('centre-branding').getPublicUrl(path);
+    return `${data.publicUrl}?v=${Date.now()}`;
   },
   async setCentreMembership(centreId,userId,role='centre_admin',active=true){
     const {data,error}=await supa.from('centre_memberships').upsert({centre_id:centreId,user_id:userId,role,active}).select().single();

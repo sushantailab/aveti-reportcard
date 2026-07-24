@@ -217,7 +217,7 @@ async function renderTeacher(tests){
     ${teacherFilterBar(tests)}
     <div class="card pad teacher-report">
       <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="assets/images/aveti-logo.png"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address} · Ph ${CONFIG.CENTRE.phone}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
+        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="small muted" style="text-align:right">${test.test_type} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
       </div>
       <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -427,7 +427,7 @@ async function renderParents(tests){
     ${parentFilterBar(tests, students)}
     <div class="card pad">
       <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo" style="height:24px" alt="Aveti Learning" src="assets/images/aveti-logo.png"><div><div style="font-weight:600">Share parent cards</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
+        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:600">Share parent cards · ${CONFIG.CENTRE.name}</div><div class="tiny faint">${testOptionLabel(test)} · ${test.test_type} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
         <div class="row" style="gap:8px;flex-wrap:wrap">
           <label class="small muted" style="display:flex;align-items:center;gap:8px">Send with
             <select style="width:auto;min-width:170px" onchange="setWhatsAppApp(this.value)">

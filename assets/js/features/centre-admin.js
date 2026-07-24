@@ -7,7 +7,7 @@ async function centreAdmin(){
   const cards=centres.map(c=>`
     <div class="card pad centre-admin-card">
       <div class="row between" style="gap:10px;align-items:flex-start">
-        <div><h3>${c.name}</h3><div class="small muted">${c.address||'No address'}${c.phone?' · '+c.phone:''}</div></div>
+        <div class="centre-admin-title">${c.logo_url?`<img class="centre-card-logo" src="${c.logo_url}" alt="${c.name} logo">`:''}<div><h3>${c.name}</h3><div class="small muted">${c.address||'No address'}${c.phone?' · '+c.phone:''}${c.email?' · '+c.email:''}</div>${c.centre_head_name?`<div class="tiny muted">Centre head: ${c.centre_head_name}</div>`:''}</div></div>
         <span class="status-pill ${c.archived_at||c.status==='archived'?'archived':'active'}">${c.archived_at||c.status==='archived'?'Archived':'Active'}</span>
       </div>
       <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap">
@@ -20,9 +20,10 @@ async function centreAdmin(){
   show(`
     <div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap"><div><div class="eyebrow">Master workspace</div><h2>Tuition centres</h2><div class="muted small">You control all centres. Centre Admin access is limited to one centre.</div></div></div>
     <div class="centre-admin-grid">${cards||'<div class="card pad">No centres yet.</div>'}</div>
+    <div id="centreEditPanel"></div>
     <div class="card pad" style="margin-top:16px">
       <h3>Create a centre</h3><div class="muted small" style="margin:4px 0 14px">Existing data remains in its current centre.</div>
-      <div class="wrap-fields"><div class="field"><label>Name</label><input id="newCentreName" placeholder="Aveti Tuition Centre 2"></div><div class="field"><label>Address</label><input id="newCentreAddress" placeholder="Centre address"></div><div class="field"><label>Phone</label><input id="newCentrePhone" placeholder="Phone"></div><button class="primary" onclick="createCentreFromAdmin()">Create centre</button></div>
+      <div class="wrap-fields"><div class="field"><label>Name</label><input id="newCentreName" placeholder="Aveti Tuition Centre 2"></div><div class="field"><label>Address</label><input id="newCentreAddress" placeholder="Centre address"></div><div class="field"><label>Phone</label><input id="newCentrePhone" placeholder="Phone"></div><div class="field"><label>Email</label><input id="newCentreEmail" type="email" placeholder="centre@example.com"></div><div class="field"><label>Centre head (optional)</label><input id="newCentreHead" placeholder="Name"></div><button class="primary" onclick="createCentreFromAdmin()">Create centre</button></div>
     </div>
     <div class="card pad" style="margin-top:16px">
       <h3>Shared Centre Admin login</h3><div class="muted small" style="margin:4px 0 14px">Creates one login for the selected centre. Do not reuse your Master Admin credentials.</div>
@@ -34,7 +35,7 @@ window.createCentreFromAdmin=async()=>{
   const name=document.getElementById('newCentreName')?.value.trim();
   if(!name){alert('Enter a centre name.');return;}
   try{
-    await DB.createCentre({name,address:document.getElementById('newCentreAddress')?.value.trim()||'',phone:document.getElementById('newCentrePhone')?.value.trim()||'',band_config:CONFIG.BANDS});
+    await DB.createCentre({name,address:document.getElementById('newCentreAddress')?.value.trim()||'',phone:document.getElementById('newCentrePhone')?.value.trim()||'',email:document.getElementById('newCentreEmail')?.value.trim()||'',centre_head_name:document.getElementById('newCentreHead')?.value.trim()||'',band_config:CONFIG.BANDS});
     await centreAdmin();
   }catch(e){alert(e.message||'Centre could not be created.');}
 };
@@ -46,15 +47,27 @@ window.archiveCentre=async id=>{
 window.editCentre=async id=>{
   const c=ACCESS_CENTRES.find(x=>x.id===id);
   if(!c) return;
-  const name=prompt('Centre name:',c.name||'');
-  if(name===null) return;
-  if(!name.trim()){alert('Centre name cannot be empty.');return;}
-  const address=prompt('Centre address:',c.address||'');
-  if(address===null) return;
-  const phone=prompt('Centre phone:',c.phone||'');
-  if(phone===null) return;
-  try{await DB.updateCentre(id,{name:name.trim(),address:address.trim(),phone:phone.trim()});await centreAdmin();}
-  catch(e){alert(e.message||'Centre details could not be updated.');}
+  const panel=document.getElementById('centreEditPanel');
+  if(!panel) return;
+  panel.innerHTML=`<div class="card pad centre-edit-panel"><div class="row between" style="gap:12px"><div><h3>Edit ${c.name}</h3><div class="small muted">These details appear on the centre’s reports.</div></div><button onclick="closeCentreEditor()">Close</button></div><div class="centre-branding-form"><div class="centre-logo-editor"><img id="centreLogoPreview" class="centre-logo-preview" src="${c.logo_url||'assets/images/aveti-logo.png'}" alt="Logo preview"><div><label class="small">Organisation logo</label><input id="editCentreLogo" type="file" accept="image/png,image/jpeg,image/webp" onchange="previewCentreLogo(this)"><div class="tiny muted">PNG, JPG, or WebP · maximum 2 MB</div>${c.logo_url?'<button type="button" class="tiny-button" onclick="removeCentreLogo()">Use Aveti default logo</button>':''}</div></div><div class="wrap-fields"><div class="field"><label>Name</label><input id="editCentreName" value="${c.name||''}"></div><div class="field"><label>Address</label><input id="editCentreAddress" value="${c.address||''}"></div><div class="field"><label>Phone</label><input id="editCentrePhone" value="${c.phone||''}"></div><div class="field"><label>Email</label><input id="editCentreEmail" type="email" value="${c.email||''}"></div><div class="field"><label>Centre head (optional)</label><input id="editCentreHead" value="${c.centre_head_name||''}"></div></div><input id="removeCentreLogo" type="hidden" value="false"><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="primary" onclick="saveCentreDetails('${id}')">Save centre details</button></div></div></div>`;
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+};
+window.closeCentreEditor=()=>{const panel=document.getElementById('centreEditPanel');if(panel)panel.innerHTML='';};
+window.previewCentreLogo=input=>{const file=input.files?.[0];if(!file)return;const preview=document.getElementById('centreLogoPreview');if(preview)preview.src=URL.createObjectURL(file);document.getElementById('removeCentreLogo').value='false';};
+window.removeCentreLogo=()=>{const preview=document.getElementById('centreLogoPreview');if(preview)preview.src='assets/images/aveti-logo.png';document.getElementById('editCentreLogo').value='';document.getElementById('removeCentreLogo').value='true';};
+window.saveCentreDetails=async id=>{
+  const name=document.getElementById('editCentreName')?.value.trim();
+  if(!name){alert('Centre name cannot be empty.');return;}
+  const button=event?.currentTarget;if(button)button.disabled=true;
+  try{
+    let logo_url;
+    const file=document.getElementById('editCentreLogo')?.files?.[0];
+    if(file) logo_url=await DB.uploadCentreLogo(id,file);
+    else if(document.getElementById('removeCentreLogo')?.value==='true') logo_url='';
+    const patch={name,address:document.getElementById('editCentreAddress')?.value.trim()||'',phone:document.getElementById('editCentrePhone')?.value.trim()||'',email:document.getElementById('editCentreEmail')?.value.trim()||'',centre_head_name:document.getElementById('editCentreHead')?.value.trim()||''};
+    if(logo_url!==undefined) patch.logo_url=logo_url;
+    await DB.updateCentre(id,patch);await centreAdmin();
+  }catch(e){alert(e.message||'Centre details could not be updated.');if(button)button.disabled=false;}
 };
 window.restoreCentre=async id=>{
   try{await DB.updateCentre(id,{status:'active',archived_at:null});await centreAdmin();}catch(e){alert(e.message||'Centre could not be restored.');}

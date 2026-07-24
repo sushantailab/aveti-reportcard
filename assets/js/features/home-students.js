@@ -67,8 +67,8 @@ async function home(){
     <div class="centre-hero card pad" style="margin-bottom:16px">
       <div class="row between" style="flex-wrap:wrap;gap:10px">
         <div class="brandbar">
-          <img class="brandlogo" style="height:24px" alt="Aveti Learning" src="assets/images/aveti-logo.png">
-          <div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">${CONFIG.CENTRE.address} · Ph ${CONFIG.CENTRE.phone}</div></div>
+          <img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}">
+          <div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div></div>
         </div>
         <button class="primary" onclick="enterMarks()">+ Enter test marks</button>
       </div>
