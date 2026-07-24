@@ -14,7 +14,7 @@ async function centreAdmin(){
       <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap">
         ${c.archived_at||c.status==='archived'
           ? `<button onclick="restoreCentre('${c.id}')">Restore centre</button><button onclick="permanentlyDeleteCentre('${c.id}')" style="color:var(--red)">Permanently delete</button>`
-          : `<button class="primary" onclick="switchCentre('${c.id}')">Open centre</button><button onclick="archiveCentre('${c.id}')">Archive centre</button>`}
+          : `<button class="primary" onclick="switchCentre('${c.id}')">Open centre</button><button onclick="editCentre('${c.id}')">Edit centre</button><button onclick="archiveCentre('${c.id}')">Archive centre</button>`}
       </div>
       ${(loginMap[c.id]||[]).map(login=>`<div class="centre-login-row"><div><b>${login.email}</b><span class="tiny muted"> · ${login.active?'Active':'Disabled'}</span><div class="tiny muted">Password hidden for security</div></div><div class="row" style="gap:6px;flex-wrap:wrap;justify-content:flex-end"><button onclick="resetCentreLoginPassword('${c.id}','${login.user_id}')">Set new password</button><button onclick="setCentreLoginStatus('${c.id}','${login.user_id}',${!login.active})">${login.active?'Disable':'Enable'}</button></div></div>`).join('')}
     </div>`).join('');
@@ -43,6 +43,19 @@ window.archiveCentre=async id=>{
   const c=ACCESS_CENTRES.find(x=>x.id===id);
   if(!c||!confirm(`Archive ${c.name}? Its data will be hidden but recoverable.`)) return;
   try{await DB.updateCentre(id,{status:'archived',archived_at:new Date().toISOString()});await centreAdmin();}catch(e){alert(e.message||'Centre could not be archived.');}
+};
+window.editCentre=async id=>{
+  const c=ACCESS_CENTRES.find(x=>x.id===id);
+  if(!c) return;
+  const name=prompt('Centre name:',c.name||'');
+  if(name===null) return;
+  if(!name.trim()){alert('Centre name cannot be empty.');return;}
+  const address=prompt('Centre address:',c.address||'');
+  if(address===null) return;
+  const phone=prompt('Centre phone:',c.phone||'');
+  if(phone===null) return;
+  try{await DB.updateCentre(id,{name:name.trim(),address:address.trim(),phone:phone.trim()});await centreAdmin();}
+  catch(e){alert(e.message||'Centre details could not be updated.');}
 };
 window.restoreCentre=async id=>{
   try{await DB.updateCentre(id,{status:'active',archived_at:null});await centreAdmin();}catch(e){alert(e.message||'Centre could not be restored.');}

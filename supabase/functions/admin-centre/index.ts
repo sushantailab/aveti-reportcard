@@ -25,7 +25,7 @@ Deno.serve(async (request) => {
     const { data: centre } = await admin.from("centres").select("id").eq("id", centreId).maybeSingle();
     if (!centre) throw new Error("Centre not found.");
     if (body.action === "list_centre_logins") {
-      const { data: memberships, error: membershipError } = await admin.from("centre_memberships").select("user_id,role,active,created_at").eq("centre_id", centreId);
+      const { data: memberships, error: membershipError } = await admin.from("centre_memberships").select("user_id,role,active,created_at").eq("centre_id", centreId).eq("role", "centre_admin");
       if (membershipError) throw new Error(membershipError.message);
       const { data: users, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (usersError) throw new Error(usersError.message);
