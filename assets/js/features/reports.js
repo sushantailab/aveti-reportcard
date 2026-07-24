@@ -10,6 +10,16 @@ function parentMessageChapter(test){
   return `Chapter ${no}: ${name}`;
 }
 
+function parentMessageChapters(test, chapterNumbers=[]){
+  const numbers=[...new Set((chapterNumbers.length?chapterNumbers:[test.chapter_no]).map(Number).filter(Number.isFinite))];
+  if(numbers.length<2) return parentMessageChapter(test);
+  const joined=numbers.length===2 ? numbers.join(' and ') : `${numbers.slice(0,-1).join(', ')} and ${numbers.at(-1)}`;
+  return `Chapters: ${joined}`;
+}
+
+const isCET = test => testTypeLabel(test.test_type)==='Chapter End Test';
+const periodicNextStep = 'Revisit the lesson notes and practise case-based and AR questions. Contact the centre if support is needed.';
+
 function parentNotificationContext(test, studentId, tests, results){
   const currentDate = new Date(testDate(test)).getTime();
   const earlierTests = tests
@@ -90,12 +100,13 @@ function parentWhatsAppMessage(test, studentName, result, classAvg, context={}){
     : isNA
       ? 'N.A.'
       : `${result.marks}/${test.full_marks} (${pct(result.marks,test.full_marks)}%)`;
+  const periodic = !isCET(test);
   const lines = [
-    '*Aveti CET Learning Update*',
+    periodic ? `*Aveti ${testTypeLabel(test.test_type)} Results*` : '*Aveti CET Learning Update*',
     '',
-    `• Student: ${name}`,
+    `Student: ${name}`,
     `• Subject: ${test.subject}`,
-    `• ${parentMessageChapter(test)}`,
+    `• ${periodic?parentMessageChapters(test,context.chapterNumbers):parentMessageChapter(test)}`,
     `• Score: ${score}`
   ];
   if(isAbsent){
@@ -107,6 +118,10 @@ function parentWhatsAppMessage(test, studentName, result, classAvg, context={}){
   }else{
     const p = pct(result.marks,test.full_marks);
     const copy = parentInsightCopy(name,p,classAvg,context.previousPercent);
+    if(periodic){
+      copy.insight=copy.insight.replace(/^This chapter\b/i,'These chapters');
+      copy.action=periodicNextStep;
+    }
     if(classAvg!=null) lines.push(`• Class Average: ${classAvg}%`);
     lines.push(`• Insight: ${copy.insight}`);
     lines.push(`• Next step: ${copy.action}`);
@@ -397,6 +412,10 @@ async function renderParents(tests){
   CURRENT_TEST = test.id;
   const rs = await cachedResults(test.id);
   const allResults = await DB.allResults();
+  const availableChapters = await DB.listChapters(test.class_level,test.subject);
+  const chapterNumberById = new Map(availableChapters.map(chapter=>[String(chapter.id),Number(chapter.chapter_no)]));
+  const selectedChapterIds = test.chapter_ids?.length ? test.chapter_ids : [test.chapter_id].filter(Boolean);
+  const chapterNumbers = selectedChapterIds.map(id=>chapterNumberById.get(String(id))).filter(Number.isFinite);
   const avg = await classAverage(test);
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
@@ -407,7 +426,7 @@ async function renderParents(tests){
     const isNA = !!r.na;
     const isAbsent = !isNA && !r.present;
     const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;
-    const context = parentNotificationContext(test,r.student_id,tests,allResults);
+    const context = {...parentNotificationContext(test,r.student_id,tests,allResults),chapterNumbers};
     const message = parentWhatsAppMessage(test,s.name,r,avg,context);
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
