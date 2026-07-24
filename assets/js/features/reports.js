@@ -189,9 +189,9 @@ async function renderTeacher(tests){
     return;
   }
   CURRENT_TEST = test.id;
-  const rs = await cachedResults(test.id);
   const students = await DB.listStudents();
   const studentById = new Map(students.map(s=>[s.id,s]));
+  const rs = (await cachedResults(test.id)).filter(result=>studentById.has(result.student_id));
   // Archived/deleted students remain recoverable in the database, but must not appear in active reports.
   let rows = rs.filter(r=>studentById.has(r.student_id)).map(r=>({name:studentById.get(r.student_id).name,marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
   const enrolled = rows.length;
@@ -410,19 +410,21 @@ async function renderParents(tests){
     return;
   }
   CURRENT_TEST = test.id;
-  const rs = await cachedResults(test.id);
+  const activeStudentIds = new Set(students.map(student=>student.id));
+  const rs = await activeResultsForTest(test,activeStudentIds);
   const allResults = await DB.allResults();
   const availableChapters = await DB.listChapters(test.class_level,test.subject);
   const chapterNumberById = new Map(availableChapters.map(chapter=>[String(chapter.id),Number(chapter.chapter_no)]));
   const selectedChapterIds = test.chapter_ids?.length ? test.chapter_ids : [test.chapter_id].filter(Boolean);
   const chapterNumbers = selectedChapterIds.map(id=>chapterNumberById.get(String(id))).filter(Number.isFinite);
-  const avg = await classAverage(test);
+  const avg = await classAverage(test,activeStudentIds);
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
   PARENT_BULK_ITEMS = [];
   let rows='';
   rs.filter(r=>(r.na || !r.present || r.marks!=null) && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
-    const s = students.find(x=>x.id===r.student_id)||{};
+    const s = students.find(x=>x.id===r.student_id);
+    if(!s) return;
     const isNA = !!r.na;
     const isAbsent = !isNA && !r.present;
     const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;

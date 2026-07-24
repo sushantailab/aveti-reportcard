@@ -27,6 +27,7 @@ let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = fals
 async function home(){
   setCrumb('Home');
   const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  const activeStudentIds = new Set((await DB.listStudents()).map(student=>student.id));
   const filteredTests = tests.filter(t=>
     (HOME_CLASS_FILTER==='All' || String(t.class_level)===String(HOME_CLASS_FILTER)) &&
     (HOME_SUBJECT_FILTER==='All' || t.subject===HOME_SUBJECT_FILTER)
@@ -42,8 +43,8 @@ async function home(){
     .join('');
   let recent='';
   for(const t of visibleTests){
-    const avg = await classAverage(t);
-    const rs = await cachedResults(t.id);
+    const avg = await classAverage(t,activeStudentIds);
+    const rs = await activeResultsForTest(t,activeStudentIds);
     const appeared = rs.filter(r=>!r.na && r.present).length;
     const newTag = isNewTest(t) ? '<span class="new-tag">NEW</span>' : '';
     recent += `<div class="recent-test">

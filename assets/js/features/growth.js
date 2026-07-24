@@ -17,6 +17,7 @@ async function growth(){
     String(s.class_level)===String(GR.cls) &&
     selectedSectionMatches(s.section, GR.section)
   );
+  const activeStudentIds = new Set(students.map(student=>student.id));
   if(!classStudents.some(s=>s.id===GR.student)) GR.student = classStudents[0] ? classStudents[0].id : null;
   const tests = allTests
     .filter(t=>
@@ -48,7 +49,7 @@ async function growth(){
   const allRes = await DB.allResults();
   const labels = tests.map(t=>chapterLabel(t));
   const classSeries = [];
-  for(const t of tests){ classSeries.push(await classAverage(t)); }
+  for(const t of tests){ classSeries.push(await classAverage(t,activeStudentIds)); }
   const studentSeries = tests.map(t=>{
     const r = allRes.find(x=>x.test_id===t.id && x.student_id===GR.student);
     return (r&&!r.na&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;

@@ -128,8 +128,12 @@ function isNewTest(t){
   return days>=0 && days<=5;
 }
 
-async function classAverage(test){
-  const rs = (await cachedResults(test.id)).filter(r=>!r.na && r.present && r.marks!=null);
+async function activeResultsForTest(test, activeStudentIds){
+  const ids = activeStudentIds || new Set((await DB.listStudents()).map(student=>student.id));
+  return (await cachedResults(test.id)).filter(result=>ids.has(result.student_id));
+}
+async function classAverage(test, activeStudentIds){
+  const rs = (await activeResultsForTest(test,activeStudentIds)).filter(r=>!r.na && r.present && r.marks!=null);
   if(!rs.length) return null;
   return Math.round(rs.reduce((a,r)=>a+pct(r.marks,test.full_marks),0)/rs.length*10)/10;
 }
