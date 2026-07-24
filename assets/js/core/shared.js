@@ -12,7 +12,7 @@ const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
 const subjectsForClass = cls => {
   const n=Number(cls);
-  if(n>=1 && n<=5) return ['Mathematics','EVS','Hindi','English','Social Science'];
+  if(n>=1 && n<=5) return ['Mathematics','EVS','Hindi','English'];
   if(n<6 || n>12) return SUBJECTS;
   const subjects=['Mathematics','Science','Hindi','English','Social Science'];
   if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);

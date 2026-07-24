@@ -79,7 +79,7 @@ async function enterMarks(testId){
 window.onEMClassChange = ()=>{
   const cls=Number(val('emClass')), sub=document.getElementById('emSub');
   const allowed=subjectsForClass(cls);
-  if(sub && !allowed.includes(sub.value)) sub.value=allowed.includes('Mathematics')?'Mathematics':allowed[0];
+  if(sub && !allowed.includes(sub.value)) sub.value=allowed.includes('EVS')?'EVS':allowed.includes('Mathematics')?'Mathematics':allowed[0];
   if(sub && cls>=1 && cls<=12) sub.innerHTML=subjectOptionsForClass(cls,sub.value);
   loadEMRoster(); loadEMChapters();
 };
