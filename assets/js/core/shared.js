@@ -1,5 +1,5 @@
 /* ---------- shared options + avatar ---------- */
-const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','SST','Geography','History'];
+const SUBJECTS = ['Mathematics','Science','Hindi','English','English Grammar','Social Science','Geography','History'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);
 const SESSIONS = ['2026-27','2027-28','2025-26'];
 const FULL_MARK_OPTIONS = [20,25,30,35,40];
@@ -10,6 +10,14 @@ const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'sel
 const classFilterOptions = sel => '<option value="All">All classes</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(sel)?'selected':''}>Class ${c}</option>`).join('');
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
 const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
+const subjectsForClass = cls => {
+  const n=Number(cls);
+  if(![6,7,8,9].includes(n)) return SUBJECTS;
+  const subjects=['Mathematics','Science','Hindi','English','English Grammar','Social Science','Geography','History'];
+  return n>=7 ? subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:[s]) : subjects;
+};
+const subjectDisplayName = (subject,cls) => subject==='Mathematics' && Number(cls)>=7 && Number(cls)<=9 ? 'Mathematics I' : subject;
+const subjectOptionsForClass = (cls,sel) => subjectsForClass(cls).map(s=>`<option value="${s}" ${s===sel?'selected':''}>${subjectDisplayName(s,cls)}</option>`).join('');
 const fullMarkButtons = sel => FULL_MARK_OPTIONS.map(f=>`<button id="f${f}" class="${Number(sel)===f?'on':''}" onclick="setFull(${f})">${f}</button>`).join('');
 const genderOptions  = sel => '<option value="">Gender</option>' + ['male','female'].map(g=>`<option value="${g}" ${g===(sel||'').toLowerCase()?'selected':''}>${cap(g)}</option>`).join('');
 const OPTIONAL = ['N.A.','Hindi','English','Sanskrit','None'];

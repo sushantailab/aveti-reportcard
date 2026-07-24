@@ -7,7 +7,7 @@ async function enterMarks(testId){
   const useDraft = draft && confirm('You have an unsaved marks draft. Restore it?');
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
-  const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Hindi'});
+  const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
   EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest };
   if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
@@ -26,7 +26,7 @@ async function enterMarks(testId){
         <div class="field"><label>Session</label><select id="emSession" onchange="loadEMRoster()">${sessionOptions(selectedSession)}</select></div>
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
-        <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptions(selectedSubject)}</select></div>
+        <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptionsForClass(selectedClass,selectedSubject)}</select></div>
         <div class="field" style="flex:2"><label>Chapter(s) <span class="tiny muted">(up to 3)</span></label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
@@ -75,7 +75,13 @@ async function enterMarks(testId){
   else await loadEMRoster();
   loadEMChapters();
 }
-window.onEMClassChange = ()=>{ loadEMRoster(); loadEMChapters(); };
+window.onEMClassChange = ()=>{
+  const cls=Number(val('emClass')), sub=document.getElementById('emSub');
+  const allowed=subjectsForClass(cls);
+  if(sub && !allowed.includes(sub.value)) sub.value=allowed.includes('Mathematics')?'Mathematics':allowed[0];
+  if(sub && [6,7,8,9].includes(cls)) sub.innerHTML=subjectOptionsForClass(cls,sub.value);
+  loadEMRoster(); loadEMChapters();
+};
 function snapshotDraft(){
   const clsEl=document.getElementById('emClass');
   if(!clsEl) return null;
