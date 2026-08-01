@@ -179,23 +179,20 @@ async function teacherFilterBar(tests){
   const chapterEntries = chapters.map(chapter=>({chapter,test:teacherChapterTest(chapter,matching)}));
   const selectedEntry = chapterEntries.find(entry=>entry.test?.id===TEACHER_FILTER.testId);
   if(TEACHER_FILTER.testId && !selectedEntry) TEACHER_FILTER.testId = '';
-  const selectedLabel = selectedEntry
-    ? chapterOptionLabel(selectedEntry.chapter)
-    : chapters.length ? 'Choose a completed chapter' : 'Choose class and subject first';
-  const chapterMenu = chapterEntries.length
-    ? chapterEntries.map(({chapter,test})=>`
-        <button type="button" class="teacher-chapter-option ${test?'is-complete':''} ${test?.id===TEACHER_FILTER.testId?'is-selected':''}" ${test?`onclick="selectTeacherChapter('${test.id}')"`:'disabled'}>
-          <span>${chapterOptionLabel(chapter)}</span>
-          <span class="teacher-chapter-status">${test?'Completed':'Not submitted'}</span>
-        </button>`).join('')
-    : '<div class="teacher-chapter-empty">No chapters are available for this selection.</div>';
+  const chapterOptions = [
+    `<option value="" ${TEACHER_FILTER.testId?'':'selected'} disabled>${chapters.length?'Choose a completed chapter':'Choose class and subject first'}</option>`,
+    ...chapterEntries.map(({chapter,test})=>test
+      ? `<option value="${test.id}" ${test.id===TEACHER_FILTER.testId?'selected':''} style="color:#28613b">✓ ${chapterOptionLabel(chapter)} — Completed</option>`
+      : `<option value="" disabled style="color:#77837c">${chapterOptionLabel(chapter)} — Not submitted</option>`
+    )
+  ].join('');
   return `
     <div class="card pad teacher-filter" style="margin-bottom:14px">
       <div class="wrap-fields">
         <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
-        <div class="field"><label>Chapter</label><div id="teacherChapterPicker" class="teacher-chapter-picker"><button type="button" class="teacher-chapter-button" onclick="toggleTeacherChapterPicker()" ${chapters.length?'':'disabled'}><span>${selectedLabel}</span><span aria-hidden="true">⌄</span></button><div class="teacher-chapter-menu">${chapterMenu}</div></div></div>
+        <div class="field"><label>Chapter</label><select onchange="setTeacherFilter('testId',this.value)" ${chapters.length?'':'disabled'}>${chapterOptions}</select></div>
       </div>
     </div>`;
 }
@@ -289,17 +286,6 @@ window.setTeacherFilter = async (key,value)=>{
   if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
   await renderTeacher(tests);
 };
-
-window.toggleTeacherChapterPicker = ()=>document.getElementById('teacherChapterPicker')?.classList.toggle('open');
-window.selectTeacherChapter = async testId=>{
-  const tests = await DB.listTests();
-  TEACHER_FILTER.testId = testId;
-  await renderTeacher(tests);
-};
-document.addEventListener('click',event=>{
-  const picker = document.getElementById('teacherChapterPicker');
-  if(picker?.classList.contains('open') && !picker.contains(event.target)) picker.classList.remove('open');
-});
 
 window.printTeacherReport = ()=>{
   window.print();
