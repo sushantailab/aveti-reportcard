@@ -47,7 +47,12 @@ async function growth(){
     return;
   }
   const allRes = await DB.allResults();
-  const labels = tests.map(t=>chapterLabel(t));
+  // Chapter names can be long and make a 10–15 point chart unreadable.
+  // Keep the axis compact; the complete title is available on each data point.
+  const labels = tests.map((t,i)=>({
+    short:`Ch ${Number(t.chapter_no)||i+1}`,
+    full:chapterDetail(t)
+  }));
   const classSeries = [];
   for(const t of tests){ classSeries.push(await classAverage(t,activeStudentIds)); }
   const studentSeries = tests.map(t=>{
@@ -62,6 +67,7 @@ async function growth(){
     ${filterBar}
     <div class="card pad">
       ${controls}
+      <div class="tiny muted" style="margin-bottom:4px">Hover or tap a point to see the chapter name and score.</div>
       ${lineChartSVG(labels, series)}
       <div style="margin-top:12px"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
     </div>
@@ -100,7 +106,7 @@ function lineChartSVG(labels, series){
   const y=v=>pad.t + ih - (v/100*ih);
   let grid='';
   [0,25,50,75,100].forEach(g=>{ grid+=`<line x1="${pad.l}" y1="${y(g)}" x2="${W-pad.r}" y2="${y(g)}" stroke="#eef1ee"/><text x="${pad.l-8}" y="${y(g)+4}" font-size="11" fill="#8a978d" text-anchor="end">${g}%</text>`; });
-  let xl=labels.map((l,i)=>`<text x="${x(i)}" y="${H-12}" font-size="11" fill="#8a978d" text-anchor="middle">${l}</text>`).join('');
+  let xl=labels.map((l,i)=>`<text x="${x(i)}" y="${H-12}" font-size="11" fill="#8a978d" text-anchor="middle">${l.short}</text>`).join('');
   let paths='',dots='',legend='';
   series.forEach((s,si)=>{
     let d='',open=false;
@@ -109,10 +115,14 @@ function lineChartSVG(labels, series){
       const p=[x(i),y(v)];
       d+=(open?'L':'M')+p[0]+' '+p[1]+' ';
       open=true;
-      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${s.color}"/>`;
+      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}: ${v}%</title></circle>`;
     });
     if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
     legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
   });
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" width="100%">${grid}${paths}${dots}${xl}</svg>`;
+}
+
+function chartText(value){
+  return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
