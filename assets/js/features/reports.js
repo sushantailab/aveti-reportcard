@@ -156,24 +156,46 @@ async function openTeacher(testId){
   renderTeacher(tests);
 }
 
-function teacherFilterBar(tests){
-  const recentOpts = '<option value="">Recent exam</option>' + tests.slice(0,12).map(t=>`<option value="${t.id}" ${t.id===TEACHER_FILTER.testId?'selected':''}>${testOptionLabel(t)}</option>`).join('');
+function teacherChapterTest(chapter, tests){
+  const chapterId = String(chapter.id);
+  return tests
+    .filter(test=>{
+      const testChapterIds = [test.chapter_id,...(test.chapter_ids||[])].filter(Boolean).map(String);
+      return testChapterIds.includes(chapterId) || Number(test.chapter_no)===Number(chapter.chapter_no);
+    })
+    .sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)))[0];
+}
+
+async function teacherFilterBar(tests){
   const clsOpts = '<option value="">Class</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(TEACHER_FILTER.cls)?'selected':''}>Class ${c}</option>`).join('');
   const secOpts = '<option value="">Section</option>' + ['All','A','B'].map(s=>`<option value="${s}" ${s===TEACHER_FILTER.section?'selected':''}>${s==='All'?'All':'Section '+s}</option>`).join('');
   const subOpts = '<option value="">Subject</option>' + SUBJECTS.map(s=>`<option value="${s}" ${s===TEACHER_FILTER.subject?'selected':''}>${s}</option>`).join('');
   const matching = (TEACHER_FILTER.cls && TEACHER_FILTER.section && TEACHER_FILTER.subject)
     ? tests.filter(t=>String(t.class_level)===String(TEACHER_FILTER.cls) && (t.section||'All')===TEACHER_FILTER.section && t.subject===TEACHER_FILTER.subject)
     : [];
-  if(TEACHER_FILTER.testId && !matching.some(t=>t.id===TEACHER_FILTER.testId)) TEACHER_FILTER.testId = '';
-  const chapOpts = '<option value="">Chapter</option>' + matching.map(t=>`<option value="${t.id}" ${t.id===TEACHER_FILTER.testId?'selected':''}>${chapterDetail(t)}</option>`).join('');
+  const chapters = (TEACHER_FILTER.cls && TEACHER_FILTER.subject)
+    ? await DB.listChapters(Number(TEACHER_FILTER.cls),TEACHER_FILTER.subject)
+    : [];
+  const chapterEntries = chapters.map(chapter=>({chapter,test:teacherChapterTest(chapter,matching)}));
+  const selectedEntry = chapterEntries.find(entry=>entry.test?.id===TEACHER_FILTER.testId);
+  if(TEACHER_FILTER.testId && !selectedEntry) TEACHER_FILTER.testId = '';
+  const selectedLabel = selectedEntry
+    ? chapterOptionLabel(selectedEntry.chapter)
+    : chapters.length ? 'Choose a completed chapter' : 'Choose class and subject first';
+  const chapterMenu = chapterEntries.length
+    ? chapterEntries.map(({chapter,test})=>`
+        <button type="button" class="teacher-chapter-option ${test?'is-complete':''} ${test?.id===TEACHER_FILTER.testId?'is-selected':''}" ${test?`onclick="selectTeacherChapter('${test.id}')"`:'disabled'}>
+          <span>${chapterOptionLabel(chapter)}</span>
+          <span class="teacher-chapter-status">${test?'Completed':'Not submitted'}</span>
+        </button>`).join('')
+    : '<div class="teacher-chapter-empty">No chapters are available for this selection.</div>';
   return `
     <div class="card pad teacher-filter" style="margin-bottom:14px">
       <div class="wrap-fields">
-        <div class="field"><label>Recent</label><select onchange="setTeacherFilter('recent',this.value)">${recentOpts}</select></div>
         <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
-        <div class="field"><label>Chapter</label><select onchange="setTeacherFilter('testId',this.value)" ${matching.length?'':'disabled'}>${chapOpts}</select></div>
+        <div class="field"><label>Chapter</label><div id="teacherChapterPicker" class="teacher-chapter-picker"><button type="button" class="teacher-chapter-button" onclick="toggleTeacherChapterPicker()" ${chapters.length?'':'disabled'}><span>${selectedLabel}</span><span aria-hidden="true">⌄</span></button><div class="teacher-chapter-menu">${chapterMenu}</div></div></div>
       </div>
     </div>`;
 }
@@ -183,7 +205,7 @@ async function renderTeacher(tests){
   if(!test){
     CURRENT_TEST = null;
     show(`
-      ${teacherFilterBar(tests)}
+      ${await teacherFilterBar(tests)}
       <div class="card pad"><div class="muted">No test found for this selection.</div></div>
     `);
     return;
@@ -230,7 +252,7 @@ async function renderTeacher(tests){
       <div class="rank-percent muted small" style="width:42px;text-align:right">${r.p}%</div>
     </div>`).join('');
   show(`
-    ${teacherFilterBar(tests)}
+    ${await teacherFilterBar(tests)}
     <div class="card pad teacher-report">
       <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
@@ -263,24 +285,21 @@ async function renderTeacher(tests){
 
 window.setTeacherFilter = async (key,value)=>{
   const tests = await DB.listTests();
-  if(key==='recent'){
-    const selected = tests.find(t=>t.id===value);
-    if(selected){
-      TEACHER_FILTER = {
-        cls:String(selected.class_level||''),
-        section:selected.section||'All',
-        subject:selected.subject||'',
-        testId:selected.id
-      };
-    } else {
-      TEACHER_FILTER.testId = '';
-    }
-  } else {
-    TEACHER_FILTER[key] = value;
-    if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
-  }
-  renderTeacher(tests);
+  TEACHER_FILTER[key] = value;
+  if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
+  await renderTeacher(tests);
 };
+
+window.toggleTeacherChapterPicker = ()=>document.getElementById('teacherChapterPicker')?.classList.toggle('open');
+window.selectTeacherChapter = async testId=>{
+  const tests = await DB.listTests();
+  TEACHER_FILTER.testId = testId;
+  await renderTeacher(tests);
+};
+document.addEventListener('click',event=>{
+  const picker = document.getElementById('teacherChapterPicker');
+  if(picker?.classList.contains('open') && !picker.contains(event.target)) picker.classList.remove('open');
+});
 
 window.printTeacherReport = ()=>{
   window.print();
