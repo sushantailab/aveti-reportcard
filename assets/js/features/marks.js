@@ -1,13 +1,12 @@
 /* ---------- ENTER MARKS ---------- */
 let EM = { full:25, rows:[], editId:null, draftDirty:false };
+let RESTORE_MARK_DRAFT = false;
 async function enterMarks(testId){
   setCrumb('Enter test marks');
   const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
   const draft = !editTest ? readJSON(LS_MARK_DRAFT,null) : null;
-  const useDraft = draft && confirm('You have an unsaved marks draft. Restore it?');
-  // Choosing not to restore means this draft is no longer wanted. Without this,
-  // the same confirmation returns on every refresh.
-  if(draft && !useDraft) clearJSON(LS_MARK_DRAFT);
+  const useDraft = !!draft && RESTORE_MARK_DRAFT;
+  RESTORE_MARK_DRAFT = false;
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
   const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
@@ -23,8 +22,14 @@ async function enterMarks(testId){
   const selectedTestType = testTypeLabel(editTest ? editTest.test_type : (useDraft ? draft.test_type : 'Chapter End Test'));
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   const selectedTime = editTest?.duration_minutes || (useDraft ? draft.duration_minutes : 60) || 60;
+  const draftNotice = draft && !useDraft ? `
+    <div class="banner row between" style="margin-bottom:12px;padding:10px 12px;gap:10px;flex-wrap:wrap">
+      <span class="small">An unsaved marks draft is available.</span>
+      <span class="row" style="gap:7px"><button type="button" class="ghost" onclick="discardMarksDraft()">Discard</button><button type="button" onclick="restoreMarksDraft()">Restore draft</button></span>
+    </div>` : '';
   show(`
     ${demoNote}
+    ${draftNotice}
     <div class="card pad">
       <h2 style="font-size:18px;margin-bottom:14px">${editTest?'Edit test marks':'Enter test marks'}</h2>
       <div class="wrap-fields" style="margin-bottom:10px">
@@ -171,8 +176,12 @@ window.selectNewChapter = ()=>{
   document.getElementById('emChapterPicker')?.classList.remove('open');
   toggleNewChapter();
 };
+window.restoreMarksDraft = async ()=>{
+  if(!readJSON(LS_MARK_DRAFT,null)) return;
+  RESTORE_MARK_DRAFT = true;
+  await enterMarks();
+};
 window.discardMarksDraft = async ()=>{
-  if(!confirm('Discard this unsaved marks draft?')) return;
   clearJSON(LS_MARK_DRAFT);
   await enterMarks();
 };
