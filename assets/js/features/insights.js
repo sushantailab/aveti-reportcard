@@ -112,8 +112,8 @@ function buildSubjectInsights(tests, students, results, filters){
     top:reliable[0]||null,
     classAverage:totalFullMarks ? round1(totalMarks/totalFullMarks*100) : null,
     sectionLeaders,
-    topPerformers:scored.slice(0,8),
-    trendRows:reliable.slice(0,8),
+    topPerformers:scored.slice(0,6),
+    trendRows:reliable.slice(0,5),
     highestImprovement:reliable.filter(row=>row.trend.change!=null).sort((a,b)=>b.trend.change-a.trend.change)[0]||null,
     noAttempt:rows.filter(row=>row.eligible>0 && row.attended===0),
     overallAttendance:totalEligible ? round1(totalAppeared/totalEligible*100) : null,
@@ -165,7 +165,7 @@ function insightPill(meta){
 
 function renderClassInsights(data){
   const testsLabel = `${data.tests.length} chapter test${data.tests.length===1?'':'s'} included`;
-  const leaderboard = data.rows.length ? data.rows.map(row=>{
+  const leaderboard = data.topPerformers.length ? data.topPerformers.map(row=>{
     const status = row.percent==null ? {label:'No exam score',className:''} : insightStatus(row);
     const rankClass = row.rank===1?'gold':row.rank===2?'silver':row.rank===3?'bronze':'';
     const scoreText = row.percent==null ? 'No score yet' : row.percent+'%';
@@ -203,7 +203,7 @@ function renderClassInsights(data){
     </div>` : '';
   const trendRows = data.trendRows.length ? data.trendRows.map(row=>`
     <div class="insight-trend-row"><div><b>${row.name}</b><div class="tiny faint">Section ${row.section}</div></div><div>${row.trend.earlierAverage}%<div class="tiny faint">Earlier average</div></div><div>${row.trend.latest}%<div class="tiny faint">Latest exam</div></div><div>${insightPill(row.trend)}</div></div>`).join('') : '<div class="empty-good">Trend appears after a student attends two exams.</div>';
-  const attendanceRows = data.rows.filter(row=>row.eligible>0).slice().sort((a,b)=>(a.attendance??101)-(b.attendance??101)).slice(0,8).map(row=>`
+  const attendanceRows = data.rows.filter(row=>row.eligible>0).slice().sort((a,b)=>(a.attendance??101)-(b.attendance??101)).slice(0,6).map(row=>`
     <div class="insight-attendance-row"><div><b>${row.name}</b><div class="tiny faint">Section ${row.section}</div></div><div class="pill ${row.attendance<75?'danger':'ok'}">${row.attended}/${row.eligible}</div><div class="small">${row.attendance}%</div></div>`).join('') || '<div class="empty-good">No exam attendance records yet.</div>';
   const chapterFocusRows = (chapters,mode) => chapters.length ? chapters.map(chapter=>`
     <div class="chapter-focus-row"><div><b>${chapter.chapter}</b><div class="tiny faint">${chapter.appeared}/${chapter.eligible} students appeared</div></div><div class="chapter-focus-score ${mode==='score' && chapter.scoreAverage<40?'danger':''}">${mode==='score' ? chapter.scoreAverage+'% average score' : chapter.examAttendance+'% exam attendance'}</div></div>`).join('') : '<div class="empty-good">No chapter-end test data is available yet.</div>';
@@ -229,7 +229,7 @@ function renderClassInsights(data){
       </div>
       <div class="card pad insight-leaderboard" style="margin-bottom:14px">
       <div class="row between insight-heading">
-        <div><h2 style="font-size:18px">${INSIGHTS.subject} leaderboard</h2><div class="muted small">Cumulative score across ${testsLabel}. Missed exams are excluded from marks and shown only in exam attendance.</div></div>
+        <div><h2 style="font-size:18px">Top performers</h2><div class="muted small">Top 6 cumulative scores across ${testsLabel}. Missed exams are excluded from marks.</div></div>
         <button class="insight-growth-button" onclick="growth()">View growth</button>
       </div>
       ${leaderboard}
