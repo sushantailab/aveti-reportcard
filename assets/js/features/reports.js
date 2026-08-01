@@ -182,8 +182,8 @@ async function teacherFilterBar(tests){
   const chapterOptions = [
     `<option value="" ${TEACHER_FILTER.testId?'':'selected'} disabled>${chapters.length?'Choose a completed chapter':'Choose class and subject first'}</option>`,
     ...chapterEntries.map(({chapter,test})=>test
-      ? `<option value="${test.id}" ${test.id===TEACHER_FILTER.testId?'selected':''} style="color:#28613b">✓ ${chapterOptionLabel(chapter)} — Completed</option>`
-      : `<option value="" disabled style="color:#77837c">${chapterOptionLabel(chapter)} — Not submitted</option>`
+      ? `<option value="${test.id}" ${test.id===TEACHER_FILTER.testId?'selected':''} style="color:#28613b">✓ ${chapterOptionLabel(chapter)} · Done</option>`
+      : `<option value="" disabled style="color:#77837c">${chapterOptionLabel(chapter)} · Pending</option>`
     )
   ].join('');
   return `
@@ -192,7 +192,7 @@ async function teacherFilterBar(tests){
         <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
-        <div class="field"><label>Chapter</label><select onchange="setTeacherFilter('testId',this.value)" ${chapters.length?'':'disabled'}>${chapterOptions}</select></div>
+        <div class="field"><label>Chapter</label><select class="teacher-chapter-select" onchange="setTeacherFilter('testId',this.value)" ${chapters.length?'':'disabled'}>${chapterOptions}</select></div>
       </div>
     </div>`;
 }
