@@ -1,15 +1,18 @@
 /* ---------- ENTER MARKS ---------- */
-let EM = { full:25, rows:[], editId:null };
+let EM = { full:25, rows:[], editId:null, draftDirty:false };
 async function enterMarks(testId){
   setCrumb('Enter test marks');
   const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
   const draft = !editTest ? readJSON(LS_MARK_DRAFT,null) : null;
   const useDraft = draft && confirm('You have an unsaved marks draft. Restore it?');
+  // Choosing not to restore means this draft is no longer wanted. Without this,
+  // the same confirmation returns on every refresh.
+  if(draft && !useDraft) clearJSON(LS_MARK_DRAFT);
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
   const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
-  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[] };
-  if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null, removedResultStudentIds:draft.removed_result_student_ids||[]};
+  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[], draftDirty:!!useDraft };
+  if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null, removedResultStudentIds:draft.removed_result_student_ids||[], draftDirty:true};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
   const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
   const selectedClass = editTest ? editTest.class_level : (useDraft ? draft.class_level : defaultEntry.class_level);
@@ -65,6 +68,7 @@ async function enterMarks(testId){
           <div><div class="tiny muted">N.A.</div><div class="num" style="font-size:18px" id="cNA">0</div></div>
         </div>
         <div style="margin-left:auto;text-align:right">
+          ${editTest?'':'<button class="ghost" type="button" onclick="discardMarksDraft()">Discard draft</button>'}
           <button id="saveBtn" class="primary" onclick="saveTest()">${EM.saveLabel}</button>
           <div id="saveState" class="tiny faint" style="margin-top:4px"></div>
         </div>
@@ -74,8 +78,8 @@ async function enterMarks(testId){
   EM.selectedChapterIds = selectedChapterIds;
   if(editTest) await loadEMExisting(editTest);
   else if(useDraft) await loadEMDraft(draft);
-  else await loadEMRoster();
-  loadEMChapters();
+  else await loadEMRoster(false);
+  loadEMChapters(false);
 }
 window.onEMClassChange = ()=>{
   const cls=Number(val('emClass')), sub=document.getElementById('emSub');
@@ -102,20 +106,24 @@ function snapshotDraft(){
     removed_result_student_ids:EM.removedResultStudentIds||[]
   };
 }
-function saveDraft(){
+function saveDraft(changed=true){
+  if(changed) EM.draftDirty = true;
+  // Saved tests are already protected by the database; only keep unsaved new
+  // entries in browser storage, and never create one merely by opening the page.
+  if(EM.editId || !EM.draftDirty) return;
   const draft=snapshotDraft();
   if(draft) writeJSON(LS_MARK_DRAFT,draft);
 }
-window.loadEMRoster = async ()=>{
+window.loadEMRoster = async (changed=true)=>{
   const cls = parseInt(val('emClass')), sec = val('emSec'), session = val('emSession');
   const all = await DB.listStudents();
   EM.classStudents = all.filter(s=> String(s.class_level)===String(cls) && (s.academic_session||currentSession())===session);
   if(!EM.classStudents.length) EM.classStudents = all.filter(s=>String(s.class_level)===String(cls));
   const match = EM.classStudents.filter(s=> sec==='All' || (s.section||'')===sec);
   EM.rows = match.map(s=>({student_id:s.id,name:s.name,section:s.section||'',gender:s.gender,marks:null,present:true,na:false}));
-  recountEM(); renderEMRoster(); saveDraft();
+  recountEM(); renderEMRoster(); saveDraft(changed);
 };
-window.loadEMChapters = async ()=>{
+window.loadEMChapters = async (changed=true)=>{
   const sel = document.getElementById('emChap');
   if(!sel) return;
   const cls = parseInt(val('emClass'));
@@ -130,7 +138,7 @@ window.loadEMChapters = async ()=>{
   renderChapterPicker();
   EM.pendingChapterId = '';
   toggleNewChapter();
-  saveDraft();
+  saveDraft(changed);
 };
 window.toggleChapterPicker = ()=>document.getElementById('emChapterPicker')?.classList.toggle('open');
 document.addEventListener('click',event=>{
@@ -162,6 +170,11 @@ window.selectNewChapter = ()=>{
   EM.selectedChapterIds=[];
   document.getElementById('emChapterPicker')?.classList.remove('open');
   toggleNewChapter();
+};
+window.discardMarksDraft = async ()=>{
+  if(!confirm('Discard this unsaved marks draft?')) return;
+  clearJSON(LS_MARK_DRAFT);
+  await enterMarks();
 };
 window.toggleNewChapter = ()=>{
   const selected = val('emChap');
@@ -546,6 +559,7 @@ window.saveTest = async ()=>{
     invalidateResults(test.id);
     writeJSON(LS_LAST_ENTRY,{academic_session:val('emSession'),class_level:clsNum,section:secVal,subject:val('emSub')});
     clearJSON(LS_MARK_DRAFT);
+    EM.draftDirty = false;
     CURRENT_TEST = test.id;
     const avg = await classAverage(test);
     const entered = EM.rows.filter(r=>!r.na&&r.present&&r.marks!=null).length;
