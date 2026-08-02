@@ -198,6 +198,21 @@ async function teacherFilterBar(tests){
     </div>`;
 }
 
+async function teacherScopeLabel(test){
+  const chapterIds = [test.chapter_id,...(test.chapter_ids||[])].filter(Boolean).map(String);
+  if(chapterIds.length){
+    const chapters = await DB.listChapters(Number(test.class_level),test.subject);
+    const numbers = [...new Set(chapters
+      .filter(chapter=>chapterIds.includes(String(chapter.id)))
+      .map(chapter=>Number(chapter.chapter_no))
+      .filter(Number.isFinite)
+    )].sort((a,b)=>a-b);
+    if(numbers.length) return numbers.map(number=>`Ch ${number}`).join(', ');
+  }
+  const number = Number(test.chapter_no);
+  return Number.isFinite(number) && number>0 ? `Ch ${number}` : 'Selected chapters';
+}
+
 async function renderTeacher(tests){
   const test = tests.find(t=>t.id===TEACHER_FILTER.testId);
   if(!test){
@@ -209,6 +224,7 @@ async function renderTeacher(tests){
     return;
   }
   CURRENT_TEST = test.id;
+  const scopeLabel = await teacherScopeLabel(test);
   const students = await DB.listStudents();
   const studentById = new Map(students.map(s=>[s.id,s]));
   const rs = (await cachedResults(test.id)).filter(result=>studentById.has(result.student_id));
@@ -278,7 +294,7 @@ async function renderTeacher(tests){
       <div class="teacher-insight-title">Test result &amp; remedial planning report</div>
       <div class="teacher-insight-head">
         <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><div class="teacher-report-name">Teacher report</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
-        <div class="teacher-test-meta"><b>▣ ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b><span>▤ Assessment scope: ${chapterDetail(test)}</span></div>
+        <div class="teacher-test-meta"><b>▣ ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b><span>▤ Assessment scope: ${scopeLabel}</span></div>
       </div>
       <div class="teacher-summary-grid">
         <div class="teacher-summary-card average"><i>▥</i><span>Class average<b>${avg??'—'}%</b></span></div>
