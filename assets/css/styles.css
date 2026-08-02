@@ -27,8 +27,9 @@
 @media (max-width:720px){.individual-summary{grid-template-columns:1fr 1fr}.individual-summary .growth-summary-card{min-height:74px}.individual-summary .growth-summary-card strong{font-size:18px}}
 
 .growth-report-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:430px;margin:-2px 0 9px}.growth-report-meta>div{display:flex;align-items:center;gap:7px;padding:0 14px;border-right:1px solid #d5dde3}.growth-report-meta>div:first-child{padding-left:0}.growth-report-meta>div:last-child{border-right:0}.growth-report-meta .growth-icon{width:22px;height:22px;color:#203657}.growth-report-meta span{display:grid;font-size:10px;color:var(--muted)}.growth-report-meta b{font-size:12px;color:var(--ink)}.growth-print-button{min-height:31px;padding:4px 9px;font-size:11px;white-space:nowrap}
+.growth-print-logo,.insight-report-logo{display:none}
 @media (max-width:720px){.growth-report-meta{margin-top:4px}.growth-print-button{display:none}}
-@media print{.growth-filter,.growth-print-button,.growth-controls{display:none!important}.growth-dashboard{max-width:none!important}.growth-head{margin-bottom:4mm!important}.growth-report-meta{margin:0 0 3mm!important}.growth-summary-card{min-height:0!important}.growth-journey{min-height:0!important}.growth-chart svg{max-height:170px!important}.growth-footer{display:none!important}}
+@media print{.growth-filter,.growth-print-button,.growth-controls{display:none!important}.growth-dashboard{max-width:none!important}.growth-head{margin-bottom:4mm!important}.growth-print-logo{display:block!important;width:12mm;height:12mm;object-fit:contain;align-self:flex-start}.insight-report-logo{display:block!important;width:12mm;height:12mm;object-fit:contain;align-self:flex-start}.growth-report-meta{margin:0 0 3mm!important}.growth-summary-card{min-height:0!important}.growth-journey{min-height:0!important}.growth-chart svg{max-height:170px!important}.growth-footer{display:none!important}}
 
 @media screen{
   body{font-family:Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#f1f6f1 0,#f6f8f6 210px)}
