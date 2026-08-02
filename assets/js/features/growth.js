@@ -17,7 +17,7 @@ async function growth(){
     String(s.class_level)===String(GR.cls) &&
     selectedSectionMatches(s.section, GR.section)
   );
-  const activeStudentIds = new Set(students.map(student=>student.id));
+  const activeStudentIds = new Set(classStudents.map(student=>student.id));
   if(!classStudents.some(s=>s.id===GR.student)) GR.student = classStudents[0] ? classStudents[0].id : null;
   const tests = allTests
     .filter(t=>
@@ -27,34 +27,36 @@ async function growth(){
     )
     .sort((a,b)=>(Number(a.chapter_no)||0)-(Number(b.chapter_no)||0));
   const filterBar = growthFilterBar();
-  const controls = `
-    <div class="row between" style="flex-wrap:wrap;gap:10px;margin-bottom:12px">
-      <div><h2 style="font-size:18px">Marks journey</h2><div class="muted small">Percentage across chapters</div></div>
-      <div class="row" style="gap:8px">
-        <div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div>
-        <select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select>
-      </div>
-    </div>`;
-  if(tests.length<2){
-    show(`
-      ${filterBar}
-      <div class="card pad">
-        ${controls}
-        <div class="muted" style="margin-top:8px">Add one more chapter test for ${GR.subject} to see the trend.</div>
-        <div style="margin-top:12px"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
-      </div>
-    `);
-    return;
-  }
   const allRes = await DB.allResults();
-  // Chapter names can be long and make a 10–15 point chart unreadable.
-  // Keep the axis compact; the complete title is available on each data point.
+  const testStats = tests.map((test,index)=>{
+    const applicable = allRes.filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na);
+    const appeared = applicable.filter(result=>result.present && result.marks!=null);
+    const average = appeared.length ? round1(appeared.reduce((sum,result)=>sum+pct(result.marks,test.full_marks),0)/appeared.length) : null;
+    return {test,index,label:`Chapter ${Number(test.chapter_no)||index+1}`,title:chapterDetail(test),applicable:applicable.length,appeared:appeared.length,average,attendance:applicable.length?round1(appeared.length/applicable.length*100):null};
+  });
+  const attendedResults = tests.flatMap(test=>allRes.filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na && result.present && result.marks!=null).map(result=>({...result,test})));
+  const applicableResults = tests.flatMap(test=>allRes.filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na));
+  const classAverage = attendedResults.length ? round1(attendedResults.reduce((sum,result)=>sum+Number(result.marks||0),0)/attendedResults.reduce((sum,result)=>sum+Number(result.test.full_marks||0),0)*100) : null;
+  const lowest = testStats.filter(item=>item.average!=null).sort((a,b)=>a.average-b.average)[0]||null;
+  const attendance = applicableResults.length ? round1(attendedResults.length/applicableResults.length*100) : null;
+  const studentStats = classStudents.map(student=>{
+    const applicable = applicableResults.filter(result=>result.student_id===student.id);
+    const appeared = applicable.filter(result=>result.present && result.marks!=null);
+    const totalMarks = appeared.reduce((sum,result)=>sum+Number(result.marks||0),0);
+    const fullMarks = appeared.reduce((sum,result)=>sum+Number(result.test.full_marks||0),0);
+    return {...student, applicable:applicable.length, appeared:appeared.length, percent:fullMarks?round1(totalMarks/fullMarks*100):null};
+  });
+  const belowForty = studentStats.filter(student=>student.percent!=null && student.percent<40);
+  const missedOne = studentStats.filter(student=>student.applicable>0 && student.appeared<student.applicable);
+  const noAttempt = studentStats.filter(student=>student.applicable>0 && student.appeared===0);
+  const previous = testStats.at(-2);
+  const latest = testStats.at(-1);
+  const fall = latest?.average!=null && previous?.average!=null ? round1(latest.average-previous.average) : null;
   const labels = tests.map((t,i)=>({
     short:`Ch ${Number(t.chapter_no)||i+1}`,
     full:chapterDetail(t)
   }));
-  const classSeries = [];
-  for(const t of tests){ classSeries.push(await classAverage(t,activeStudentIds)); }
+  const classSeries = testStats.map(item=>item.average);
   const studentSeries = tests.map(t=>{
     const r = allRes.find(x=>x.test_id===t.id && x.student_id===GR.student);
     return (r&&!r.na&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
@@ -63,15 +65,37 @@ async function growth(){
   const series = GR.mode==='class'
     ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3}]
     : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true}];
+  const chapterTiles = testStats.length ? testStats.map(item=>{
+    const lowScore = item.average!=null && item.average<60;
+    const lowAttendance = item.attendance!=null && item.attendance<75;
+    const note = lowAttendance ? 'Follow up attendance' : lowScore ? 'Priority support' : item.average>=70 ? 'Strong performance' : 'Reinforce concepts';
+    return `<div class="growth-chapter-tile ${lowScore||lowAttendance?'needs-attention':''}"><b>${item.label}</b><strong>${item.average==null?'—':item.average+'%'}</strong><span class="growth-tile-note">${note}</span><span class="tiny">${item.attendance==null?'No attendance data':item.attendance+'% attended'}</span></div>`;
+  }).join('') : '<div class="empty-good">No completed chapter exams yet.</div>';
+  const actionItems = [
+    lowest && lowest.average<60 ? `Reteach ${lowest.title}` : null,
+    belowForty.length ? `Identify ${belowForty.length} student${belowForty.length===1?'':'s'} below 40%` : null,
+    missedOne.length ? `Follow up with ${missedOne.length} student${missedOne.length===1?'':'s'} who missed an exam` : null
+  ].filter(Boolean);
   show(`
     ${filterBar}
-    <div class="card pad">
-      ${controls}
-      <div class="tiny muted" style="margin-bottom:4px">Hover or tap a point to see the chapter name and score.</div>
-      ${lineChartSVG(labels, series)}
-      <div style="margin-top:12px"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
+    <div class="growth-dashboard">
+      <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — ${GR.subject} performance report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      <div class="growth-summary-grid">
+        <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${classAverage==null?'—':classAverage+'%'}</strong><em>All attended exams</em></div></div>
+        <div class="growth-summary-card ${lowest?.average<60?'alert':''}"><span>${growthIcon('low')}</span><div><small>Lowest average</small><strong>${lowest?lowest.average+'%':'—'}</strong><em>${lowest?.label||'No chapter data'}</em></div></div>
+        <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${attendance==null?'—':attendance+'%'}</strong><em>of applicable exams</em></div></div>
+      </div>
+      <div class="growth-journey card"><div class="growth-journey-head"><div><h2>Class performance journey</h2><p>Percentage across completed chapters</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latest&&lowest?`<div class="growth-attention ${latest===lowest?'show':''}"><b>${latest===lowest?'Attention needed':'Chapter focus'}</b><span>${latest===lowest && fall!=null && fall<0 ? `${latest.label} fell by ${Math.abs(fall)} points from ${previous.label}.` : `${lowest.label} has the lowest class average.`}</span><strong>${lowest.average}%</strong></div>`:''}</div>
+      <div class="growth-chapter-grid">${chapterTiles}</div>
+      <div class="growth-bottom-grid"><div class="card growth-action"><h2>${growthIcon('action')}Teacher action plan</h2>${actionItems.length?`<ul>${actionItems.map(item=>`<li>${item}</li>`).join('')}</ul>`:'<div class="empty-good">No urgent academic action identified.</div>'}</div><div class="card growth-attendance"><h2>${growthIcon('attendance')}Exam attendance</h2><div class="growth-attendance-main"><b>${attendedResults.length} / ${applicableResults.length}</b><span>exam records attended</span></div><div class="growth-attendance-list"><div><b>${missedOne.length}</b><span>students missed one or more exams</span></div><div><b>${noAttempt.length}</b><span>students made no exam attempt</span></div></div></div></div>
+      <div class="growth-footer"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
     </div>
   `);
+}
+
+function growthIcon(kind){
+  const paths={average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',low:'<path d="M4 7l6 6 4-4 6 8m-5 0h5v-5"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',action:'<path d="M5 4h14v16H5zM9 2v4m6-4v4M8 11h8m-8 4h5"/>'};
+  return `<svg class="growth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.average}</svg>`;
 }
 
 function growthFilterBar(){
@@ -100,7 +124,7 @@ window.setGrowthMode = m=>{ GR.mode=m; growth(); };
 window.setGrowthStudent = id=>{ GR.student=id; growth(); };
 
 function lineChartSVG(labels, series){
-  const W=680,H=300,pad={l:38,r:14,t:16,b:34};
+  const W=680,H=220,pad={l:38,r:14,t:16,b:34};
   const iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
   const x=i=>pad.l + (labels.length<=1?iw/2:(i*iw/(labels.length-1)));
   const y=v=>pad.t + ih - (v/100*ih);

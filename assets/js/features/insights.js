@@ -30,6 +30,47 @@ function rankInsightRows(rows){
   });
 }
 
+function chapterFocusForTests(tests, results, studentIds){
+  const allowedStudents = new Set(studentIds);
+  const grouped = new Map();
+  tests.forEach(test=>{
+    const chapterIds = [...new Set([...(test.chapter_ids||[]),test.chapter_id].filter(Boolean).map(String))];
+    // A combined test has one overall score, so it cannot reliably diagnose an individual chapter.
+    if(chapterIds.length>1 || (!chapterIds.length && !test.chapter_no)) return;
+    const key = chapterIds[0] || `chapter-${test.chapter_no}`;
+    const item = grouped.get(key) || {
+      title:chapterDetail(test),
+      chapterNo:Number(test.chapter_no)||0,
+      appeared:0,
+      applicable:0,
+      marks:0,
+      fullMarks:0
+    };
+    results.filter(result=>result.test_id===test.id && allowedStudents.has(result.student_id) && !result.na).forEach(result=>{
+      item.applicable += 1;
+      if(result.present && result.marks!=null){
+        item.appeared += 1;
+        item.marks += Number(result.marks||0);
+        item.fullMarks += Number(test.full_marks||0);
+      }
+    });
+    grouped.set(key,item);
+  });
+  return [...grouped.values()].map(item=>{
+    const score = item.fullMarks ? round1(item.marks/item.fullMarks*100) : null;
+    const attendance = item.applicable ? round1(item.appeared/item.applicable*100) : null;
+    const lowAttendance = attendance!=null && attendance<75;
+    const lowScore = score!=null && score<60;
+    return {
+      ...item, score, attendance, lowAttendance, lowScore,
+      action:lowAttendance && lowScore ? 'Reteach + follow up' : lowAttendance ? 'Attendance follow-up' : 'Reteach',
+      priority:(lowAttendance ? 200-attendance : 0) + (score==null ? 100 : 100-score)
+    };
+  }).filter(item=>item.lowAttendance || item.lowScore)
+    .sort((a,b)=>b.priority-a.priority || a.chapterNo-b.chapterNo)
+    .slice(0,5);
+}
+
 function buildSubjectInsights(tests, students, results, filters){
   const matchingTests = tests
     .filter(t=>
@@ -86,6 +127,7 @@ function buildSubjectInsights(tests, students, results, filters){
   const sectionLeaders = [...new Set(reliable.map(row=>row.section))].map(section=>
     reliable.filter(row=>row.section===section)[0]
   ).filter(Boolean);
+  const chapterFocus = chapterFocusForTests(matchingTests,results,matchingStudents.map(student=>student.id));
   return {
     tests:matchingTests,
     rows:[...scored,...noScores],
@@ -94,6 +136,7 @@ function buildSubjectInsights(tests, students, results, filters){
     top:reliable[0]||null,
     classAverage:totalFullMarks ? round1(totalMarks/totalFullMarks*100) : null,
     examAttendance:applicableExams ? round1(attendedExams/applicableExams*100) : null,
+    chapterFocus,
     sectionLeaders,
     topPerformers:scored.slice(0,10),
     // Keep the trend report in the same cumulative-score order as the leaderboard.
@@ -161,6 +204,7 @@ function renderClassInsights(data){
   const support = list(data.support,row=>`<li>${row.name} (Section ${row.section}) · ${row.percent}%</li>`,'No students are below 40%.');
   const absent = list(data.attendanceRisk,row=>`<li>${row.name} (Section ${row.section}) · ${row.attended} / ${row.eligible}</li>`,'No regular exam absences.');
   const noAttempt = list(data.noAttempt,row=>`<li>${row.name} (Section ${row.section})</li>`,'Every student has attempted an exam.');
+  const chapterFocus = data.chapterFocus.length ? data.chapterFocus.map(item=>`<div class="insight-chapter-row"><div><b>${item.title}</b><div class="tiny faint">Single-chapter exam</div></div><div><span class="tiny faint">Class score</span><b>${item.score==null?'—':item.score+'%'}</b></div><div><span class="tiny faint">Exam attendance</span><b>${item.attendance==null?'—':item.attendance+'%'}</b></div><div><span class="pill ${item.lowAttendance?'warn':'danger'}">${item.action}</span></div></div>`).join('') : '<div class="empty-good">No chapter currently needs attention.</div>';
   const improve = data.highestImprovement?.trend.change;
   show(`
     ${insightsFilterBar()}
@@ -170,6 +214,7 @@ function renderClassInsights(data){
   <div class="insight-metrics exact-metrics"><div class="metric icon-metric">${insightIcon('average')}<span><div class="tiny">Class average</div><div class="n">${data.classAverage??'--'}${data.classAverage==null?'':'%'}</div><div class="tiny faint">All attended exams</div></span></div><div class="metric icon-metric">${insightIcon('improve')}<span><div class="tiny">Highest improvement</div><div class="n">${improve==null?'--':(improve>0?'+':'')+improve}</div><div class="tiny faint">percentage points</div></span></div><div class="metric icon-metric attendance-metric">${insightIcon('attendance')}<span><div class="tiny">Exam attendance</div><div class="n">${data.examAttendance??'--'}${data.examAttendance==null?'':'%'}</div><div class="tiny faint">of applicable exams attended</div></span></div></div>
       <div class="insight-main-grid"><div class="card pad insight-leaderboard"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Top performers</h2></div><div class="muted small">Average percentage across all attended exams</div></div><div class="insight-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${leaderboard}${data.rows.filter(row=>row.percent!=null).length>10?`<button class="insight-show-all" onclick="setInsightsShowAll()">${INSIGHTS.showAll?'Show Top 10':'Show all students'}</button>`:''}</div><div class="card pad insight-sections"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Section leaders</h2></div></div>${sectionCards}</div></div>
       <div class="card pad insight-trend-card"><div class="insight-heading"><div>${insightIcon('improve')}<h2>Performance trend</h2></div><div class="muted small">Top 10 by overall average · previous attended exam vs current attended exam</div></div><div class="insight-trend-head"><span>Student</span><span>Previous %</span><span>Current %</span><span>Change</span></div>${trendRows}${data.trendRows.length>10?`<button class="insight-show-all" onclick="setInsightsTrendShowAll()">${INSIGHTS.showAllTrends?'Show Top 10':'Show all students'}</button>`:''}</div>
+      <div class="card pad insight-chapter-focus"><div class="insight-heading"><div>${insightIcon('flag')}<h2>Chapters needing attention</h2></div><div class="muted small">Lowest outcomes from single-chapter exams · scores exclude absences</div></div>${chapterFocus}</div>
       <div class="card pad insight-flags"><div class="insight-heading"><div>${insightIcon('flag')}<h2>Academic support flags</h2></div></div><div class="insight-flag-grid"><div class="insight-flag support"><h3>Below 40%</h3><div class="tiny">Students scoring below 40%</div>${support}</div><div class="insight-flag absent"><h3>Regularly absent</h3><div class="tiny">Attempted exams / applicable exams</div>${absent}</div><div class="insight-flag no-attempt"><h3>No exam attempt</h3><div class="tiny">No score in any applicable exam</div>${noAttempt}</div></div></div>
       <div class="tiny faint insight-note">Average percentage is calculated from scored marks across all attended exams. Trend changes are percentage points.</div>
     </div>`);
