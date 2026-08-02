@@ -264,7 +264,7 @@ async function renderTeacher(tests){
   show(`
     ${await teacherFilterBar(tests)}
     <div class="card pad teacher-report teacher-insight-report">
-      <div class="teacher-insight-title">Teacher assessment insight report</div>
+      <div class="teacher-insight-title">Subject assessment &amp; remedial planning report</div>
       <div class="teacher-insight-head">
         <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><div class="teacher-report-name">Teacher report</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
         <div class="teacher-test-meta"><b>▣ ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b><span>▤ Assessment scope: ${chapterDetail(test)}</span></div>
