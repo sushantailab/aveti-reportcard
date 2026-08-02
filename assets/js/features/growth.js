@@ -107,13 +107,14 @@ async function growth(){
     show(`
       ${filterBar}
       <div class="growth-dashboard growth-individual-dashboard">
-        <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — Individual student progress report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`} · ${GR.subject} · ${currentSession()}</div></div><div class="growth-controls"><div class="seg"><button onclick="setGrowthMode('class')">Class trend</button><button class="on" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+        <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — Individual student progress report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`} · ${currentSession()}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="window.print()">🖨 Print / Save as PDF</button><div class="seg"><button onclick="setGrowthMode('class')">Class trend</button><button class="on" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+        ${growthReportMeta()}
         <div class="growth-student-band"><span class="growth-student-avatar">${String(selectedStudent?.name||'?').split(/\s+/).map(word=>word[0]).slice(0,2).join('')}</span><div><span class="tiny muted">Student</span><b>${selectedStudent?.name||'No student selected'}</b></div></div>
         <div class="growth-summary-grid individual-summary">
           <div class="growth-summary-card"><span>${growthIcon('journey')}</span><div><small>Latest score</small><strong>${latestStudentScore==null?'—':latestStudentScore+'%'}</strong><em>${latestStudentIndex>=0?testStats[latestStudentIndex].label:'No score yet'}</em></div></div>
           <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${latestClassScore==null?'—':latestClassScore+'%'}</strong><em>${latestStudentIndex>=0?testStats[latestStudentIndex].label:'No chapter data'}</em></div></div>
           <div class="growth-summary-card"><span>${growthIcon('strong')}</span><div><small>Current position</small><strong>${position==null?'—':position+' / '+scoredClass.length}</strong><em>Based on overall average</em></div></div>
-          <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${selectedStudent?`${selectedStudent.appeared} / ${selectedStudent.applicable}`:'—'}</strong><em>${studentAttendance==null?'No exam data':studentAttendance+'% of tests'}</em></div></div>
+          <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${studentAttendance==null?'—':studentAttendance+'%'}</strong><em>${selectedStudent?`${selectedStudent.appeared} / ${selectedStudent.applicable} tests attended`:'No exam data'}</em></div></div>
         </div>
         <div class="growth-journey card"><div class="growth-journey-head"><div><h2>${growthIcon('journey')}${selectedStudent?.name||'Student'}’s performance journey</h2><p>Student score compared with class average in each chapter</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latestStudentIndex>=0?`<div class="growth-attention ${latestDelta!=null&&latestDelta<0?'show':''}"><b>${latestDelta!=null&&latestDelta<0?'Priority revision':'Latest result'}</b><span>${latestDelta==null?'Class comparison unavailable':latestDelta<0?`${testStats[latestStudentIndex].label} is ${Math.abs(latestDelta)} points below the class average.`:`${testStats[latestStudentIndex].label} is ${latestDelta} points above the class average.`}</span><strong>${latestStudentScore}%</strong></div>`:''}</div>
         <div class="growth-chapter-grid individual-chapter-grid">${individualTiles||'<div class="empty-good">No chapter results yet.</div>'}</div>
@@ -126,7 +127,8 @@ async function growth(){
   show(`
     ${filterBar}
     <div class="growth-dashboard">
-      <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="window.print()">🖨 Print / Save as PDF</button><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      ${growthReportMeta()}
       <div class="growth-summary-grid">
         <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${classAverage==null?'—':classAverage+'%'}</strong><em>All attended exams</em></div></div>
         <div class="growth-summary-card ${lowest?.average<60?'alert':''}"><span>${growthIcon('low')}</span><div><small>Lowest average</small><strong>${lowest?lowest.average+'%':'—'}</strong><em>${lowest?.label||'No chapter data'}</em></div></div>
@@ -141,13 +143,13 @@ async function growth(){
 }
 
 function growthIcon(kind){
-  const paths={average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',low:'<path d="M4 7l6 6 4-4 6 8m-5 0h5v-5"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',journey:'<path d="M4 17l5-5 4 3 7-8m-5 0h5v5"/>',strong:'<path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/>',focus:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/>',action:'<path d="M5 4h14v16H5zM9 2v4m6-4v4M8 11h8m-8 4h5"/>'};
+  const paths={class:'<path d="M3 9l9-5 9 5-9 5-9-5zm4 3v4c3 2 6 2 10 0v-4"/>',subject:'<path d="M4 5.5C7 4 9.5 5 12 7c2.5-2 5-3 8-1.5v12c-3-1.5-5.5-.5-8 1-2.5-1.5-5-2.5-8-1v-12zM12 7v11"/>',average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',low:'<path d="M4 7l6 6 4-4 6 8m-5 0h5v-5"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',journey:'<path d="M4 17l5-5 4 3 7-8m-5 0h5v5"/>',strong:'<path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/>',focus:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/>',action:'<path d="M5 4h14v16H5zM9 2v4m6-4v4M8 11h8m-8 4h5"/>'};
   return `<svg class="growth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.average}</svg>`;
 }
 
 function growthFilterBar(){
   return `
-    <div class="card pad" style="margin-bottom:14px">
+    <div class="card pad growth-filter" style="margin-bottom:14px">
       <div class="wrap-fields">
         <div class="field"><label>Class</label><select onchange="setGrowthFilter('cls',this.value)">${classOptions(GR.cls)}</select></div>
         <div class="field"><label>Section</label><select onchange="setGrowthFilter('section',this.value)">${sectionOptions(GR.section,true)}</select></div>
@@ -160,6 +162,10 @@ function growthStudentOptions(students){
   return students.length
     ? students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${s.name}</option>`).join('')
     : '<option value="">No students</option>';
+}
+
+function growthReportMeta(){
+  return `<div class="growth-report-meta"><div>${growthIcon('class')}<span>Class<b>Class ${GR.cls}</b></span></div><div>${growthIcon('subject')}<span>Subject<b>${GR.subject}</b></span></div></div>`;
 }
 
 window.setGrowthFilter = (key,value)=>{
