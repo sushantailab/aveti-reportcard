@@ -79,6 +79,50 @@ async function growth(){
     belowForty.length ? `Identify ${belowForty.length} student${belowForty.length===1?'':'s'} below 40%` : null,
     missedOne.length ? `Follow up with ${missedOne.length} student${missedOne.length===1?'':'s'} who missed an exam` : null
   ].filter(Boolean);
+  if(GR.mode==='ind'){
+    const selectedStudent = studentStats.find(student=>student.id===GR.student) || classStudents[0];
+    const scoredClass = studentStats.filter(student=>student.percent!=null).sort((a,b)=>b.percent-a.percent || a.name.localeCompare(b.name));
+    const position = selectedStudent?.percent==null ? null : scoredClass.findIndex(student=>student.id===selectedStudent.id)+1;
+    const latestStudentIndex = studentSeries.reduce((last,score,index)=>score==null ? last : index,-1);
+    const latestStudentScore = latestStudentIndex>=0 ? studentSeries[latestStudentIndex] : null;
+    const latestClassScore = latestStudentIndex>=0 ? classSeries[latestStudentIndex] : null;
+    const studentAttendance = selectedStudent?.applicable ? round1(selectedStudent.appeared/selectedStudent.applicable*100) : null;
+    const individualTiles = testStats.map((item,index)=>{
+      const score = studentSeries[index];
+      const difference = score==null || item.average==null ? null : round1(score-item.average);
+      const absent = score==null;
+      const status = absent ? 'Not attempted' : difference>=5 ? 'Strong' : difference<=-5 ? 'Needs revision' : 'On track';
+      const tileIcon = absent ? 'attendance' : status==='Strong' ? 'strong' : status==='Needs revision' ? 'focus' : 'journey';
+      const detail = absent ? 'Exam absence' : `${difference>=0?'+':''}${difference} pp vs class`;
+      return `<div class="growth-chapter-tile individual ${absent||status==='Needs revision'?'needs-attention':''}"><b>${item.label}</b><strong>${absent?'—':score+'%'}</strong><span class="growth-tile-meta">${growthIcon(tileIcon)}<span>${detail}</span></span><span class="growth-tile-note">${status}</span></div>`;
+    }).join('');
+    const weakestIndex = studentSeries.reduce((weakest,score,index)=>score!=null && (weakest<0 || score<studentSeries[weakest]) ? index : weakest,-1);
+    const nextSteps = [
+      selectedStudent?.appeared<selectedStudent?.applicable ? `Discuss missed ${testStats.filter((_,index)=>studentSeries[index]==null).map(item=>item.label).join(', ')} test${selectedStudent.applicable-selectedStudent.appeared===1?'':'s'}.` : null,
+      weakestIndex>=0 ? `Assign ${testStats[weakestIndex].label} revision worksheet.` : null,
+      weakestIndex>=0 ? `Review weak concepts from ${testStats[weakestIndex].title}.` : null,
+      'Track progress in the next assessment.'
+    ].filter(Boolean);
+    const latestDelta = latestStudentScore==null || latestClassScore==null ? null : round1(latestStudentScore-latestClassScore);
+    show(`
+      ${filterBar}
+      <div class="growth-dashboard growth-individual-dashboard">
+        <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — Individual student progress report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`} · ${GR.subject} · ${currentSession()}</div></div><div class="growth-controls"><div class="seg"><button onclick="setGrowthMode('class')">Class trend</button><button class="on" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+        <div class="growth-student-band"><span class="growth-student-avatar">${String(selectedStudent?.name||'?').split(/\s+/).map(word=>word[0]).slice(0,2).join('')}</span><div><span class="tiny muted">Student</span><b>${selectedStudent?.name||'No student selected'}</b></div></div>
+        <div class="growth-summary-grid individual-summary">
+          <div class="growth-summary-card"><span>${growthIcon('journey')}</span><div><small>Latest score</small><strong>${latestStudentScore==null?'—':latestStudentScore+'%'}</strong><em>${latestStudentIndex>=0?testStats[latestStudentIndex].label:'No score yet'}</em></div></div>
+          <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${latestClassScore==null?'—':latestClassScore+'%'}</strong><em>${latestStudentIndex>=0?testStats[latestStudentIndex].label:'No chapter data'}</em></div></div>
+          <div class="growth-summary-card"><span>${growthIcon('strong')}</span><div><small>Current position</small><strong>${position==null?'—':position+' / '+scoredClass.length}</strong><em>Based on overall average</em></div></div>
+          <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${selectedStudent?`${selectedStudent.appeared} / ${selectedStudent.applicable}`:'—'}</strong><em>${studentAttendance==null?'No exam data':studentAttendance+'% of tests'}</em></div></div>
+        </div>
+        <div class="growth-journey card"><div class="growth-journey-head"><div><h2>${growthIcon('journey')}${selectedStudent?.name||'Student'}’s performance journey</h2><p>Student score compared with class average in each chapter</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latestStudentIndex>=0?`<div class="growth-attention ${latestDelta!=null&&latestDelta<0?'show':''}"><b>${latestDelta!=null&&latestDelta<0?'Priority revision':'Latest result'}</b><span>${latestDelta==null?'Class comparison unavailable':latestDelta<0?`${testStats[latestStudentIndex].label} is ${Math.abs(latestDelta)} points below the class average.`:`${testStats[latestStudentIndex].label} is ${latestDelta} points above the class average.`}</span><strong>${latestStudentScore}%</strong></div>`:''}</div>
+        <div class="growth-chapter-grid individual-chapter-grid">${individualTiles||'<div class="empty-good">No chapter results yet.</div>'}</div>
+        <div class="growth-bottom-grid"><div class="card growth-action"><h2>${growthIcon('action')}Teacher next steps</h2><ol class="growth-next-steps">${nextSteps.map(step=>`<li>${step}</li>`).join('')}</ol></div></div>
+        <div class="growth-footer"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
+      </div>
+    `);
+    return;
+  }
   show(`
     ${filterBar}
     <div class="growth-dashboard">
