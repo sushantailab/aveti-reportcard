@@ -27,3 +27,9 @@
 }
 
 @media screen and (min-width:721px){.home-recent-card .pad.row{padding-bottom:8px!important}.home-recent-card .home-recent-table{padding-top:0!important}.home-tests-table-head{position:static!important;top:auto!important;margin-top:0!important}}
+
+/* Desktop chrome: one horizontal Aveti logo at left, actions in the header. */
+@media screen and (min-width:721px){
+  .app-sidebar .sidebar-amark{display:none!important}.sidebar-brand{padding-left:4px!important}.sidebar-brand .brandlogo{display:block!important;height:30px!important;width:auto!important;margin-right:auto!important}
+  .topnav-primary{display:flex!important;align-items:center;justify-content:center;gap:7px;flex:1}.topnav-primary button{position:relative;min-height:38px;border:0;background:transparent;padding:7px 11px;color:#53645c;font-size:13px;font-weight:700;box-shadow:none}.topnav-primary button:hover{background:#f3f7f4;transform:none}.topnav-primary button.active{color:#075b43}.topnav-primary button.active:after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px;background:#087054}.topnav-primary .top-enter{border:1px solid #087054;background:#087054;color:#fff;border-radius:7px;padding-inline:15px}.topnav-primary .top-enter:hover{background:#075b43;color:#fff}
+}
