@@ -189,8 +189,14 @@ async function teacherFilterBar(tests){
   if(TEACHER_FILTER.testType==='Chapter End Test' && TEACHER_FILTER.testId && !selectedEntry) TEACHER_FILTER.testId = '';
   const periodicTest = periodicTests.find(test=>test.id===TEACHER_FILTER.testId);
   const periodicScope = periodicTest ? await teacherScopeLabel(periodicTest) : 'No tested chapters available';
+  const testedChapterIds = new Set([periodicTest?.chapter_id,...(periodicTest?.chapter_ids||[])].filter(Boolean).map(String));
+  const testedChapterNumbers = new Set((String(periodicScope).match(/\d+/g)||[]).map(Number));
+  const periodicChapterMenu = chapters.map(chapter=>{
+    const included = testedChapterIds.has(String(chapter.id)) || testedChapterNumbers.has(Number(chapter.chapter_no));
+    return `<div class="teacher-tested-chapter ${included?'included':''}"><b>${included?'✓':'○'}</b><span>${chapterOptionLabel(chapter)}</span><em>${included?'Included in this test':'Not included'}</em></div>`;
+  }).join('') || '<div class="teacher-tested-chapter"><span>No chapters found</span></div>';
   const chapterControl = TEACHER_FILTER.testType==='Periodic Test-1'
-    ? `<div class="teacher-tested-chapters">✓ ${periodicScope}</div>`
+    ? `<details class="teacher-tested-chapters"><summary>✓ ${periodicScope}</summary><div class="teacher-tested-chapter-menu">${periodicChapterMenu}</div></details>`
     : `<select class="teacher-chapter-select" onchange="setTeacherFilter('testId',this.value)" ${TEACHER_FILTER.testType==='Chapter End Test'&&chapters.length?'':'disabled'}>${[
         `<option value="" ${TEACHER_FILTER.testId?'':'selected'} disabled>${TEACHER_FILTER.testType==='Chapter End Test'?'Choose a completed chapter':'Choose test type first'}</option>`,
         ...chapterEntries.map(({chapter,test})=>test
