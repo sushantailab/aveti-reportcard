@@ -69,6 +69,7 @@ window.switchCentre = id=>{
 
 async function afterLogin(){
   loginOverlay.classList.remove('show');
+  document.body.classList.add('is-authenticated');
   document.querySelectorAll('[data-signout]').forEach(el=>el.style.display='');
   try { const {data:{user}} = await supa.auth.getUser(); CURRENT_USER_ID = user?.id || 'unknown-user'; } catch(e){}
   try {

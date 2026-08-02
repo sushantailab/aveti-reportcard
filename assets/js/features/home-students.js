@@ -78,6 +78,8 @@ async function home(){
     const avg = await classAverage(t,activeStudentIds);
     const rs = await activeResultsForTest(t,activeStudentIds);
     const appeared = rs.filter(r=>!r.na && r.present).length;
+    const applicableStudents = rs.filter(r=>!r.na).length;
+    const testAttendance = applicableStudents ? Math.round(appeared/applicableStudents*100) : null;
     const newTag = isNewTest(t) ? '<span class="new-tag">NEW</span>' : '';
     recent += `<div class="recent-test">
       <div class="recent-grid">
@@ -86,7 +88,7 @@ async function home(){
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
         <div class="recent-field"><div class="label">Test & chapter</div><div class="value">${testTypeLabel(t.test_type)} · ${chapterDetail(t)}</div></div>
         <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
-        <div class="recent-field"><div class="label">Students</div><div class="value">${appeared}/${rs.length} appeared</div></div>
+        <div class="recent-field"><div class="label">Attendance</div><div class="value strong">${testAttendance==null?'—':testAttendance+'%'}</div></div>
         <div class="recent-field"><div class="label">Average score</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
         <div class="recent-field recent-status"><div class="label">Status</div><div class="value"><span class="home-status">Report ready</span></div></div>
         <div class="recent-actions">
@@ -111,10 +113,10 @@ async function home(){
       </section>
 
       <section class="home-workflow card"><h2>Teaching workflow</h2><div class="workflow-grid">
-        <button class="workflow-step workflow-enter" onclick="enterMarks()"><i>1</i><span class="workflow-icon">${homeIcon('tests')}</span><b>Enter marks</b><small>Record a test and scores</small></button>
-        <div class="workflow-step workflow-analyse"><i>2</i><div><b>Analyse &amp; remedial</b><button onclick="openTeacher()">${homeIcon('report')} Teacher report &amp; remedial</button><button onclick="growth()">${homeIcon('chart')} Growth tracker</button><button onclick="classInsights()">${homeIcon('chart')} Class insights</button></div></div>
-        <button class="workflow-step workflow-parent" onclick="openParents()"><i>3</i><span class="workflow-icon">${homeIcon('parent')}</span><b>Parent communication</b><small>Open parent reports</small></button>
-        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} Certificates</button><button onclick="teacherActivation()">${homeIcon('activation')} Teacher activation</button></div>
+        <button class="workflow-step workflow-enter" onclick="enterMarks()"><span class="workflow-top"><i>1</i><b>Enter marks</b><span class="workflow-icon">${homeIcon('tests')}</span></span><small>Record a test and scores</small></button>
+        <div class="workflow-step workflow-analyse"><span class="workflow-top"><i>2</i><b>Analyse &amp; remedial</b><span class="workflow-icon">${homeIcon('chart')}</span></span><div class="workflow-analysis-tools"><button onclick="openTeacher()">${homeIcon('report')} <span><b>Teacher report</b><small>Results and remedial plan</small></span></button><button onclick="growth()">${homeIcon('chart')} <span><b>Growth tracker</b><small>Chapter-by-chapter progress</small></span></button><button onclick="classInsights()">${homeIcon('classes')} <span><b>Class insights</b><small>Leaderboard and support risks</small></span></button></div></div>
+        <button class="workflow-step workflow-parent" onclick="openParents()"><span class="workflow-top"><i>3</i><b>Parent communication</b><span class="workflow-icon">${homeIcon('parent')}</span></span><small>Open parent reports</small></button>
+        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} <span>Certificates</span></button><button onclick="teacherActivation()">${homeIcon('activation')} <span>Teacher activation</span></button></div>
       </div></section>
 
       <section class="card home-recent-card">
@@ -129,7 +131,7 @@ async function home(){
           <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
         </div>
       </div>
-      <div class="pad" style="padding-top:0">${recent||'<div class="home-empty">No tests found for this selection.</div>'}</div>
+      <div class="pad home-recent-table" style="padding-top:0">${recent?`<div class="recent-grid home-tests-table-head"><span>Date</span><span>Class &amp; section</span><span>Subject</span><span>Test &amp; chapter</span><span>Full marks</span><span>Attendance</span><span>Average score</span><span>Status</span><span>Reports</span></div>${recent}`:'<div class="home-empty">No tests found for this selection.</div>'}</div>
       </section>
     </div>
   `);
