@@ -25,3 +25,5 @@
   .app-shell{display:grid!important;grid-template-columns:248px minmax(0,1fr)!important}.app-shell.sidebar-collapsed{grid-template-columns:74px minmax(0,1fr)!important}
   .app-sidebar{display:flex!important}.topnav-brand,.topnav-primary,.account-menu{display:none!important}.topnav-inner{height:64px!important;justify-content:flex-end!important}.topnav-actions{margin-left:auto}.topnav-actions #navSignout{display:none!important}body.is-authenticated .topnav-actions #navSignout{display:inline-flex!important}
 }
+
+@media screen and (min-width:721px){.home-recent-card .pad.row{padding-bottom:8px!important}.home-recent-card .home-recent-table{padding-top:0!important}.home-tests-table-head{position:static!important;top:auto!important;margin-top:0!important}}
