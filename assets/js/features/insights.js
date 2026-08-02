@@ -1,5 +1,5 @@
 /* ---------- CLASS INSIGHTS ---------- */
-let INSIGHTS = { cls:'', section:'All', subject:'', showAll:false };
+let INSIGHTS = { cls:'', section:'All', subject:'', showAll:false, showAllTrends:false };
 
 const round1 = value => Math.round(value*10)/10;
 const insightStatus = row => {
@@ -81,6 +81,8 @@ function buildSubjectInsights(tests, students, results, filters){
   const reliable = scored.filter(r=>r.attended>=2);
   const totalMarks = reliable.reduce((sum,r)=>sum+r.marks,0);
   const totalFullMarks = reliable.reduce((sum,r)=>sum+r.fullMarks,0);
+  const applicableExams = rows.reduce((sum,row)=>sum+row.eligible,0);
+  const attendedExams = rows.reduce((sum,row)=>sum+row.attended,0);
   const sectionLeaders = [...new Set(reliable.map(row=>row.section))].map(section=>
     reliable.filter(row=>row.section===section)[0]
   ).filter(Boolean);
@@ -91,9 +93,11 @@ function buildSubjectInsights(tests, students, results, filters){
     attendanceRisk,
     top:reliable[0]||null,
     classAverage:totalFullMarks ? round1(totalMarks/totalFullMarks*100) : null,
+    examAttendance:applicableExams ? round1(attendedExams/applicableExams*100) : null,
     sectionLeaders,
     topPerformers:scored.slice(0,10),
-    trendRows:reliable.slice(0,5),
+    // Keep the trend report in the same cumulative-score order as the leaderboard.
+    trendRows:reliable,
     highestImprovement:reliable.filter(row=>row.trend.change!=null).sort((a,b)=>b.trend.change-a.trend.change)[0]||null,
     noAttempt:rows.filter(row=>row.eligible>0 && row.attended===0)
   };
@@ -139,7 +143,7 @@ function insightPill(meta){
 }
 
 function insightIcon(kind){
-  const paths={class:'<path d="M3 9l9-5 9 5-9 5-9-5zm4 3v4c3 2 6 2 10 0v-4"/>',subject:'<path d="M4 5.5C7 4 9.5 5 12 7c2.5-2 5-3 8-1.5v12c-3-1.5-5.5-.5-8 1-2.5-1.5-5-2.5-8-1v-12zM12 7v11"/>',session:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16m-11 4h.01m3 0h.01m3 0h.01"/>',exam:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4h6v3H9zm1 7h4m-4 4h4"/>',average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',leader:'<circle cx="12" cy="9" r="5"/><path d="M8 13l-2 8 6-3 6 3-2-8"/>',improve:'<path d="M4 17l6-6 4 4 6-8m-5 0h5v5"/>',flag:'<path d="M5 21V4m0 1h11l-1 5 1 5H5"/>'};
+  const paths={class:'<path d="M3 9l9-5 9 5-9 5-9-5zm4 3v4c3 2 6 2 10 0v-4"/>',subject:'<path d="M4 5.5C7 4 9.5 5 12 7c2.5-2 5-3 8-1.5v12c-3-1.5-5.5-.5-8 1-2.5-1.5-5-2.5-8-1v-12zM12 7v11"/>',session:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16m-11 4h.01m3 0h.01m3 0h.01"/>',exam:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4h6v3H9zm1 7h4m-4 4h4"/>',average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',leader:'<circle cx="12" cy="9" r="5"/><path d="M8 13l-2 8 6-3 6 3-2-8"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',improve:'<path d="M4 17l6-6 4 4 6-8m-5 0h5v5"/>',flag:'<path d="M5 21V4m0 1h11l-1 5 1 5H5"/>'};
   return `<svg class="insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.exam}</svg>`;
 }
 
@@ -151,7 +155,8 @@ function renderClassInsights(data){
     return `<div class="insight-board-row ${index>=10?'insight-extra-row':''}"><div class="insight-rank ${rankClass}">${row.rank}</div><div class="insight-student"><b>${row.name}</b><div class="tiny faint">Section ${row.section}</div></div><div class="insight-score-bar"><span style="width:${row.percent}%"></span></div><div class="insight-score"><b>${row.percent}%</b></div></div>`;
   }).join('') : '<div class="empty-good">No scored exams yet.</div>';
   const sectionCards = data.sectionLeaders.map(row=>`<div class="insight-section-card"><div>${insightIcon('leader')}<span class="tiny">Section ${row.section} leader</span></div><b>${row.name}</b><div class="insight-section-score">${row.percent}%</div><div class="tiny faint">Average across all attended exams</div></div>`).join('') || '<div class="empty-good">Section leaders appear after two attended exams.</div>';
-  const trendRows = data.trendRows.map(row=>`<div class="insight-trend-row"><div><b>${row.name}</b><div class="tiny faint">Section ${row.section}</div></div><div>${row.trend.previous}%</div><div>${row.trend.latest}%</div><div>${insightPill(row.trend)}</div></div>`).join('') || '<div class="empty-good">Trend appears after two attended exams.</div>';
+  const visibleTrendRows = INSIGHTS.showAllTrends ? data.trendRows : data.trendRows.slice(0,10);
+  const trendRows = visibleTrendRows.map((row,index)=>`<div class="insight-trend-row ${index>=10?'insight-extra-row':''}"><div><b>${row.name}</b><div class="tiny faint">Section ${row.section}</div></div><div>${row.trend.previous}%</div><div>${row.trend.latest}%</div><div>${insightPill(row.trend)}</div></div>`).join('') || '<div class="empty-good">Trend appears after two attended exams.</div>';
   const list = (rows,render,empty) => rows.length ? `<ul class="insight-flag-list">${rows.map(render).join('')}</ul>` : `<div class="empty-good">${empty}</div>`;
   const support = list(data.support,row=>`<li>${row.name} (Section ${row.section}) · ${row.percent}%</li>`,'No students are below 40%.');
   const absent = list(data.attendanceRisk,row=>`<li>${row.name} (Section ${row.section}) · ${row.attended} / ${row.eligible}</li>`,'No regular exam absences.');
@@ -161,10 +166,10 @@ function renderClassInsights(data){
     ${insightsFilterBar()}
     <div class="insight-report exact-insight-report">
       <div class="insight-print-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class Insights —<br>Student Performance Report</h1></div><button class="insight-print-button" onclick="window.print()">🖨 Print / Save as PDF</button></div>
-      <div class="insight-meta"><div>${insightIcon('class')}<span>Class<b>Class ${INSIGHTS.cls}</b></span></div><div>${insightIcon('subject')}<span>Subject<b>${INSIGHTS.subject}</b></span></div><div>${insightIcon('session')}<span>Academic year<b>${currentSession()}</b></span></div><div>${insightIcon('exam')}<span>Exams included<b>${included}</b></span></div></div>
-  <div class="insight-metrics exact-metrics"><div class="metric icon-metric">${insightIcon('average')}<span><div class="tiny">Class average</div><div class="n">${data.classAverage??'--'}${data.classAverage==null?'':'%'}</div><div class="tiny faint">All attended exams</div></span></div><div class="metric icon-metric">${insightIcon('improve')}<span><div class="tiny">Highest improvement</div><div class="n">${improve==null?'--':(improve>0?'+':'')+improve}</div><div class="tiny faint">percentage points</div></span></div></div>
+      <div class="insight-meta"><div>${insightIcon('class')}<span>Class<b>Class ${INSIGHTS.cls}</b></span></div><div>${insightIcon('subject')}<span>Subject<b>${INSIGHTS.subject}</b></span></div><div>${insightIcon('exam')}<span>Exams included<b>${included}</b></span></div></div>
+  <div class="insight-metrics exact-metrics"><div class="metric icon-metric">${insightIcon('average')}<span><div class="tiny">Class average</div><div class="n">${data.classAverage??'--'}${data.classAverage==null?'':'%'}</div><div class="tiny faint">All attended exams</div></span></div><div class="metric icon-metric">${insightIcon('improve')}<span><div class="tiny">Highest improvement</div><div class="n">${improve==null?'--':(improve>0?'+':'')+improve}</div><div class="tiny faint">percentage points</div></span></div><div class="metric icon-metric attendance-metric">${insightIcon('attendance')}<span><div class="tiny">Exam attendance</div><div class="n">${data.examAttendance??'--'}${data.examAttendance==null?'':'%'}</div><div class="tiny faint">of applicable exams attended</div></span></div></div>
       <div class="insight-main-grid"><div class="card pad insight-leaderboard"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Top performers</h2></div><div class="muted small">Average percentage across all attended exams</div></div><div class="insight-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${leaderboard}${data.rows.filter(row=>row.percent!=null).length>10?`<button class="insight-show-all" onclick="setInsightsShowAll()">${INSIGHTS.showAll?'Show Top 10':'Show all students'}</button>`:''}</div><div class="card pad insight-sections"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Section leaders</h2></div></div>${sectionCards}</div></div>
-      <div class="card pad insight-trend-card"><div class="insight-heading"><div>${insightIcon('improve')}<h2>Performance trend</h2></div><div class="muted small">Previous attended exam vs current attended exam</div></div><div class="insight-trend-head"><span>Student</span><span>Previous %</span><span>Current %</span><span>Change</span></div>${trendRows}</div>
+      <div class="card pad insight-trend-card"><div class="insight-heading"><div>${insightIcon('improve')}<h2>Performance trend</h2></div><div class="muted small">Top 10 by overall average · previous attended exam vs current attended exam</div></div><div class="insight-trend-head"><span>Student</span><span>Previous %</span><span>Current %</span><span>Change</span></div>${trendRows}${data.trendRows.length>10?`<button class="insight-show-all" onclick="setInsightsTrendShowAll()">${INSIGHTS.showAllTrends?'Show Top 10':'Show all students'}</button>`:''}</div>
       <div class="card pad insight-flags"><div class="insight-heading"><div>${insightIcon('flag')}<h2>Academic support flags</h2></div></div><div class="insight-flag-grid"><div class="insight-flag support"><h3>Below 40%</h3><div class="tiny">Students scoring below 40%</div>${support}</div><div class="insight-flag absent"><h3>Regularly absent</h3><div class="tiny">Attempted exams / applicable exams</div>${absent}</div><div class="insight-flag no-attempt"><h3>No exam attempt</h3><div class="tiny">No score in any applicable exam</div>${noAttempt}</div></div></div>
       <div class="tiny faint insight-note">Average percentage is calculated from scored marks across all attended exams. Trend changes are percentage points.</div>
     </div>`);
@@ -173,7 +178,9 @@ function renderClassInsights(data){
 window.setInsightsFilter = (key,value)=>{
   INSIGHTS[key] = value;
   INSIGHTS.showAll = false;
+  INSIGHTS.showAllTrends = false;
   classInsights();
 };
 window.setInsightsShowAll = ()=>{ INSIGHTS.showAll=!INSIGHTS.showAll; classInsights(); };
+window.setInsightsTrendShowAll = ()=>{ INSIGHTS.showAllTrends=!INSIGHTS.showAllTrends; classInsights(); };
 window.classInsights = classInsights;

@@ -8,7 +8,7 @@
   }
 
 /* Final screen overrides kept after print rules so the shared system wins. */
-.exact-insight-report .exact-metrics{grid-template-columns:repeat(2,minmax(0,1fr));max-width:530px}
+.exact-insight-report .exact-metrics{grid-template-columns:repeat(3,minmax(0,1fr));max-width:800px}.exact-insight-report .attendance-metric{background:#fffaf2;border-color:#f1d6a8}.exact-insight-report .attendance-metric .n{color:#a8670a}
 
 @media screen{
   body{font-family:Inter,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#f1f6f1 0,#f6f8f6 210px)}
