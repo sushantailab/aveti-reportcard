@@ -71,7 +71,8 @@ async function growth(){
     const lowScore = item.average!=null && item.average<60;
     const lowAttendance = item.attendance!=null && item.attendance<75;
     const note = lowAttendance ? 'Follow up attendance' : lowScore ? 'Priority support' : item.average>=70 ? 'Strong performance' : 'Reinforce concepts';
-    return `<div class="growth-chapter-tile ${lowScore||lowAttendance?'needs-attention':''}"><b>${item.label}</b><strong>${item.average==null?'—':item.average+'%'}</strong><span class="growth-tile-note">${note}</span><span class="tiny">${item.attendance==null?'No attendance data':item.attendance+'% attended'}</span></div>`;
+    const tileIcon = lowAttendance ? 'attendance' : lowScore ? 'low' : item.average>=70 ? 'strong' : 'focus';
+    return `<div class="growth-chapter-tile ${lowScore||lowAttendance?'needs-attention':''}"><b>${item.label}</b><strong>${item.average==null?'—':item.average+'%'}</strong><span class="growth-tile-note">${note}</span><span class="growth-tile-meta">${growthIcon(tileIcon)}<span>${item.attendance==null?'No attendance data':item.attendance+'% attended'}</span></span></div>`;
   }).join('') : '<div class="empty-good">No completed chapter exams yet.</div>';
   const actionItems = [
     lowest && lowest.average<60 ? `Reteach ${lowest.title}` : null,
@@ -81,22 +82,22 @@ async function growth(){
   show(`
     ${filterBar}
     <div class="growth-dashboard">
-      <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — ${GR.subject} performance report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      <div class="growth-head"><div><div class="eyebrow">Aveti Learning</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
       <div class="growth-summary-grid">
         <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${classAverage==null?'—':classAverage+'%'}</strong><em>All attended exams</em></div></div>
         <div class="growth-summary-card ${lowest?.average<60?'alert':''}"><span>${growthIcon('low')}</span><div><small>Lowest average</small><strong>${lowest?lowest.average+'%':'—'}</strong><em>${lowest?.label||'No chapter data'}</em></div></div>
         <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${attendance==null?'—':attendance+'%'}</strong><em>of applicable exams</em></div></div>
       </div>
-      <div class="growth-journey card"><div class="growth-journey-head"><div><h2>Class performance journey</h2><p>Percentage across completed chapters</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latest&&lowest?`<div class="growth-attention ${latest===lowest?'show':''}"><b>${latest===lowest?'Attention needed':'Chapter focus'}</b><span>${latest===lowest && fall!=null && fall<0 ? `${latest.label} fell by ${Math.abs(fall)} points from ${previous.label}.` : `${lowest.label} has the lowest class average.`}</span><strong>${lowest.average}%</strong></div>`:''}</div>
+      <div class="growth-journey card"><div class="growth-journey-head"><div><h2>${growthIcon('journey')}Class performance journey</h2><p>Class score percentage in each completed chapter</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latest&&lowest?`<div class="growth-attention ${latest===lowest?'show':''}"><b>${latest===lowest?'Attention needed':'Chapter focus'}</b><span>${latest===lowest && fall!=null && fall<0 ? `${latest.label} fell by ${Math.abs(fall)} points from ${previous.label}.` : `${lowest.label} has the lowest class average.`}</span><strong>${lowest.average}%</strong></div>`:''}</div>
       <div class="growth-chapter-grid">${chapterTiles}</div>
-      <div class="growth-bottom-grid"><div class="card growth-action"><h2>${growthIcon('action')}Teacher action plan</h2>${actionItems.length?`<ul>${actionItems.map(item=>`<li>${item}</li>`).join('')}</ul>`:'<div class="empty-good">No urgent academic action identified.</div>'}</div><div class="card growth-attendance"><h2>${growthIcon('attendance')}Exam attendance</h2><div class="growth-attendance-main"><b>${attendedResults.length} / ${applicableResults.length}</b><span>exam records attended</span></div><div class="growth-attendance-list"><div><b>${missedOne.length}</b><span>students missed one or more exams</span></div><div><b>${noAttempt.length}</b><span>students made no exam attempt</span></div></div></div></div>
+      <div class="growth-bottom-grid"><div class="card growth-action"><h2>${growthIcon('action')}Teacher action plan</h2>${actionItems.length?`<ul>${actionItems.map(item=>`<li>${item}</li>`).join('')}</ul>`:'<div class="empty-good">No urgent academic action identified.</div>'}</div></div>
       <div class="growth-footer"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>
     </div>
   `);
 }
 
 function growthIcon(kind){
-  const paths={average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',low:'<path d="M4 7l6 6 4-4 6 8m-5 0h5v-5"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',action:'<path d="M5 4h14v16H5zM9 2v4m6-4v4M8 11h8m-8 4h5"/>'};
+  const paths={average:'<path d="M5 19V11m5 8V6m5 13V9m4 10H3"/>',low:'<path d="M4 7l6 6 4-4 6 8m-5 0h5v-5"/>',attendance:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14.5 20c.2-2.7 1.4-4.3 3.7-4.8"/>',journey:'<path d="M4 17l5-5 4 3 7-8m-5 0h5v5"/>',strong:'<path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/>',focus:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/>',action:'<path d="M5 4h14v16H5zM9 2v4m6-4v4M8 11h8m-8 4h5"/>'};
   return `<svg class="growth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.average}</svg>`;
 }
 
@@ -141,7 +142,7 @@ function lineChartSVG(labels, series){
       const p=[x(i),y(v)];
       d+=(open?'L':'M')+p[0]+' '+p[1]+' ';
       open=true;
-      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}: ${v}%</title></circle>`;
+      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}: ${v}%</title></circle>${si===0?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
     });
     if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
     legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
