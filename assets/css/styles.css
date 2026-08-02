@@ -91,6 +91,10 @@
 
 .teacher-trend-pill.first-test{background:#eef3f8;color:#536b7e}
 
+.teacher-trend-score{display:grid;gap:2px}.teacher-trend-score small{font-family:Inter,Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;color:#6c7b74;white-space:nowrap}
+@media(max-width:620px){.teacher-trend-score small{font-size:8px}}
+@media print{.teacher-trend-score small{font-size:5.5pt}}
+
 @media (max-width:720px){
   .insight-meta{grid-template-columns:1fr 1fr;gap:10px}.insight-meta>div{padding:0;border:0}.exact-metrics{grid-template-columns:1fr 1fr}.insight-main-grid{grid-template-columns:1fr}.insight-flag-grid{grid-template-columns:1fr}.exact-insight-report .insight-print-head h1{font-size:25px}.insight-axis{margin-left:calc(32px + 96px)}.exact-insight-report .insight-board-row{grid-template-columns:28px minmax(96px,1fr) minmax(80px,1fr) 43px}.insight-trend-head,.exact-insight-report .insight-trend-row{grid-template-columns:minmax(105px,1fr) 56px 56px}.insight-trend-head span:last-child,.exact-insight-report .insight-trend-row>div:last-child{grid-column:2/-1}.exact-insight-report .insight-trend-row{row-gap:2px}.exact-insight-report .insight-trend-row .pill{justify-self:start}
 }

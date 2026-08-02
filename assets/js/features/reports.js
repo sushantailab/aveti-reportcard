@@ -225,6 +225,12 @@ async function teacherScopeLabel(test){
   return Number.isFinite(number) && number>0 ? `Ch ${number}` : 'Selected chapters';
 }
 
+function teacherShortTestLabel(test, scope){
+  const prefix = testTypeLabel(test.test_type)==='Chapter End Test' ? 'CET' : testTypeLabel(test.test_type)==='Periodic Test-1' ? 'PT1' : testTypeLabel(test.test_type);
+  const chapters = (String(scope||'').match(/\d+/g)||[]).join(',');
+  return chapters ? `${prefix}-Ch${chapters}` : prefix;
+}
+
 async function renderTeacher(tests){
   const test = tests.find(t=>t.id===TEACHER_FILTER.testId);
   if(!test){
@@ -313,6 +319,8 @@ async function renderTeacher(tests){
     candidate.subject===test.subject &&
     new Date(testDate(candidate)).getTime()<=currentTime
   ).sort((a,b)=>new Date(testDate(a))-new Date(testDate(b)));
+  const comparisonScopes = new Map(await Promise.all(comparisonTests.map(async candidate=>[candidate.id,await teacherScopeLabel(candidate)])));
+  const currentComparisonLabel = teacherShortTestLabel(test,scopeLabel);
   const comparisonResults = new Map(await Promise.all(comparisonTests.map(async candidate=>[
     candidate.id,
     (await cachedResults(candidate.id)).filter(result=>studentById.has(result.student_id))
@@ -330,7 +338,7 @@ async function renderTeacher(tests){
     const previousResult = previousTest ? comparisonResults.get(previousTest.id).find(item=>item.student_id===row.studentId) : null;
     const previous = previousResult ? pct(previousResult.marks,previousTest.full_marks) : null;
     const change = previous==null ? null : Math.round((row.p-previous)*10)/10;
-    return {...row,previous,change,overall:Math.round(attended.reduce((sum,value)=>sum+value,0)/attended.length*10)/10};
+    return {...row,previous,change,previousLabel:previousTest?teacherShortTestLabel(previousTest,comparisonScopes.get(previousTest.id)):'No earlier test',currentLabel:currentComparisonLabel,overall:Math.round(attended.reduce((sum,value)=>sum+value,0)/attended.length*10)/10};
   }).sort((a,b)=>{
     if(a.change==null && b.change!=null) return 1;
     if(b.change==null && a.change!=null) return -1;
@@ -341,7 +349,7 @@ async function renderTeacher(tests){
   const comparisonList = comparisonDisplay.map((row,index)=>{
     const tone = row.change==null ? 'first-test' : row.change>=5 ? 'improving' : row.change<=-5 ? 'declining' : 'stable';
     const label = row.change==null ? 'First scored test' : tone==='improving' ? `Improving +${row.change} pts` : tone==='declining' ? `Declining ${row.change} pts` : 'Stable';
-    return `<div class="teacher-trend-row"><em>${index+1}</em><div><b>${row.name}</b><span>Section ${test.section||'All'} · Overall average ${row.overall}%</span></div><strong>${row.previous==null?'—':row.previous+'%'}</strong><strong>${row.p}%</strong><span class="teacher-trend-pill ${tone}">${label}</span></div>`;
+    return `<div class="teacher-trend-row"><em>${index+1}</em><div><b>${row.name}</b><span>Section ${test.section||'All'} · Overall average ${row.overall}%</span></div><strong class="teacher-trend-score">${row.previous==null?'—':row.previous+'%'}<small>${row.previousLabel}</small></strong><strong class="teacher-trend-score">${row.p}%<small>${row.currentLabel}</small></strong><span class="teacher-trend-pill ${tone}">${label}</span></div>`;
   }).join('');
   show(`
     ${await teacherFilterBar(tests)}
