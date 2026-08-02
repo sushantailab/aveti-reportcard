@@ -1,6 +1,7 @@
 /* ---------- TEACHER REPORT ---------- */
-let TEACHER_FILTER = { cls:'', section:'', subject:'', testId:'' };
+let TEACHER_FILTER = { cls:'', section:'', subject:'', testType:'', testId:'' };
 let TEACHER_SHOW_ALL = false;
+let TEACHER_TREND_SHOW_ALL = false;
 
 function parentMessageChapter(test){
   const no = String(test.chapter_no||'').trim();
@@ -141,6 +142,7 @@ async function openTeacher(testId){
         cls:String(selected.class_level||''),
         section:selected.section||'All',
         subject:selected.subject||'',
+        testType:testTypeLabel(selected.test_type),
         testId:selected.id
       };
       CURRENT_TEST = selected.id;
@@ -148,10 +150,11 @@ async function openTeacher(testId){
   } else if(!TEACHER_FILTER.testId && tests[0]){
     const recent = tests[0];
     TEACHER_FILTER = {
-      cls:String(recent.class_level||''),
-      section:recent.section||'All',
-      subject:recent.subject||'',
-      testId:recent.id
+        cls:String(recent.class_level||''),
+        section:recent.section||'All',
+        subject:recent.subject||'',
+        testType:testTypeLabel(recent.test_type),
+        testId:recent.id
     };
   }
   renderTeacher(tests);
@@ -171,29 +174,38 @@ async function teacherFilterBar(tests){
   const clsOpts = '<option value="">Class</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(TEACHER_FILTER.cls)?'selected':''}>Class ${c}</option>`).join('');
   const secOpts = '<option value="">Section</option>' + ['All','A','B'].map(s=>`<option value="${s}" ${s===TEACHER_FILTER.section?'selected':''}>${s==='All'?'All':'Section '+s}</option>`).join('');
   const subOpts = '<option value="">Subject</option>' + SUBJECTS.map(s=>`<option value="${s}" ${s===TEACHER_FILTER.subject?'selected':''}>${s}</option>`).join('');
-  const matching = (TEACHER_FILTER.cls && TEACHER_FILTER.section && TEACHER_FILTER.subject)
+  const baseMatching = (TEACHER_FILTER.cls && TEACHER_FILTER.section && TEACHER_FILTER.subject)
     ? tests.filter(t=>String(t.class_level)===String(TEACHER_FILTER.cls) && (t.section||'All')===TEACHER_FILTER.section && t.subject===TEACHER_FILTER.subject)
     : [];
+  const testTypeOpts = ['Chapter End Test','Periodic Test-1'].map(type=>`<option value="${type}" ${type===TEACHER_FILTER.testType?'selected':''}>${type}</option>`).join('');
+  const matching = TEACHER_FILTER.testType ? baseMatching.filter(test=>testTypeLabel(test.test_type)===TEACHER_FILTER.testType) : [];
   const chapters = (TEACHER_FILTER.cls && TEACHER_FILTER.subject)
     ? await DB.listChapters(Number(TEACHER_FILTER.cls),TEACHER_FILTER.subject)
     : [];
+  const periodicTests = matching.slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  if(TEACHER_FILTER.testType==='Periodic Test-1' && periodicTests.length && !periodicTests.some(test=>test.id===TEACHER_FILTER.testId)) TEACHER_FILTER.testId=periodicTests[0].id;
   const chapterEntries = chapters.map(chapter=>({chapter,test:teacherChapterTest(chapter,matching)}));
   const selectedEntry = chapterEntries.find(entry=>entry.test?.id===TEACHER_FILTER.testId);
-  if(TEACHER_FILTER.testId && !selectedEntry) TEACHER_FILTER.testId = '';
-  const chapterOptions = [
-    `<option value="" ${TEACHER_FILTER.testId?'':'selected'} disabled>${chapters.length?'Choose a completed chapter':'Choose class and subject first'}</option>`,
-    ...chapterEntries.map(({chapter,test})=>test
-      ? `<option value="${test.id}" ${test.id===TEACHER_FILTER.testId?'selected':''} style="color:#28613b">✓ ${chapterOptionLabel(chapter)} · Done</option>`
-      : `<option value="" disabled style="color:#77837c">${chapterOptionLabel(chapter)} · Pending</option>`
-    )
-  ].join('');
+  if(TEACHER_FILTER.testType==='Chapter End Test' && TEACHER_FILTER.testId && !selectedEntry) TEACHER_FILTER.testId = '';
+  const periodicTest = periodicTests.find(test=>test.id===TEACHER_FILTER.testId);
+  const periodicScope = periodicTest ? await teacherScopeLabel(periodicTest) : 'No tested chapters available';
+  const chapterControl = TEACHER_FILTER.testType==='Periodic Test-1'
+    ? `<div class="teacher-tested-chapters">✓ ${periodicScope}</div>`
+    : `<select class="teacher-chapter-select" onchange="setTeacherFilter('testId',this.value)" ${TEACHER_FILTER.testType==='Chapter End Test'&&chapters.length?'':'disabled'}>${[
+        `<option value="" ${TEACHER_FILTER.testId?'':'selected'} disabled>${TEACHER_FILTER.testType==='Chapter End Test'?'Choose a completed chapter':'Choose test type first'}</option>`,
+        ...chapterEntries.map(({chapter,test})=>test
+          ? `<option value="${test.id}" ${test.id===TEACHER_FILTER.testId?'selected':''} style="color:#28613b">✓ ${chapterOptionLabel(chapter)} · Done</option>`
+          : `<option value="" disabled style="color:#77837c">${chapterOptionLabel(chapter)} · Pending</option>`
+        )
+      ].join('')}</select>`;
   return `
     <div class="card pad teacher-filter" style="margin-bottom:14px">
       <div class="wrap-fields">
         <div class="field"><label>Class</label><select onchange="setTeacherFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setTeacherFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setTeacherFilter('subject',this.value)">${subOpts}</select></div>
-        <div class="field"><label>Chapter</label><select class="teacher-chapter-select" onchange="setTeacherFilter('testId',this.value)" ${chapters.length?'':'disabled'}>${chapterOptions}</select></div>
+        <div class="field"><label>Type of test</label><select onchange="setTeacherFilter('testType',this.value)"><option value="" ${TEACHER_FILTER.testType?'':'selected'} disabled>Select test type</option>${testTypeOpts}</select></div>
+        <div class="field"><label>${TEACHER_FILTER.testType==='Periodic Test-1'?'Tested chapters':'Chapter'}</label>${chapterControl}</div>
       </div>
     </div>`;
 }
@@ -229,7 +241,7 @@ async function renderTeacher(tests){
   const studentById = new Map(students.map(s=>[s.id,s]));
   const rs = (await cachedResults(test.id)).filter(result=>studentById.has(result.student_id));
   // Archived/deleted students remain recoverable in the database, but must not appear in active reports.
-  let rows = rs.filter(r=>studentById.has(r.student_id)).map(r=>({name:studentById.get(r.student_id).name,marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
+  let rows = rs.filter(r=>studentById.has(r.student_id)).map(r=>({studentId:r.student_id,name:studentById.get(r.student_id).name,marks:r.marks,present:r.present,na:!!r.na,p:(!r.na&&r.present)?pct(r.marks,test.full_marks):null}));
   const enrolled = rows.length;
   const appearedCount = rows.filter(r=>!r.na && r.present).length;
   const absentCount = rows.filter(r=>!r.na && !r.present).length;
@@ -284,7 +296,7 @@ async function renderTeacher(tests){
     const top = (50+Math.sin(angle)*35).toFixed(2);
     return `<b class="teacher-donut-label" style="left:${left}%;top:${top}%">${item.share}%</b>`;
   }).join('');
-  const distributionCard = `<section class="teacher-distribution"><h2>Score distribution <span>(by percentage range)</span></h2><div class="teacher-distribution-body"><div class="teacher-donut" style="background:${distributionGradient}">${distributionLabels}<div>▥</div></div><div class="teacher-distribution-legend">${distribution.map(item=>`<div><i style="background:${distributionColors[item.grade]}"></i><span>${item.range}</span><b>${item.share}%</b></div>`).join('')}</div></div></section>`;
+  const distributionCard = `<section class="teacher-distribution"><h2>Score distribution <span>(by percentage range)</span></h2><div class="teacher-distribution-body"><div class="teacher-donut" style="background:${distributionGradient}">${distributionLabels}<div>▥</div></div><div class="teacher-distribution-legend">${distribution.map(item=>`<div><i style="background:${distributionColors[item.grade]}"></i><span>${item.range}</span></div>`).join('')}</div></div></section>`;
   const leaderboardRows = (TEACHER_SHOW_ALL ? present : present.slice(0,10)).map((r,i)=>`
     <div class="teacher-leader-row">
       <div class="teacher-leader-rank ${i<3?'medal-'+(i+1):''}">${i+1}</div>
@@ -294,13 +306,46 @@ async function renderTeacher(tests){
     </div>`).join('');
   const supportCount = present.filter(row=>row.p<60).length;
   const attendance = enrolled-naCount ? Math.round(appearedCount/(enrolled-naCount)*1000)/10 : null;
+  const currentTime = new Date(testDate(test)).getTime();
+  const comparisonTests = tests.filter(candidate=>
+    String(candidate.class_level)===String(test.class_level) &&
+    (candidate.section||'All')===(test.section||'All') &&
+    candidate.subject===test.subject &&
+    new Date(testDate(candidate)).getTime()<=currentTime
+  ).sort((a,b)=>new Date(testDate(a))-new Date(testDate(b)));
+  const comparisonResults = new Map(await Promise.all(comparisonTests.map(async candidate=>[
+    candidate.id,
+    (await cachedResults(candidate.id)).filter(result=>studentById.has(result.student_id))
+  ])));
+  const earlierTests = comparisonTests.filter(candidate=>new Date(testDate(candidate)).getTime()<currentTime).sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  const comparisonRows = present.map(row=>{
+    const attended = comparisonTests.map(candidate=>{
+      const result = comparisonResults.get(candidate.id)?.find(item=>item.student_id===row.studentId);
+      return result && !result.na && result.present && result.marks!=null ? pct(result.marks,candidate.full_marks) : null;
+    }).filter(value=>value!=null);
+    const previousTest = earlierTests.find(candidate=>{
+      const result = comparisonResults.get(candidate.id)?.find(item=>item.student_id===row.studentId);
+      return result && !result.na && result.present && result.marks!=null;
+    });
+    if(!previousTest) return null;
+    const previousResult = comparisonResults.get(previousTest.id).find(item=>item.student_id===row.studentId);
+    const previous = pct(previousResult.marks,previousTest.full_marks);
+    const change = Math.round((row.p-previous)*10)/10;
+    return {...row,previous,change,overall:Math.round(attended.reduce((sum,value)=>sum+value,0)/attended.length*10)/10};
+  }).filter(Boolean).sort((a,b)=>b.p-a.p || b.overall-a.overall);
+  const comparisonDisplay = (TEACHER_TREND_SHOW_ALL ? comparisonRows : comparisonRows.slice(0,10));
+  const comparisonList = comparisonDisplay.map(row=>{
+    const tone = row.change>=5 ? 'improving' : row.change<=-5 ? 'declining' : 'stable';
+    const label = tone==='improving' ? `Improving +${row.change} pts` : tone==='declining' ? `Declining ${row.change} pts` : 'Stable';
+    return `<div class="teacher-trend-row"><div><b>${row.name}</b><span>Section ${test.section||'All'} · Overall average ${row.overall}%</span></div><strong>${row.previous}%</strong><strong>${row.p}%</strong><span class="teacher-trend-pill ${tone}">${label}</span></div>`;
+  }).join('');
   show(`
     ${await teacherFilterBar(tests)}
     <div class="card pad teacher-report teacher-insight-report">
       <div class="teacher-insight-title">Test result &amp; remedial planning report</div>
       <div class="teacher-insight-head">
         <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><div class="teacher-report-name">Teacher report</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
-        <div class="teacher-test-meta"><b>▣ ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b><span>▤ Assessment scope: ${scopeLabel}</span></div>
+        <div class="teacher-test-meta"><div class="teacher-test-line"><i>▣</i><b>${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b></div><div class="teacher-scope-line"><i>▤</i><span>Assessment scope: <strong>${scopeLabel}</strong></span></div></div>
       </div>
       <div class="teacher-summary-grid">
         <div class="teacher-summary-card average"><i>▥</i><span>Class average<b>${avg??'—'}%</b></span></div>
@@ -314,6 +359,7 @@ async function renderTeacher(tests){
         <section class="teacher-leaderboard"><div class="teacher-board-heading"><div><h2>♛ Top performers</h2><span>Students who appeared, ranked by this assessment</span></div><span class="teacher-axis">0%　25%　50%　75%　100%</span></div>${leaderboardRows||'<div class="muted">No submitted marks yet.</div>'}${present.length>10?`<button class="teacher-show-all" onclick="setTeacherShowAll()">${TEACHER_SHOW_ALL?'Show Top 10':`View full ranking (${present.length})`}</button>`:''}</section>
         <div class="teacher-side-insights">${distributionCard}<section class="teacher-absentees"><div class="teacher-absent-head"><h2>⚠ Exam absentees</h2>${absentCount?'<span class="teacher-retest-tag">▣ Re-test needed</span>':''}</div><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section></div>
       </div>
+      <section class="teacher-performance-trend"><div class="teacher-trend-heading"><div><h2>↗ Performance comparison</h2><span>Top 10 by current test score · previous attended assessment vs this assessment</span></div></div><div class="teacher-trend-labels"><span>Student</span><span>Previous %</span><span>Current %</span><span>Change</span></div>${comparisonList||'<div class="teacher-trend-empty">No student has both a previous attended assessment and a score in this assessment yet.</div>'}${comparisonRows.length>10?`<button class="teacher-show-all" onclick="setTeacherTrendShowAll()">${TEACHER_TREND_SHOW_ALL?'Show Top 10':'Show all students'}</button>`:''}</section>
       ${naList}
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
@@ -329,12 +375,18 @@ window.setTeacherFilter = async (key,value)=>{
   const tests = await DB.listTests();
   TEACHER_FILTER[key] = value;
   TEACHER_SHOW_ALL = false;
-  if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
+  TEACHER_TREND_SHOW_ALL = false;
+  if(key==='cls' || key==='section' || key==='subject' || key==='testType') TEACHER_FILTER.testId = '';
   await renderTeacher(tests);
 };
 
 window.setTeacherShowAll = async ()=>{
   TEACHER_SHOW_ALL = !TEACHER_SHOW_ALL;
+  await renderTeacher(await DB.listTests());
+};
+
+window.setTeacherTrendShowAll = async ()=>{
+  TEACHER_TREND_SHOW_ALL = !TEACHER_TREND_SHOW_ALL;
   await renderTeacher(await DB.listTests());
 };
 
