@@ -278,7 +278,13 @@ async function renderTeacher(tests){
   });
   const distributionColors = {A:'#08704e',B:'#82b94d',C:'#f2a52a',D:'#ef5046'};
   const distributionGradient = present.length ? `conic-gradient(${distribution.map(item=>`${distributionColors[item.grade]} ${item.start}% ${item.end}%`).join(',')})` : '#e7eeea';
-  const distributionCard = `<section class="teacher-distribution"><h2>Score distribution <span>(by percentage range)</span></h2><div class="teacher-distribution-body"><div class="teacher-donut" style="background:${distributionGradient}"><div>▥</div></div><div class="teacher-distribution-legend">${distribution.map(item=>`<div><i style="background:${distributionColors[item.grade]}"></i><span>${item.range}</span><b>${item.share}%</b></div>`).join('')}</div></div></section>`;
+  const distributionLabels = distribution.filter(item=>item.share>0).map(item=>{
+    const angle = ((item.start+item.end)/200)*Math.PI*2-Math.PI/2;
+    const left = (50+Math.cos(angle)*35).toFixed(2);
+    const top = (50+Math.sin(angle)*35).toFixed(2);
+    return `<b class="teacher-donut-label" style="left:${left}%;top:${top}%">${item.share}%</b>`;
+  }).join('');
+  const distributionCard = `<section class="teacher-distribution"><h2>Score distribution <span>(by percentage range)</span></h2><div class="teacher-distribution-body"><div class="teacher-donut" style="background:${distributionGradient}">${distributionLabels}<div>▥</div></div><div class="teacher-distribution-legend">${distribution.map(item=>`<div><i style="background:${distributionColors[item.grade]}"></i><span>${item.range}</span><b>${item.share}%</b></div>`).join('')}</div></div></section>`;
   const leaderboardRows = (TEACHER_SHOW_ALL ? present : present.slice(0,10)).map((r,i)=>`
     <div class="teacher-leader-row">
       <div class="teacher-leader-rank ${i<3?'medal-'+(i+1):''}">${i+1}</div>
