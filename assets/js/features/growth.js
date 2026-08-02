@@ -35,7 +35,9 @@ async function growth(){
     return {test,index,label:`Chapter ${Number(test.chapter_no)||index+1}`,title:chapterDetail(test),applicable:applicable.length,appeared:appeared.length,average,attendance:applicable.length?round1(appeared.length/applicable.length*100):null};
   });
   const attendedResults = tests.flatMap(test=>allRes.filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na && result.present && result.marks!=null).map(result=>({...result,test})));
-  const applicableResults = tests.flatMap(test=>allRes.filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na));
+  const applicableResults = tests.flatMap(test=>allRes
+    .filter(result=>result.test_id===test.id && activeStudentIds.has(result.student_id) && !result.na)
+    .map(result=>({...result,test})));
   const classAverage = attendedResults.length ? round1(attendedResults.reduce((sum,result)=>sum+Number(result.marks||0),0)/attendedResults.reduce((sum,result)=>sum+Number(result.test.full_marks||0),0)*100) : null;
   const lowest = testStats.filter(item=>item.average!=null).sort((a,b)=>a.average-b.average)[0]||null;
   const attendance = applicableResults.length ? round1(attendedResults.length/applicableResults.length*100) : null;
