@@ -21,13 +21,45 @@ function show(html){ app.innerHTML = '<div class="screen active">'+html+'</div>'
 const demoNote = CONFIG.USE_SUPABASE ? '' :
   '<div class="demoflag">Demo mode — sample data, nothing is saved permanently. Set <b>USE_SUPABASE = true</b> in the file and add your keys to go live.</div>';
 const toolGlyph = symbol => `<span class="tool-glyph" aria-hidden="true">${symbol}</span>`;
+const homeIcon = type => ({
+  tests:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3v3m6-3v3M8.5 11l2 2 4-4m-6 7h7"/></svg>',
+  classes:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 20c.4-4 2.5-6 5.5-6s5.1 2 5.5 6m.4-5c2.7.2 4.4 1.8 4.8 4.6"/></svg>',
+  subject:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5c3.2-.9 5.6-.4 8 1.4v12c-2.4-1.8-4.8-2.3-8-1.4zM20 5.5c-3.2-.9-5.6-.4-8 1.4v12c2.4-1.8 4.8-2.3 8-1.4z"/></svg>',
+  attendance:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2.5 20c.5-4 2.6-6 5.5-6s5 2 5.5 6m1-4.7 2 2 4-4"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m6 10V4m6 16v-7"/><path d="M2 20h20"/></svg>',
+  report:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  parent:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 20c.4-4 2.5-6 5.5-6s5.1 2 5.5 6m.4-5c2.7.2 4.4 1.8 4.8 4.6"/></svg>',
+  certificate:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="m8.5 13-1 7 4.5-2 4.5 2-1-7M12 6.5v5m-2.5-2.5h5"/></svg>',
+  activation:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 14-14M9 5h10v10"/></svg>'
+}[type] || '');
 
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
+let HOME_PERIOD_MONTH = '', HOME_PERIOD_YEAR = '';
 async function home(){
   setCrumb('Home');
   const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
   const activeStudentIds = new Set((await DB.listStudents()).map(student=>student.id));
+  const datedTests = tests.filter(test=>!Number.isNaN(new Date(testDate(test)).getTime()));
+  if((!HOME_PERIOD_MONTH || !HOME_PERIOD_YEAR) && datedTests.length){
+    const latest = new Date(testDate(datedTests[0]));
+    HOME_PERIOD_MONTH = String(latest.getMonth());
+    HOME_PERIOD_YEAR = String(latest.getFullYear());
+  }
+  const selectedMonth = Number(HOME_PERIOD_MONTH || new Date().getMonth());
+  const selectedYear = Number(HOME_PERIOD_YEAR || new Date().getFullYear());
+  const monthName = new Intl.DateTimeFormat('en-IN',{month:'long'}).format(new Date(selectedYear,selectedMonth,1));
+  const periodTests = datedTests.filter(test=>{ const date=new Date(testDate(test)); return date.getMonth()===selectedMonth && date.getFullYear()===selectedYear; });
+  const periodData = await Promise.all(periodTests.map(async test=>({test,results:await activeResultsForTest(test,activeStudentIds)})));
+  const applicable = periodData.reduce((total,item)=>total+item.results.filter(result=>!result.na).length,0);
+  const attended = periodData.reduce((total,item)=>total+item.results.filter(result=>!result.na&&result.present).length,0);
+  const attendance = applicable ? Math.round(attended/applicable*1000)/10 : null;
+  const periodClasses = new Map(), periodSubjects = new Map();
+  periodTests.forEach(test=>{ periodClasses.set(String(test.class_level),(periodClasses.get(String(test.class_level))||0)+1); periodSubjects.set(test.subject,(periodSubjects.get(test.subject)||0)+1); });
+  const years = [...new Set(datedTests.map(test=>new Date(testDate(test)).getFullYear()))].sort((a,b)=>b-a);
+  if(!years.includes(selectedYear)) years.push(selectedYear);
+  const monthOptions = Array.from({length:12},(_,month)=>`<option value="${month}" ${month===selectedMonth?'selected':''}>${new Intl.DateTimeFormat('en-IN',{month:'long'}).format(new Date(2026,month,1))}</option>`).join('');
+  const yearOptions = years.sort((a,b)=>b-a).map(year=>`<option value="${year}" ${year===selectedYear?'selected':''}>${year}</option>`).join('');
   const filteredTests = tests.filter(t=>
     (HOME_CLASS_FILTER==='All' || String(t.class_level)===String(HOME_CLASS_FILTER)) &&
     (HOME_SUBJECT_FILTER==='All' || t.subject===HOME_SUBJECT_FILTER)
@@ -52,10 +84,11 @@ async function home(){
         <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}${newTag}</div></div>
         <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
-        <div class="recent-field"><div class="label">Chapter</div><div class="value">${chapterDetail(t)}</div></div>
+        <div class="recent-field"><div class="label">Test & chapter</div><div class="value">${testTypeLabel(t.test_type)} · ${chapterDetail(t)}</div></div>
         <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
         <div class="recent-field"><div class="label">Students</div><div class="value">${appeared}/${rs.length} appeared</div></div>
-        <div class="recent-field"><div class="label">Average</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
+        <div class="recent-field"><div class="label">Average score</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
+        <div class="recent-field recent-status"><div class="label">Status</div><div class="value"><span class="home-status">Report ready</span></div></div>
         <div class="recent-actions">
           <button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button>
           <button class="action parent" onclick="openParents('${t.id}')">Parent</button>
@@ -65,45 +98,26 @@ async function home(){
   }
   show(`
     ${demoNote}
-    <div class="centre-hero card pad" style="margin-bottom:16px">
-      <div class="row between" style="flex-wrap:wrap;gap:10px">
-        <div class="brandbar">
-          <img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}">
-          <div><div style="font-weight:600">${CONFIG.CENTRE.name}</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div></div>
+    <div class="home-dashboard">
+      <section class="home-overview card">
+        <div class="home-overview-head"><h1>Test activity overview</h1><div class="home-period-controls"><label>Month <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><label>Year <select onchange="setHomeYear(this.value)">${yearOptions}</select></label></div></div>
+        <div class="home-stat-grid">
+          <article class="home-stat-card"><i class="home-icon tests">${homeIcon('tests')}</i><div><b>${periodTests.length}</b><span>Tests conducted</span></div></article>
+          <article class="home-stat-card"><i class="home-icon classes">${homeIcon('classes')}</i><div><b>${periodClasses.size}</b><span>Classes covered</span></div></article>
+          <article class="home-stat-card"><i class="home-icon subject">${homeIcon('subject')}</i><div><b>${periodSubjects.size}</b><span>Subjects assessed</span></div></article>
+          <article class="home-stat-card"><i class="home-icon attendance">${homeIcon('attendance')}</i><div><b>${attendance==null?'—':attendance+'%'}</b><span>Exam attendance</span></div></article>
         </div>
-        <button class="primary" onclick="enterMarks()">+ Enter test marks</button>
-      </div>
-    </div>
+        <div class="home-summary-grid"><div class="home-summary"><b>Tests by class</b><div>${periodClasses.size?[...periodClasses.entries()].sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,count])=>`<span>Class ${key} <strong>— ${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div><div class="home-summary"><b>Tests by subject</b><div>${periodSubjects.size?[...periodSubjects.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>`<span>${key} <strong>— ${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div></div>
+      </section>
 
-    <div class="section-heading"><div><div class="eyebrow">Workspace</div><h2>Open a report or tool</h2></div></div>
-    <div class="tiles" style="margin-bottom:20px">
-      <div class="tile teacher" onclick="openTeacher()">
-        <div class="tile-icon">${toolGlyph('▤')}</div><h3>Teacher report</h3>
-        <div class="muted small">Class marks, ranking, bands and who needs support.</div>
-      </div>
-      <div class="tile parent" onclick="openParents()">
-        <div class="tile-icon">${toolGlyph('◌')}</div><h3>Parent report</h3>
-        <div class="muted small">A card per student — send to parents on WhatsApp.</div>
-      </div>
-      <div class="tile growth" onclick="growth()">
-        <div class="tile-icon">${toolGlyph('⌁')}</div><h3>Growth tracker</h3>
-        <div class="muted small">Chapter-to-chapter trend, class vs individual.</div>
-      </div>
-      <div class="tile insights" onclick="classInsights()">
-        <div class="tile-icon">${toolGlyph('◫')}</div><h3>Class insights</h3>
-        <div class="muted small">Subject leaderboard, students below 40% and attendance risks.</div>
-      </div>
-      <div class="tile certificates" onclick="certificates()">
-        <div class="tile-icon">${toolGlyph('◇')}</div><h3>Certificates</h3>
-        <div class="muted small">Generate teacher training certificates from CSV and send by WhatsApp.</div>
-      </div>
-      <div class="tile activation" onclick="teacherActivation()">
-        <div class="tile-icon">${toolGlyph('↗')}</div><h3>Teacher Activation</h3>
-        <div class="muted small">Onboard teachers through the Prepare → Teach loop.</div>
-      </div>
-    </div>
+      <section class="home-workflow card"><h2>Teaching workflow</h2><div class="workflow-grid">
+        <button class="workflow-step workflow-enter" onclick="enterMarks()"><i>1</i><span class="workflow-icon">${homeIcon('tests')}</span><b>Enter marks</b><small>Record a test and scores</small></button>
+        <div class="workflow-step workflow-analyse"><i>2</i><div><b>Analyse &amp; remedial</b><button onclick="openTeacher()">${homeIcon('report')} Teacher report &amp; remedial</button><button onclick="growth()">${homeIcon('chart')} Growth tracker</button><button onclick="classInsights()">${homeIcon('chart')} Class insights</button></div></div>
+        <button class="workflow-step workflow-parent" onclick="openParents()"><i>3</i><span class="workflow-icon">${homeIcon('parent')}</span><b>Parent communication</b><small>Open parent reports</small></button>
+        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} Certificates</button><button onclick="teacherActivation()">${homeIcon('activation')} Teacher activation</button></div>
+      </div></section>
 
-    <div class="card">
+      <section class="card home-recent-card">
       <div class="pad row between" style="padding-bottom:6px;gap:12px;flex-wrap:wrap">
         <div>
           <span class="section-title">${HOME_SHOW_ALL?'All Tests':'Recent Tests'}</span>
@@ -115,13 +129,16 @@ async function home(){
           <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
         </div>
       </div>
-      <div class="pad" style="padding-top:0">${recent||'<div class="muted small">No tests found for this selection.</div>'}</div>
+      <div class="pad" style="padding-top:0">${recent||'<div class="home-empty">No tests found for this selection.</div>'}</div>
+      </section>
     </div>
   `);
 }
 window.setHomeClassFilter = value=>{ HOME_CLASS_FILTER=value; home(); };
 window.setHomeSubjectFilter = value=>{ HOME_SUBJECT_FILTER=value; home(); };
 window.toggleHomeTests = ()=>{ HOME_SHOW_ALL=!HOME_SHOW_ALL; home(); };
+window.setHomeMonth = value=>{ HOME_PERIOD_MONTH=value; home(); };
+window.setHomeYear = value=>{ HOME_PERIOD_YEAR=value; home(); };
 
 /* ---------- ROSTER ---------- */
 let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();

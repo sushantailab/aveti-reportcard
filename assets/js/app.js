@@ -3,8 +3,10 @@ document.getElementById('saveDone').onclick=e=>{e.preventDefault();document.getE
 document.getElementById('saveToParents').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openParents(CURRENT_TEST);};
 document.getElementById('saveToTeacher').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openTeacher(CURRENT_TEST);};
 document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');growth();};
-document.getElementById('navHome').onclick=home;
-document.getElementById('navRoster').onclick=roster;
+const navHome = document.getElementById('navHome');
+const navRoster = document.getElementById('navRoster');
+if(navHome) navHome.onclick=home;
+if(navRoster) navRoster.onclick=roster;
 window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks;
 window.appNavigate = route => {
   const target = ({home,marks:enterMarks,students:roster,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home);

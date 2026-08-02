@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase client (used only when USE_SUPABASE = true below) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260803-8">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260803-9">
 </head>
 <body>
 
@@ -41,8 +41,9 @@
     <header class="topnav">
       <div class="topnav-inner">
         <button class="mobile-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open navigation">☰</button>
-        <div><div class="topbar-kicker">Aveti Learning Tuition Center</div><div class="crumb" id="crumb">Home</div></div>
-        <div class="topnav-actions"><div id="centreSwitcher"></div><button class="ghost top-home" id="navHome">Home</button><button class="ghost top-students" id="navRoster">Students</button><button class="primary top-enter" onclick="enterMarks()">Enter marks</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
+        <div class="topnav-brand"><img class="topnav-logo" alt="Aveti Learning Tuition Center" src="assets/images/aveti-logo.png"><div><div class="topbar-kicker">Aveti Learning Tuition Center</div><div class="crumb" id="crumb">Home</div></div></div>
+        <nav class="topnav-primary" aria-label="Primary navigation"><button data-route="home" class="active" onclick="appNavigate('home')">⌂ <span>Home</span></button><button data-route="students" onclick="appNavigate('students')">♟ <span>Students</span></button><button data-route="marks" class="top-enter" onclick="enterMarks()">✎ <span>Enter marks</span></button></nav>
+        <div class="topnav-actions"><div id="centreSwitcher"></div><button class="account-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open account and tools">◉ <span>Menu</span>⌄</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
       </div>
     </header>
     <div class="app-content" id="app"></div>
@@ -91,7 +92,7 @@
 
 <script src="assets/js/core/database.js?v=20260802-2"></script>
 <script src="assets/js/core/shared.js?v=20260802-2"></script>
-<script src="assets/js/features/home-students.js?v=20260724-7"></script>
+<script src="assets/js/features/home-students.js?v=20260803-1"></script>
 <script src="assets/js/features/marks.js?v=20260801-12"></script>
 <script src="assets/js/features/reports.js?v=20260803-10"></script>
 <script src="assets/js/features/growth.js?v=20260802-8"></script>
@@ -99,6 +100,6 @@
 <script src="assets/js/features/certificates.js?v=20260802-1"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
 <script src="assets/js/features/centre-admin.js?v=20260724-5"></script>
-<script src="assets/js/app.js?v=20260802-1"></script>
+<script src="assets/js/app.js?v=20260803-1"></script>
 </body>
 </html>
