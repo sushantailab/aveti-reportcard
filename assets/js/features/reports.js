@@ -231,6 +231,11 @@ function teacherShortTestLabel(test, scope){
   return chapters ? `${prefix}-Ch${chapters}` : prefix;
 }
 
+function teacherHeaderIcon(type){
+  if(type==='test') return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"></path></svg>';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11a3 3 0 0 1 3 3v14a3 3 0 0 0-3-3H6.5A2.5 2.5 0 0 0 4 19.5zM20 5.5A2.5 2.5 0 0 0 17.5 3H15a3 3 0 0 0-1 2.2V20a3 3 0 0 1 3-3h.5a2.5 2.5 0 0 1 2.5 2.5z"></path></svg>';
+}
+
 async function renderTeacher(tests){
   const test = tests.find(t=>t.id===TEACHER_FILTER.testId);
   if(!test){
@@ -357,7 +362,7 @@ async function renderTeacher(tests){
       <div class="teacher-insight-title">Test result &amp; remedial planning report</div>
       <div class="teacher-insight-head">
         <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><div class="teacher-report-name">Teacher report</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
-        <div class="teacher-test-meta"><div class="teacher-test-line"><i>▣</i><b>${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b></div><div class="teacher-scope-line"><i>▤</i><span>Assessment scope: <strong>${scopeLabel}</strong></span></div></div>
+        <div class="teacher-test-meta"><div class="teacher-test-line">${teacherHeaderIcon('test')}<b>${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b></div><div class="teacher-scope-line">${teacherHeaderIcon('scope')}<span>Assessment scope: <strong>${scopeLabel}</strong></span></div></div>
       </div>
       <div class="teacher-summary-grid">
         <div class="teacher-summary-card average"><i>▥</i><span>Class average<b>${avg??'—'}%</b></span></div>
