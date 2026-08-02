@@ -252,6 +252,17 @@ async function renderTeacher(tests){
       <div class="teacher-group-action"><i>${group.icon}</i><span><b>Action</b>${group.action}</span><em>›</em></div>
     </section>`;
   }).join('');
+  let distributionCursor = 0;
+  const distribution = groupInfo.map(group=>{
+    const count = present.filter(row=>band(row.p)===group.grade).length;
+    const share = present.length ? Math.round(count/present.length*100) : 0;
+    const start = distributionCursor;
+    distributionCursor += share;
+    return {...group,count,share,start,end:distributionCursor};
+  });
+  const distributionColors = {A:'#08704e',B:'#82b94d',C:'#f2a52a',D:'#ef5046'};
+  const distributionGradient = present.length ? `conic-gradient(${distribution.map(item=>`${distributionColors[item.grade]} ${item.start}% ${item.end}%`).join(',')})` : '#e7eeea';
+  const distributionCard = `<section class="teacher-distribution"><h2>Score distribution <span>(by percentage range)</span></h2><div class="teacher-distribution-body"><div class="teacher-donut" style="background:${distributionGradient}"><div>▥</div></div><div class="teacher-distribution-legend">${distribution.map(item=>`<div><i style="background:${distributionColors[item.grade]}"></i><span>${item.range}</span><b>${item.share}%</b></div>`).join('')}</div></div></section>`;
   const leaderboardRows = (TEACHER_SHOW_ALL ? present : present.slice(0,10)).map((r,i)=>`
     <div class="teacher-leader-row">
       <div class="teacher-leader-rank ${i<3?'medal-'+(i+1):''}">${i+1}</div>
@@ -275,11 +286,11 @@ async function renderTeacher(tests){
         <div class="teacher-summary-card attendance"><i>♚</i><span>Exam attendance<b>${attendance??'—'}${attendance==null?'':'%'}</b><small>${appearedCount} of ${enrolled-naCount||0} applicable students</small></span></div>
         <div class="teacher-summary-card support"><i>⊕</i><span>Students need support<b>${supportCount}</b><small>Below 60%</small></span></div>
       </div>
-      <div class="teacher-group-heading">Student groups <span>(by score range)</span></div>
+      <div class="teacher-group-heading">Student groups &amp; next action</div>
       <div class="teacher-score-groups">${groupCards}</div>
       <div class="teacher-bottom-grid">
         <section class="teacher-leaderboard"><div class="teacher-board-heading"><div><h2>♛ Top performers</h2><span>Students who appeared, ranked by this assessment</span></div><span class="teacher-axis">0%　25%　50%　75%　100%</span></div>${leaderboardRows||'<div class="muted">No submitted marks yet.</div>'}${present.length>10?`<button class="teacher-show-all" onclick="setTeacherShowAll()">${TEACHER_SHOW_ALL?'Show Top 10':`View full ranking (${present.length})`}</button>`:''}</section>
-        <section class="teacher-absentees"><h2>⚠ Exam absentees</h2><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section>
+        <div class="teacher-side-insights">${distributionCard}<section class="teacher-absentees"><h2>⚠ Exam absentees</h2><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section></div>
       </div>
       ${naList}
       <div class="teacher-next-actions"><div><i>♟</i><span><b>1. Create support groups</b>Form small groups for peer learning.</span></div><div><i>▣</i><span><b>2. Assign revision worksheet</b>Give targeted practice to developing students.</span></div><div><i>☏</i><span><b>3. Share parent cards</b>Communicate performance and next steps.</span></div></div>
