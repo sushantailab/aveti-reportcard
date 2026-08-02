@@ -192,7 +192,7 @@ const memoryDB = {
     return t;
   },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
-  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Learning Center',address:'',phone:'',email:'',centre_head_name:'',logo_url:'',status:'active',archived_at:null,role:'master_admin'}]; },
+  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Learning Tuition Center',address:'',phone:'',email:'',centre_head_name:'',logo_url:'',status:'active',archived_at:null,role:'master_admin'}]; },
   async createCentre(payload){ return {id:uid(),...payload,status:'active',archived_at:null}; },
   async updateCentre(id,patch){ return {id,...patch}; },
   async deleteCentre(id){ return {id}; },

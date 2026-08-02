@@ -5,7 +5,7 @@ const SESSIONS = ['2026-27','2027-28','2025-26'];
 const FULL_MARK_OPTIONS = [20,25,30,35,40];
 const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 const currentSession = () => SESSIONS[0];
-const displayCentreName = name => String(name||'').trim()==='Aveti Tuition Centre' ? 'Aveti Learning Center' : name;
+const displayCentreName = name => ['Aveti Tuition Centre','Aveti Learning Center'].includes(String(name||'').trim()) ? 'Aveti Learning Tuition Center' : name;
 const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||currentSession())?'selected':''}>${s}</option>`).join('');
 const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'selected':''}>Class ${c}</option>`).join('');
 const classFilterOptions = sel => '<option value="All">All classes</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(sel)?'selected':''}>Class ${c}</option>`).join('');
