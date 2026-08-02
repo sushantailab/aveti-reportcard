@@ -327,17 +327,16 @@ async function renderTeacher(tests){
       const result = comparisonResults.get(candidate.id)?.find(item=>item.student_id===row.studentId);
       return result && !result.na && result.present && result.marks!=null;
     });
-    if(!previousTest) return null;
-    const previousResult = comparisonResults.get(previousTest.id).find(item=>item.student_id===row.studentId);
-    const previous = pct(previousResult.marks,previousTest.full_marks);
-    const change = Math.round((row.p-previous)*10)/10;
+    const previousResult = previousTest ? comparisonResults.get(previousTest.id).find(item=>item.student_id===row.studentId) : null;
+    const previous = previousResult ? pct(previousResult.marks,previousTest.full_marks) : null;
+    const change = previous==null ? null : Math.round((row.p-previous)*10)/10;
     return {...row,previous,change,overall:Math.round(attended.reduce((sum,value)=>sum+value,0)/attended.length*10)/10};
-  }).filter(Boolean).sort((a,b)=>b.p-a.p || b.overall-a.overall);
+  }).sort((a,b)=>b.p-a.p || b.overall-a.overall);
   const comparisonDisplay = (TEACHER_TREND_SHOW_ALL ? comparisonRows : comparisonRows.slice(0,10));
   const comparisonList = comparisonDisplay.map((row,index)=>{
-    const tone = row.change>=5 ? 'improving' : row.change<=-5 ? 'declining' : 'stable';
-    const label = tone==='improving' ? `Improving +${row.change} pts` : tone==='declining' ? `Declining ${row.change} pts` : 'Stable';
-    return `<div class="teacher-trend-row"><em>${index+1}</em><div><b>${row.name}</b><span>Section ${test.section||'All'} · Overall average ${row.overall}%</span></div><strong>${row.previous}%</strong><strong>${row.p}%</strong><span class="teacher-trend-pill ${tone}">${label}</span></div>`;
+    const tone = row.change==null ? 'first-test' : row.change>=5 ? 'improving' : row.change<=-5 ? 'declining' : 'stable';
+    const label = row.change==null ? 'First scored test' : tone==='improving' ? `Improving +${row.change} pts` : tone==='declining' ? `Declining ${row.change} pts` : 'Stable';
+    return `<div class="teacher-trend-row"><em>${index+1}</em><div><b>${row.name}</b><span>Section ${test.section||'All'} · Overall average ${row.overall}%</span></div><strong>${row.previous==null?'—':row.previous+'%'}</strong><strong>${row.p}%</strong><span class="teacher-trend-pill ${tone}">${label}</span></div>`;
   }).join('');
   show(`
     ${await teacherFilterBar(tests)}
@@ -359,7 +358,7 @@ async function renderTeacher(tests){
         <section class="teacher-leaderboard"><div class="teacher-board-heading"><div><h2>♛ Top performers</h2><span>Students who appeared, ranked by this assessment</span></div><span class="teacher-axis">0%　25%　50%　75%　100%</span></div>${leaderboardRows||'<div class="muted">No submitted marks yet.</div>'}${present.length>10?`<button class="teacher-show-all" onclick="setTeacherShowAll()">${TEACHER_SHOW_ALL?'Show Top 10':`View full ranking (${present.length})`}</button>`:''}</section>
         <div class="teacher-side-insights">${distributionCard}<section class="teacher-absentees"><div class="teacher-absent-head"><h2>⚠ Exam absentees</h2>${absentCount?'<span class="teacher-retest-tag">▣ Re-test needed</span>':''}</div><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section></div>
       </div>
-      <section class="teacher-performance-trend"><div class="teacher-trend-heading"><div><h2>↗ Performance comparison</h2><span>Top 10 by current test score · previous attended assessment vs this assessment</span></div></div><div class="teacher-trend-labels"><span>Rank</span><span>Student</span><span>Previous %</span><span>Current % ↓</span><span>Change</span></div>${comparisonList||'<div class="teacher-trend-empty">No student has both a previous attended assessment and a score in this assessment yet.</div>'}${comparisonRows.length>10?`<button class="teacher-show-all" onclick="setTeacherTrendShowAll()">${TEACHER_TREND_SHOW_ALL?'Show Top 10':'Show all students'}</button>`:''}</section>
+      <section class="teacher-performance-trend"><div class="teacher-trend-heading"><div><h2>↗ Performance comparison</h2><span>Top 10 by current test score · compared with the previous attended assessment when available</span></div></div><div class="teacher-trend-labels"><span>Rank</span><span>Student</span><span>Previous %</span><span>Current % ↓</span><span>Change</span></div>${comparisonList||'<div class="teacher-trend-empty">No scored students in this assessment yet.</div>'}${comparisonRows.length>10?`<button class="teacher-show-all" onclick="setTeacherTrendShowAll()">${TEACHER_TREND_SHOW_ALL?'Show Top 10':'Show all students'}</button>`:''}</section>
       ${naList}
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
