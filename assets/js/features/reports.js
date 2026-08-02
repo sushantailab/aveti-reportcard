@@ -377,6 +377,12 @@ window.setTeacherFilter = async (key,value)=>{
   TEACHER_SHOW_ALL = false;
   TEACHER_TREND_SHOW_ALL = false;
   if(key==='cls' || key==='section' || key==='subject' || key==='testType') TEACHER_FILTER.testId = '';
+  if(key==='testType' && value==='Periodic Test-1'){
+    const latestPeriodic = tests
+      .filter(test=>String(test.class_level)===String(TEACHER_FILTER.cls) && (test.section||'All')===TEACHER_FILTER.section && test.subject===TEACHER_FILTER.subject && testTypeLabel(test.test_type)==='Periodic Test-1')
+      .sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)))[0];
+    if(latestPeriodic) TEACHER_FILTER.testId = latestPeriodic.id;
+  }
   await renderTeacher(tests);
 };
 
