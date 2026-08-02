@@ -1,5 +1,6 @@
 /* ---------- TEACHER REPORT ---------- */
 let TEACHER_FILTER = { cls:'', section:'', subject:'', testId:'' };
+let TEACHER_SHOW_ALL = false;
 
 function parentMessageChapter(test){
   const no = String(test.chapter_no||'').trim();
@@ -235,41 +236,53 @@ async function renderTeacher(tests){
   const avg = present.length?Math.round(present.reduce((a,r)=>a+r.p,0)/present.length*10)/10:null;
   const counts={}; bandConfig().forEach(b=>counts[b.grade]=0); present.forEach(r=>counts[band(r.p)]++);
   const hi=present[0], lo=present[present.length-1];
-  const bandCards = bandConfig().map((b,i)=>`
-    <div class="band" style="background:${i===0?'var(--bandA)':i===1?'var(--bandB)':i===2?'var(--bandC)':'#f0f3ef'};${i===0?'flex:2':''}">
-      <div class="tiny" style="color:${i===0?'#04342c':i===1?'#173404':i===2?'#412402':'var(--faint)'}">${b.grade} · ${bandRangeLabel(b)}</div>
-      <div class="num" style="color:${i===0?'#04342c':i===1?'#173404':i===2?'#412402':'var(--faint)'}">${counts[b.grade]||0}</div>
+  const groupInfo = [
+    {grade:'A',title:'High achievers',range:'80–100',tone:'high',action:'Enrichment questions',icon:'📖'},
+    {grade:'B',title:'On track',range:'60–79',tone:'track',action:'Continue regular practice',icon:'✓'},
+    {grade:'C',title:'Developing',range:'40–59',tone:'developing',action:'Guided revision',icon:'▣'},
+    {grade:'D',title:'Urgent support',range:'Below 40',tone:'urgent',action:'Assign remedial worksheet',icon:'⊕'}
+  ];
+  const groupCards = groupInfo.map(group=>{
+    const groupRows = present.filter(row=>band(row.p)===group.grade);
+    return `<section class="teacher-score-group ${group.tone}">
+      <div class="teacher-group-title">${group.title}</div>
+      <div class="teacher-group-range">${group.range}</div>
+      <div class="teacher-group-count"><b>${groupRows.length}</b><span>${groupRows.length===1?'student':'students'}</span></div>
+      <div class="teacher-group-students">${groupRows.length ? groupRows.map((row,index)=>`<div><b>${index+1}</b><span>${row.name}${group.grade==='D'?` · ${row.p}%`:''}</span></div>`).join('') : '<span class="tiny muted">No students</span>'}</div>
+      <div class="teacher-group-action"><i>${group.icon}</i><span><b>Action</b>${group.action}</span><em>›</em></div>
+    </section>`;
+  }).join('');
+  const leaderboardRows = (TEACHER_SHOW_ALL ? present : present.slice(0,10)).map((r,i)=>`
+    <div class="teacher-leader-row">
+      <div class="teacher-leader-rank ${i<3?'medal-'+(i+1):''}">${i+1}</div>
+      <div class="teacher-leader-name"><b>${r.name}</b><span>Section ${test.section||'All'}</span></div>
+      <div class="teacher-leader-bar"><span style="width:${r.p}%"></span></div>
+      <strong>${r.p}%</strong>
     </div>`).join('');
-  const list = present.map((r,i)=>`
-    <div class="listrow rank-row">
-      <div class="rank-no" style="width:20px">${i+1}</div>
-      <div class="rank-student" style="flex:1">${r.name}${needsSupport(r.p)?' <span class="pill warn">needs support</span>':''}${band(r.p)==='A'?' <span class="pill ok">top performer</span>':''}</div>
-      <div class="bar"><span style="width:${r.p}%;background:${bandColor(band(r.p))}"></span></div>
-      <div class="rank-marks num" style="width:54px;text-align:right">${r.marks}/${test.full_marks}</div>
-      <div class="rank-percent muted small" style="width:42px;text-align:right">${r.p}%</div>
-    </div>`).join('');
+  const supportCount = present.filter(row=>row.p<60).length;
+  const attendance = enrolled-naCount ? Math.round(appearedCount/(enrolled-naCount)*1000)/10 : null;
   show(`
     ${await teacherFilterBar(tests)}
-    <div class="card pad teacher-report">
-      <div class="row between report-head" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:700">${CONFIG.CENTRE.name} · Teacher / Class Report</div><div class="tiny faint">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}${CONFIG.CENTRE.email?' · '+CONFIG.CENTRE.email:''}</div><div class="small muted">Class ${test.class_level} · Section ${test.section||'All'} · <span class="report-highlight">${test.subject} · ${chapterDetail(test)}</span> · ${appearedCount} of ${enrolled} appeared</div></div></div>
-        <div class="small muted" style="text-align:right">${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</div>
+    <div class="card pad teacher-report teacher-insight-report">
+      <div class="teacher-insight-title">Teacher assessment insight report</div>
+      <div class="teacher-insight-head">
+        <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><div class="teacher-report-name">Teacher report</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
+        <div class="teacher-test-meta"><b>▣ ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b><span>▤ Assessment scope: ${chapterDetail(test)}</span></div>
       </div>
-      <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
-        <div class="metric"><div class="tiny muted">Class average</div><div class="n">${avg??'—'}%</div></div>
-        <div class="metric"><div class="tiny muted">Highest</div><div class="n">${hi?hi.p+'%':'—'}</div><div class="tiny faint">${hi?hi.name:''}</div></div>
-        <div class="metric"><div class="tiny muted">Lowest</div><div class="n">${lo?lo.p+'%':'—'}</div><div class="tiny faint">${lo?lo.name:''}</div></div>
-        <div class="metric"><div class="tiny muted">Appeared</div><div class="n">${appearedCount} of ${enrolled}</div><div class="tiny faint">${naCount} N.A.</div></div>
-        <div class="metric"><div class="tiny muted">Absent</div><div class="n">${absentCount}</div><div class="tiny faint">${absentCount?absentRows.map(r=>r.name).slice(0,2).join(', '):'None'}${absentCount>2?' +' + (absentCount-2):''}</div></div>
+      <div class="teacher-summary-grid">
+        <div class="teacher-summary-card average"><i>▥</i><span>Class average<b>${avg??'—'}%</b></span></div>
+        <div class="teacher-summary-card highest"><i>♛</i><span>Highest<b>${hi?hi.p+'%':'—'}</b><small>${hi?hi.name:''}</small></span></div>
+        <div class="teacher-summary-card attendance"><i>♚</i><span>Exam attendance<b>${attendance??'—'}${attendance==null?'':'%'}</b><small>${appearedCount} of ${enrolled-naCount||0} applicable students</small></span></div>
+        <div class="teacher-summary-card support"><i>⊕</i><span>Students need support<b>${supportCount}</b><small>Below 60%</small></span></div>
       </div>
-      <div class="small muted">Score bands</div>
-      <div class="bands">
-        ${bandCards}
+      <div class="teacher-group-heading">Student groups <span>(by score range)</span></div>
+      <div class="teacher-score-groups">${groupCards}</div>
+      <div class="teacher-bottom-grid">
+        <section class="teacher-leaderboard"><div class="teacher-board-heading"><div><h2>♛ Top performers</h2><span>Students who appeared, ranked by this assessment</span></div><span class="teacher-axis">0%　25%　50%　75%　100%</span></div>${leaderboardRows||'<div class="muted">No submitted marks yet.</div>'}${present.length>10?`<button class="teacher-show-all" onclick="setTeacherShowAll()">${TEACHER_SHOW_ALL?'Show Top 10':`View full ranking (${present.length})`}</button>`:''}</section>
+        <section class="teacher-absentees"><h2>⚠ Exam absentees</h2><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section>
       </div>
-      <div class="small muted report-section-label" style="margin:14px 0 4px">Ranked results</div>
-      ${list}
-      ${absentList}
       ${naList}
+      <div class="teacher-next-actions"><div><i>♟</i><span><b>1. Create support groups</b>Form small groups for peer learning.</span></div><div><i>▣</i><span><b>2. Assign revision worksheet</b>Give targeted practice to developing students.</span></div><div><i>☏</i><span><b>3. Share parent cards</b>Communicate performance and next steps.</span></div></div>
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
@@ -283,8 +296,14 @@ async function renderTeacher(tests){
 window.setTeacherFilter = async (key,value)=>{
   const tests = await DB.listTests();
   TEACHER_FILTER[key] = value;
+  TEACHER_SHOW_ALL = false;
   if(key==='cls' || key==='section' || key==='subject') TEACHER_FILTER.testId = '';
   await renderTeacher(tests);
+};
+
+window.setTeacherShowAll = async ()=>{
+  TEACHER_SHOW_ALL = !TEACHER_SHOW_ALL;
+  await renderTeacher(await DB.listTests());
 };
 
 window.printTeacherReport = ()=>{
