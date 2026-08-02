@@ -293,7 +293,6 @@ async function renderTeacher(tests){
         <div class="teacher-side-insights">${distributionCard}<section class="teacher-absentees"><div class="teacher-absent-head"><h2>⚠ Exam absentees</h2>${absentCount?'<span class="teacher-retest-tag">▣ Re-test needed</span>':''}</div><b>${absentCount} student${absentCount===1?'':'s'} absent</b><span>Not included in score groups</span>${absentRows.length?`<div>${absentRows.map(row=>`<p>● ${row.name}</p>`).join('')}</div>`:'<p class="muted">All applicable students appeared.</p>'}</section></div>
       </div>
       ${naList}
-      <div class="teacher-next-actions"><div><i>♟</i><span><b>1. Create support groups</b>Form small groups for peer learning.</span></div><div><i>▣</i><span><b>2. Assign revision worksheet</b>Give targeted practice to developing students.</span></div><div><i>☏</i><span><b>3. Share parent cards</b>Communicate performance and next steps.</span></div></div>
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
