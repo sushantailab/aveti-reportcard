@@ -79,7 +79,7 @@ const demo = {
       subtitle:'One-Hour Professional Development Webinar',
       event_date:'2026-06-22',
       duration_hours:1,
-      organizer_name:'AVETI LEARNING',
+      organizer_name:'AVETI LEARNING TUITION CENTER',
       focus_points:'Understanding the vision of NEP 2020\nIntroduction to Competency-Based Education\nClassroom implementation strategies\nEffective lesson planning and assessment practices\nDigital tools and teaching resources for improved learning outcomes',
       certificate_prefix:'AVT-PD-2026',
       signatory_1_name:'Sushant Kumar Mahapatra',
@@ -192,7 +192,7 @@ const memoryDB = {
     return t;
   },
   async addTahMessageLog(log){ const r={id:uid(),created_at:new Date().toISOString(),sent_at:new Date().toISOString(),...log}; demo.tah_message_logs.push(r); return r; },
-  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Tuition Centre',address:'',phone:'',email:'',centre_head_name:'',logo_url:'',status:'active',archived_at:null,role:'master_admin'}]; },
+  async listAccessibleCentres(){ return [{id:'demo-centre',name:'Aveti Learning Center',address:'',phone:'',email:'',centre_head_name:'',logo_url:'',status:'active',archived_at:null,role:'master_admin'}]; },
   async createCentre(payload){ return {id:uid(),...payload,status:'active',archived_at:null}; },
   async updateCentre(id,patch){ return {id,...patch}; },
   async deleteCentre(id){ return {id}; },

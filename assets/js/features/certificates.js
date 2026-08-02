@@ -8,7 +8,7 @@ function defaultTrainingEvent(){
     subtitle:'One-Hour Professional Development Webinar',
     event_date:new Date().toISOString().slice(0,10),
     duration_hours:1,
-    organizer_name:'AVETI LEARNING',
+    organizer_name:'AVETI LEARNING TUITION CENTER',
     focus_points:[
       'Understanding the vision of NEP 2020',
       'Introduction to Competency-Based Education',
@@ -121,7 +121,7 @@ function certificatePaperHTML(event, participant){
   return `
     <div class="certificate-paper">
       <div class="cert-top">
-        <img class="cert-logo" alt="Aveti Learning" src="assets/images/aveti-logo.png">
+        <img class="cert-logo" alt="Aveti Learning Tuition Center" src="assets/images/aveti-logo.png">
         <div>
           <div class="cert-small">Professional Development</div>
           <div class="cert-org">${escapeHTML(event.organizer_name)}</div>
@@ -217,7 +217,7 @@ function certEventPayload(){
     subtitle:normalizeText(val('certSubtitle')),
     event_date:val('certDate'),
     duration_hours:Number(val('certHours'))||1,
-    organizer_name:normalizeText(val('certOrganizer'))||'AVETI LEARNING',
+    organizer_name:normalizeText(val('certOrganizer'))||'AVETI LEARNING TUITION CENTER',
     focus_points:document.getElementById('certFocus').value.trim(),
     certificate_prefix:normalizeText(val('certPrefix'))||`AVT-PD-${new Date().getFullYear()}`,
     signatory_1_name:normalizeText(val('certSig1Name')),
@@ -348,7 +348,7 @@ window.downloadCertificatePDF = id=>{
 
 function certificateWhatsAppMessage(participant){
   const link = participant.certificate_url || certificateVerifyURL(participant);
-  return `Hello ${participant.name},\n\nThank you for participating in the ${CERT.event.title} webinar.\n\nYour certificate is ready.\nCertificate ID: ${participant.certificate_id}\nDownload PDF: ${link}\n\nRegards,\nTeam Aveti Learning`;
+  return `Hello ${participant.name},\n\nThank you for participating in the ${CERT.event.title} webinar.\n\nYour certificate is ready.\nCertificate ID: ${participant.certificate_id}\nDownload PDF: ${link}\n\nRegards,\nAveti Learning Tuition Center`;
 }
 
 window.sendCertificateWhatsApp = async id=>{
@@ -391,7 +391,7 @@ async function verifyCertificate(certificateId){
     CERT.verifyRecord = record;
     show(`
       <div class="cert-verify-card">
-        <img class="brandlogo" alt="Aveti Learning" src="assets/images/aveti-logo.png">
+        <img class="brandlogo" alt="Aveti Learning Tuition Center" src="assets/images/aveti-logo.png">
         <div class="pill ok" style="margin-top:14px">Certificate Verified</div>
         <h1>${escapeHTML(record.name)}</h1>
         <div class="muted">${escapeHTML(record.school || '')}</div>
@@ -402,7 +402,7 @@ async function verifyCertificate(certificateId){
           <div><span>Certificate ID</span><b>${escapeHTML(record.certificate_id)}</b></div>
         </div>
         <button class="primary" onclick="downloadVerifiedCertificate()">Download PDF</button>
-        <div class="muted small">Issued by ${escapeHTML(event.organizer_name || 'AVETI LEARNING')}</div>
+        <div class="muted small">Issued by ${escapeHTML(event.organizer_name || 'AVETI LEARNING TUITION CENTER')}</div>
       </div>`);
   }catch(e){
     show(`<div class="card pad"><h2 style="font-size:19px">Verification unavailable</h2><div class="muted" style="margin-top:8px">Could not verify this certificate right now.</div><div class="tiny faint" style="margin-top:8px">${escapeHTML(e.message||e)}</div></div>`);

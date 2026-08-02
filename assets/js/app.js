@@ -45,7 +45,7 @@ async function loadAccessContext(){
   const selected = active.find(c=>c.id===saved) || active[0];
   CENTRE_ID = selected.id;
   localStorage.setItem('aveti_active_centre',CENTRE_ID);
-  CONFIG.CENTRE = {...CONFIG.CENTRE,...selected};
+  CONFIG.CENTRE = {...CONFIG.CENTRE,...selected,name:displayCentreName(selected.name)};
   if(Array.isArray(selected.band_config) && selected.band_config.length) CONFIG.BANDS = selected.band_config;
   renderAccessChrome();
 }
@@ -54,7 +54,7 @@ function renderAccessChrome(){
   const host=document.getElementById('centreSwitcher');
   if(host){
     host.innerHTML=ACCESS_CENTRES.length>1
-      ? `<label class="centre-switcher"><span class="tiny muted">Centre</span><select onchange="switchCentre(this.value)">${ACCESS_CENTRES.filter(c=>!c.archived_at&&c.status!=='archived').map(c=>`<option value="${c.id}" ${c.id===CENTRE_ID?'selected':''}>${c.name}</option>`).join('')}</select></label>`
+      ? `<label class="centre-switcher"><span class="tiny muted">Centre</span><select onchange="switchCentre(this.value)">${ACCESS_CENTRES.filter(c=>!c.archived_at&&c.status!=='archived').map(c=>`<option value="${c.id}" ${c.id===CENTRE_ID?'selected':''}>${displayCentreName(c.name)}</option>`).join('')}</select></label>`
       : `<span class="centre-name small">${CONFIG.CENTRE.name}</span>`;
   }
   document.querySelectorAll('[data-master-only]').forEach(el=>{el.style.display=ACCESS_ROLE==='master_admin'?'':'none';});
