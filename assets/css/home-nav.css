@@ -37,11 +37,12 @@
 /* A reliable compact icon rail when the user presses the left collapse button. */
 @media screen and (min-width:721px){
   .app-shell.sidebar-collapsed{display:grid!important;grid-template-columns:74px minmax(0,1fr)!important}
-  .app-shell.sidebar-collapsed .app-sidebar{display:flex!important;width:74px!important;min-width:74px!important;padding:18px 12px!important}
+  .app-shell.sidebar-collapsed .app-sidebar{display:flex!important;width:74px!important;min-width:74px!important;padding:18px 12px!important;overflow:visible!important}
   .app-shell.sidebar-collapsed .sidebar-brand{justify-content:center!important;padding-left:0!important}
   .app-shell.sidebar-collapsed .sidebar-brand .brandlogo{display:none!important}
   .app-shell.sidebar-collapsed .sidebar-brand .sidebar-amark{display:grid!important;margin:0!important}
-  .app-shell.sidebar-collapsed .sidebar-collapse{display:none!important}
+  .app-shell.sidebar-collapsed .sidebar-collapse{display:grid!important;place-items:center;position:absolute;top:18px;right:-14px;z-index:20;width:28px!important;height:28px!important;min-height:28px!important;padding:0!important;border:1px solid #cfdcd5!important;border-radius:50%!important;background:#fff!important;color:#52645b!important;font-size:0!important;box-shadow:0 3px 9px rgba(22,57,40,.12)!important}
+  .app-shell.sidebar-collapsed .sidebar-collapse::after{content:'›';font-size:22px;font-weight:700;line-height:1}
   .app-shell.sidebar-collapsed .sidebar-label,.app-shell.sidebar-collapsed .sidebar-signout,.app-shell.sidebar-collapsed .nav-item span:last-child{display:none!important}
   .app-shell.sidebar-collapsed .nav-item{display:flex!important;justify-content:center!important;width:100%!important;padding:8px!important}
   .app-shell.sidebar-collapsed .nav-icon{width:auto!important;font-size:19px!important}
