@@ -23,6 +23,24 @@ button,select,input,textarea{max-width:100%}
   .app-shell.sidebar-collapsed .sidebar-collapse{display:grid!important;place-items:center!important;position:absolute!important;top:18px!important;right:-14px!important;z-index:30!important;width:30px!important;height:30px!important;min-height:30px!important;padding:0!important;border:1px solid #cfdcd5!important;border-radius:50%!important;background:#fff!important;color:#52645b!important;font-size:0!important;box-shadow:0 3px 9px rgba(22,57,40,.12)!important}
   .app-shell.sidebar-collapsed .sidebar-collapse:after{content:'›';font-size:22px;font-weight:700;line-height:1}
   .home-tests-table-head{display:grid!important;grid-template-columns:78px 93px 94px minmax(120px,1fr) 72px 50px 67px 52px 140px;gap:8px;align-items:center;margin-bottom:7px;padding:9px 10px 9px 18px!important;border:1px solid #d5e1da!important;border-radius:8px!important;background:#edf6f1!important;color:#35544a!important;font-size:9px!important;font-weight:800!important;letter-spacing:.055em;text-transform:uppercase}
+  .home-overview{padding:16px!important}
+  .home-snapshot-head{min-height:62px!important;margin-bottom:10px!important}
+  .home-snapshot-head h1{font-size:23px!important}
+  .home-stat-grid{gap:8px!important}
+  .home-stat-card{height:124px!important;min-height:124px!important;padding:12px!important}
+  .home-stat-card>div:not(.attendance-ring){grid-template-rows:22px 18px!important}
+  .snapshot-bars,.snapshot-sparkline{height:28px!important}
+  .attendance-ring{width:96px!important;height:96px!important}
+  .home-summary-grid{gap:8px!important;margin-top:8px!important;align-items:start!important}
+  .home-summary{min-height:0!important;padding:11px!important}
+  .home-summary>div{gap:8px!important;margin-top:8px!important}
+  .home-summary span{padding:1px 0!important}
+  .home-recent-card .pad.row{padding:12px 14px 7px!important}
+  .home-recent-table{padding:0 14px 13px!important}
+  .home-test-timeline{gap:5px!important}
+  .home-timeline-row{min-height:60px!important;padding-top:7px!important;padding-bottom:7px!important}
+  .home-timeline-dot{top:24px!important}
+  .home-test-scope em{margin-top:2px!important}
 }
 
 @media screen and (min-width:721px) and (max-width:1100px){
