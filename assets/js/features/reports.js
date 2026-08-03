@@ -475,7 +475,7 @@ window.exportTeacherPDF = async testId=>{
 };
 
 /* ---------- PARENT SHARE ---------- */
-let PARENT_FILTER = { cls:'', section:'', subject:'', testId:'', student:'All' };
+let PARENT_FILTER = { cls:'', section:'', subject:'', testId:'', student:'All', search:'', status:'all' };
 let PARENT_BULK_ITEMS = [];
 
 async function openParents(testId){
@@ -489,7 +489,7 @@ async function openParents(testId){
         section:selected.section||'All',
         subject:selected.subject||'',
         testId:selected.id,
-        student:'All'
+        student:'All', search:'', status:'all'
       };
       CURRENT_TEST = selected.id;
     }
@@ -500,7 +500,7 @@ async function openParents(testId){
       section:recent.section||'All',
       subject:recent.subject||'',
       testId:recent.id,
-      student:'All'
+      student:'All', search:'', status:'all'
     };
   }
   renderParents(tests);
@@ -520,19 +520,16 @@ function parentFilterBar(tests, students){
     String(s.class_level)===String(PARENT_FILTER.cls) &&
     (PARENT_FILTER.section==='All' || (s.section||'')===PARENT_FILTER.section)
   );
-  const studentOpts = '<option value="All">All students</option>' + classStudents.map(s=>`<option value="${s.id}" ${s.id===PARENT_FILTER.student?'selected':''}>${s.name}</option>`).join('');
-  if(PARENT_FILTER.student!=='All' && !classStudents.some(s=>s.id===PARENT_FILTER.student)) PARENT_FILTER.student = 'All';
   return `
-    <div class="card pad" style="margin-bottom:14px">
-      <div class="wrap-fields">
+    <section class="card parent-filter-panel">
+      <div class="parent-filter-grid">
         <div class="field"><label>Recent</label><select onchange="setParentFilter('recent',this.value)">${recentOpts}</select></div>
         <div class="field"><label>Class</label><select onchange="setParentFilter('cls',this.value)">${clsOpts}</select></div>
         <div class="field"><label>Section</label><select onchange="setParentFilter('section',this.value)">${secOpts}</select></div>
         <div class="field"><label>Subject</label><select onchange="setParentFilter('subject',this.value)">${subOpts}</select></div>
         <div class="field"><label>Chapter</label><select onchange="setParentFilter('testId',this.value)" ${matching.length?'':'disabled'}>${chapOpts}</select></div>
-        <div class="field"><label>Student</label><select onchange="setParentFilter('student',this.value)">${studentOpts}</select></div>
       </div>
-    </div>`;
+    </section>`;
 }
 
 async function renderParents(tests){
@@ -554,11 +551,12 @@ async function renderParents(tests){
   const chapterNumberById = new Map(availableChapters.map(chapter=>[String(chapter.id),Number(chapter.chapter_no)]));
   const selectedChapterIds = test.chapter_ids?.length ? test.chapter_ids : [test.chapter_id].filter(Boolean);
   const chapterNumbers = selectedChapterIds.map(id=>chapterNumberById.get(String(id))).filter(Number.isFinite);
+  const scopeLabel = chapterNumbers.length ? chapterNumbers.map(number=>`Ch ${number}`).join(', ') : chapterDetail(test);
   const avg = await classAverage(test,activeStudentIds);
   const enrolled = rs.length;
   const appearedCount = rs.filter(r=>!r.na && r.present).length;
+  const rowsData = [];
   PARENT_BULK_ITEMS = [];
-  let rows='';
   rs.filter(r=>(r.na || !r.present || r.marks!=null) && (PARENT_FILTER.student==='All' || r.student_id===PARENT_FILTER.student)).forEach(r=>{
     const s = students.find(x=>x.id===r.student_id);
     if(!s) return;
@@ -570,38 +568,30 @@ async function renderParents(tests){
     const msg = encodeURIComponent(message);
     const phone = normalizeIndianPhone(s.parent_phone);
     const sent = parentCardWasSent(test.id,r.student_id);
+    const kind = isNA ? 'na' : isAbsent ? 'absent' : !phone ? 'missing' : sent ? 'sent' : 'ready';
     if(phone && !sent && !isNA) PARENT_BULK_ITEMS.push({phone,message:msg,studentId:r.student_id});
-    rows += `<div class="listrow">
-      ${avatar(s.gender,s.name)}
-      <div style="flex:1;min-width:0"><div>${s.name}</div><div class="tiny faint">${p==null?(isNA?'N.A. · Did not appear':'Absent · Did not appear'):`${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`}</div></div>
-      ${isNA
-        ? '<span class="pill">No notification needed</span>'
-        : phone
-        ? `<a class="link small" style="margin-right:6px">${phone}</a><button style="padding:7px 12px" data-message="${msg}" onclick="previewParentMessage(this.dataset.message)">Preview</button><button class="primary" style="padding:7px 12px" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button>
-           <label class="small muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer"><input type="checkbox" style="width:auto" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${r.student_id}',this.checked)"> Sent</label>`
-        : `<span class="pill warn" style="margin-right:6px">invalid/missing phone</span><button onclick="alert('Add a valid Indian 10-digit parent phone number in Students before sending this parent card.')">Send</button>`}
-    </div>`;
+    rowsData.push({s,r,p,isNA,isAbsent,phone,sent,msg,kind});
   });
+  const search = String(PARENT_FILTER.search||'').trim().toLowerCase();
+  const filtered = rowsData.filter(item=>!search || item.s.name.toLowerCase().includes(search));
+  const counts = {ready:rowsData.filter(x=>x.kind==='ready').length,sent:rowsData.filter(x=>x.kind==='sent').length,missing:rowsData.filter(x=>x.kind==='missing').length,absent:rowsData.filter(x=>x.kind==='absent').length};
+  const visible = PARENT_FILTER.status==='all' ? filtered : filtered.filter(x=>x.kind===PARENT_FILTER.status);
+  const parentRow = item=>{
+    const {s,r,p,isNA,isAbsent,phone,sent,msg}=item;
+    const details = p==null ? (isNA?'N.A. · No notification needed':'Absent · Did not appear') : `${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`;
+    const actions = isNA
+      ? '<span class="parent-pill neutral">No notification needed</span>'
+      : phone
+        ? `<a class="parent-phone">${phone}</a><button class="parent-action preview" data-message="${msg}" onclick="previewParentMessage(this.dataset.message)">Preview</button><button class="parent-action send" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button><label class="parent-sent"><input type="checkbox" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${s.id}',this.checked)"> Sent</label>`
+        : `<span class="parent-pill warn">Missing phone</span><button class="parent-action add-phone" onclick="appNavigate('students')">Add phone number</button>`;
+    return `<div class="parent-recipient-row ${isAbsent?'is-absent':''}">${avatar(s.gender,s.name)}<div class="parent-recipient-main"><b>${s.name}</b><span>${details}</span></div><div class="parent-recipient-actions">${actions}</div></div>`;
+  };
+  const group = (title,kind,items,extra='')=>items.length?`<section class="parent-recipient-group ${kind}"><div class="parent-group-title"><b>${title}</b><span>${items.length}</span></div>${items.map(parentRow).join('')}</section>`:'';
+  const ready = visible.filter(x=>x.kind==='ready'), missing = visible.filter(x=>x.kind==='missing'), absent = visible.filter(x=>x.kind==='absent'), sent = visible.filter(x=>x.kind==='sent');
+  const grouped = PARENT_FILTER.status==='all' ? group('Ready to send','ready',ready)+group('Sent','sent',sent)+group('Action needed — missing phone','missing',missing)+group('Absent students','absent',absent) : group(PARENT_FILTER.status==='ready'?'Ready to send':PARENT_FILTER.status==='sent'?'Sent':PARENT_FILTER.status==='missing'?'Action needed — missing phone':'Absent students',PARENT_FILTER.status,visible);
   show(`
     ${parentFilterBar(tests, students)}
-    <div class="card pad">
-      <div class="row between" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div class="brandbar"><img class="brandlogo centre-output-logo" style="height:24px" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div style="font-weight:600">Share parent cards · ${CONFIG.CENTRE.name}</div><div class="tiny faint">${testOptionLabel(test)} · ${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</div></div></div>
-        <div class="row" style="gap:8px;flex-wrap:wrap">
-          <label class="small muted" style="display:flex;align-items:center;gap:8px">Send with
-            <select style="width:auto;min-width:170px" onchange="setWhatsAppApp(this.value)">
-              <option value="personal" ${preferredWhatsAppApp()==='personal'?'selected':''}>WhatsApp</option>
-              <option value="business" ${preferredWhatsAppApp()==='business'?'selected':''}>WhatsApp Business</option>
-            </select>
-          </label>
-          <button class="primary" onclick="sendAllParentCards()" ${PARENT_BULK_ITEMS.length?'':'disabled'}>Send all unsent (${PARENT_BULK_ITEMS.length})</button>
-        </div>
-      </div>
-      <div class="banner" style="margin-bottom:14px">Each message highlights progress and one practical next step. N.A. results are not sent.</div>
-      <div class="small muted" style="margin-bottom:4px">Recipients</div>
-      ${rows||'<div class="muted small" style="padding:8px 0">No student result found for this selection.</div>'}
-      <div class="tiny faint" style="margin-top:12px">Tap <b>Send</b> to open that parent's WhatsApp with the message ready. (In demo, links open real WhatsApp web — they won't send by themselves.)</div>
-    </div>
+    <section class="card parent-report-card"><header class="parent-report-head"><div class="parent-brand"><img class="centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><h1>Share parent cards</h1><p>${CONFIG.CENTRE.name}</p><span>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} · ${testTypeLabel(test.test_type)} · ${scopeLabel} · ${fmtDate(testDate(test))} · ${test.full_marks} marks · ${appearedCount} of ${enrolled} appeared</span></div></div><div class="parent-summary-grid"><div class="parent-summary ready"><b>${counts.ready}</b><span>Ready to send</span><small>parents</small></div><div class="parent-summary sent"><b>${counts.sent}</b><span>Sent</span><small>parents</small></div><div class="parent-summary missing"><b>${counts.missing}</b><span>Missing phone</span><small>parents</small></div><div class="parent-summary absent"><b>${counts.absent}</b><span>Absent</span><small>students</small></div></div></header><div class="parent-sendbar"><label>Send with <select onchange="setWhatsAppApp(this.value)"><option value="personal" ${preferredWhatsAppApp()==='personal'?'selected':''}>WhatsApp</option><option value="business" ${preferredWhatsAppApp()==='business'?'selected':''}>WhatsApp Business</option></select></label><button class="primary" onclick="sendAllParentCards()" ${PARENT_BULK_ITEMS.length?'':'disabled'}>Send all ready (${PARENT_BULK_ITEMS.length})</button><button class="parent-preview-trigger" onclick="previewParentMessage('')">Preview message</button><span>Mark sent manually after WhatsApp opens.</span></div><div class="parent-report-body"><div class="parent-recipient-pane"><div class="parent-list-tools"><input type="search" value="${PARENT_FILTER.search||''}" placeholder="Search recipients" oninput="setParentSearch(this.value)"><div class="parent-status-tabs"><button class="${PARENT_FILTER.status==='all'?'active':''}" onclick="setParentStatus('all')">All <b>${rowsData.length}</b></button><button class="${PARENT_FILTER.status==='ready'?'active':''}" onclick="setParentStatus('ready')">Ready <b>${counts.ready}</b></button><button class="${PARENT_FILTER.status==='missing'?'active':''}" onclick="setParentStatus('missing')">Missing <b>${counts.missing}</b></button><button class="${PARENT_FILTER.status==='absent'?'active':''}" onclick="setParentStatus('absent')">Absent <b>${counts.absent}</b></button></div></div><div class="parent-note">Each message highlights progress and one practical next step. N.A. results are not sent.</div>${grouped||'<div class="parent-empty">No recipients match this filter.</div>'}</div><aside class="parent-preview-panel" id="parentPreviewPanel"><div class="parent-preview-placeholder"><b>Message preview</b><span>Select Preview on a recipient to review the WhatsApp message here.</span></div></aside></div></section>
   `);
 }
 
@@ -619,7 +609,26 @@ window.setWhatsAppApp = value=>{
 };
 
 window.previewParentMessage = message=>{
-  alert(decodeURIComponent(message));
+  const panel=document.getElementById('parentPreviewPanel');
+  if(!panel) return alert(message ? decodeURIComponent(message) : 'Select Preview on a recipient to review the WhatsApp message here.');
+  if(!message){
+    panel.innerHTML='<div class="parent-preview-placeholder"><b>Message preview</b><span>Select Preview on a recipient to review the WhatsApp message here.</span></div>';
+    return;
+  }
+  const text=decodeURIComponent(message).replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
+  panel.innerHTML=`<div class="parent-preview-content"><b>Message preview</b><pre>${text}</pre></div>`;
+};
+
+window.setParentSearch = async value=>{
+  PARENT_FILTER.search=value;
+  await renderParents(await DB.listTests());
+  const input=document.querySelector('.parent-list-tools input');
+  if(input){input.focus();input.setSelectionRange(value.length,value.length);}
+};
+
+window.setParentStatus = async value=>{
+  PARENT_FILTER.status=value;
+  renderParents(await DB.listTests());
 };
 
 window.openParentWhatsApp = (phone,message)=>{
@@ -666,7 +675,7 @@ window.setParentFilter = async (key,value)=>{
         section:selected.section||'All',
         subject:selected.subject||'',
         testId:selected.id,
-        student:'All'
+        student:'All', search:PARENT_FILTER.search||'', status:PARENT_FILTER.status||'all'
       };
     } else {
       PARENT_FILTER.testId = '';
