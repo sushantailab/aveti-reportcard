@@ -123,8 +123,9 @@ async function home(){
   show(`
     ${demoNote}
     <div class="home-dashboard">
+      <header class="home-dashboard-title"><span>Aveti Learning Tuition Center</span><h1>Monthly Assessment &amp; Progress</h1></header>
       <section class="home-overview card">
-        <div class="home-snapshot-head"><div><h1>Monthly Assessment &amp; Progress</h1><p>${monthName} ${selectedYear} · A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select aria-label="Reporting year" onchange="setHomeYear(this.value)">${yearOptions}</select></div>${calendar}</div>
+        <div class="home-snapshot-head"><div><h1>${monthName} ${selectedYear} activity overview</h1><p>A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select aria-label="Reporting year" onchange="setHomeYear(this.value)">${yearOptions}</select></div>${calendar}</div>
         <div class="home-stat-grid">
           <article class="home-stat-card"><div><i class="home-icon tests">${homeIcon('tests')}</i><b>${periodTests.length}</b><span>Tests conducted</span></div>${homeBars(periodTests.length)}</article>
           <article class="home-stat-card"><div><i class="home-icon classes">${homeIcon('classes')}</i><b>${periodClasses.size}</b><span>Classes covered</span></div>${homeSparkline()}</article>
