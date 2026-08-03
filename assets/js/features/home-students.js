@@ -36,6 +36,18 @@ const homeIcon = type => ({
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
 let HOME_PERIOD_MONTH = '', HOME_PERIOD_YEAR = '';
+async function homeChapterScope(test){
+  const selectedIds = Array.isArray(test.chapter_ids) ? test.chapter_ids.map(String) : [];
+  let chapterNumbers = [];
+  if(selectedIds.length){
+    const chapters = await DB.listChapters(test.class_level,test.subject);
+    const numberById = new Map(chapters.map(chapter=>[String(chapter.id),Number(chapter.chapter_no)]));
+    chapterNumbers = selectedIds.map(id=>numberById.get(id)).filter(Number.isFinite);
+  }
+  if(!chapterNumbers.length && Number.isFinite(Number(test.chapter_no))) chapterNumbers=[Number(test.chapter_no)];
+  chapterNumbers=[...new Set(chapterNumbers)].sort((a,b)=>a-b);
+  return chapterNumbers.length ? chapterNumbers.map(number=>`Ch ${number}`).join(', ') : 'Ch —';
+}
 async function home(){
   setCrumb('Home');
   const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
@@ -77,6 +89,7 @@ async function home(){
   for(const t of visibleTests){
     const avg = await classAverage(t,activeStudentIds);
     const rs = await activeResultsForTest(t,activeStudentIds);
+    const chapterScope = await homeChapterScope(t);
     const appeared = rs.filter(r=>!r.na && r.present).length;
     const applicableStudents = rs.filter(r=>!r.na).length;
     const testAttendance = applicableStudents ? Math.round(appeared/applicableStudents*100) : null;
@@ -86,7 +99,7 @@ async function home(){
         <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}${newTag}</div></div>
         <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
         <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
-        <div class="recent-field"><div class="label">Test & chapter</div><div class="value">${testTypeLabel(t.test_type)} · ${chapterDetail(t)}</div></div>
+        <div class="recent-field"><div class="label">Test & chapter</div><div class="value">${testTypeLabel(t.test_type)} · ${chapterScope}</div></div>
         <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
         <div class="recent-field"><div class="label">Attendance</div><div class="value strong">${testAttendance==null?'—':testAttendance+'%'}</div></div>
         <div class="recent-field"><div class="label">Average score</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
