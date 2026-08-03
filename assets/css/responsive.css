@@ -5,6 +5,12 @@ img,svg{max-width:100%}
 button,select,input,textarea{max-width:100%}
 .app-main,.app-content,.screen{min-width:0}
 
+/* The three analysis reports are a single, clearly highlighted workflow group. */
+.workflow-analysis-tools button{background:#edf8f1!important;border-color:#b9dfc8!important}
+.workflow-analysis-tools button:hover{background:#dcf1e4!important;border-color:#76b994!important}
+.workflow-analysis-tools button:first-child{background:#e3f5e9!important}
+.workflow-analysis-tools button svg,.workflow-analysis-tools button>em{color:#08775a!important}
+
 /* Live Home calendar: green = one test; red = two or more tests on one date. */
 .home-mini-calendar{width:154px;padding:7px 8px;border:1px solid #dce8e1;border-radius:9px;background:#fff;box-shadow:0 4px 14px rgba(31,83,57,.05)}
 .home-mini-calendar>div{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px;color:#315246}.home-mini-calendar>div>b{font-size:10px}.home-mini-calendar>div>span{display:flex;align-items:center;gap:3px;color:#718179;font-size:8px;white-space:nowrap}.home-mini-calendar>div>span i{width:5px;height:5px;border-radius:50%;background:#13966b}.home-mini-calendar>div>span i.multiple{background:#e34e47;margin-left:2px}.home-mini-calendar section{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center}.home-mini-calendar section>em{padding-bottom:2px;color:#8a9992;font-size:7px;font-style:normal;font-weight:700}.home-calendar-empty,.home-calendar-day{position:relative;display:grid;place-items:center;min-height:15px;color:#52645b;font-size:8px;font-style:normal}.home-calendar-day.has-test{font-weight:800;color:#075b43}.home-calendar-day b{position:absolute;bottom:0;width:4px;height:4px;border-radius:50%;background:#13966b}.home-calendar-day.multiple-tests b{background:#e34e47}
