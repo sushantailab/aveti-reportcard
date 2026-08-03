@@ -477,6 +477,14 @@ window.exportTeacherPDF = async testId=>{
 /* ---------- PARENT SHARE ---------- */
 let PARENT_FILTER = { cls:'', section:'', subject:'', testId:'', student:'All', search:'', status:'all' };
 let PARENT_BULK_ITEMS = [];
+let PARENT_MESSAGE_OVERRIDES = {};
+let PARENT_PHONE_LOOKUP = {};
+let PARENT_PREVIEW = {testId:'',studentId:'',message:''};
+const parentMessageKey = (testId,studentId) => `${testId}:${studentId}`;
+const maskedParentPhone = phone => {
+  const digits=String(phone||'').replace(/\D/g,'');
+  return digits.length>4 ? `••••••${digits.slice(-4)}` : '••••••';
+};
 
 async function openParents(testId){
   const tests = await DB.listTests();
@@ -484,6 +492,7 @@ async function openParents(testId){
   if(testId){
     const selected = tests.find(t=>t.id===testId);
     if(selected){
+      if(PARENT_FILTER.testId && PARENT_FILTER.testId!==selected.id) PARENT_MESSAGE_OVERRIDES={};
       PARENT_FILTER = {
         cls:String(selected.class_level||''),
         section:selected.section||'All',
@@ -544,6 +553,7 @@ async function renderParents(tests){
     return;
   }
   CURRENT_TEST = test.id;
+  PARENT_PHONE_LOOKUP = {};
   const activeStudentIds = new Set(students.map(student=>student.id));
   const rs = await activeResultsForTest(test,activeStudentIds);
   const allResults = await DB.allResults();
@@ -564,25 +574,29 @@ async function renderParents(tests){
     const isAbsent = !isNA && !r.present;
     const p = !isNA && !isAbsent ? pct(r.marks,test.full_marks) : null;
     const context = {...parentNotificationContext(test,r.student_id,tests,allResults),chapterNumbers};
-    const message = parentWhatsAppMessage(test,s.name,r,avg,context);
+    const generatedMessage = parentWhatsAppMessage(test,s.name,r,avg,context);
+    const override = PARENT_MESSAGE_OVERRIDES[parentMessageKey(test.id,r.student_id)];
+    const message = override==null ? generatedMessage : override;
     const msg = encodeURIComponent(message);
+    const generatedMsg = encodeURIComponent(generatedMessage);
     const phone = normalizeIndianPhone(s.parent_phone);
+    if(phone) PARENT_PHONE_LOOKUP[parentMessageKey(test.id,r.student_id)] = phone;
     const sent = parentCardWasSent(test.id,r.student_id);
     const kind = isNA ? 'na' : isAbsent ? 'absent' : !phone ? 'missing' : sent ? 'sent' : 'ready';
     if(phone && !sent && !isNA) PARENT_BULK_ITEMS.push({phone,message:msg,studentId:r.student_id});
-    rowsData.push({s,r,p,isNA,isAbsent,phone,sent,msg,kind});
+    rowsData.push({s,r,p,isNA,isAbsent,phone,sent,msg,generatedMsg,kind});
   });
   const search = String(PARENT_FILTER.search||'').trim().toLowerCase();
   const filtered = rowsData.filter(item=>!search || item.s.name.toLowerCase().includes(search));
   const counts = {ready:rowsData.filter(x=>x.kind==='ready').length,sent:rowsData.filter(x=>x.kind==='sent').length,missing:rowsData.filter(x=>x.kind==='missing').length,absent:rowsData.filter(x=>x.kind==='absent').length};
   const visible = PARENT_FILTER.status==='all' ? filtered : filtered.filter(x=>x.kind===PARENT_FILTER.status);
   const parentRow = item=>{
-    const {s,r,p,isNA,isAbsent,phone,sent,msg}=item;
+    const {s,r,p,isNA,isAbsent,phone,sent,msg,generatedMsg}=item;
     const details = p==null ? (isNA?'N.A. · No notification needed':'Absent · Did not appear') : `${r.marks}/${test.full_marks} · ${p}% · Grade ${band(p)}`;
     const actions = isNA
       ? '<span class="parent-pill neutral">No notification needed</span>'
       : phone
-        ? `<a class="parent-phone">${phone}</a><button class="parent-action preview" data-message="${msg}" onclick="previewParentMessage(this.dataset.message)">Preview</button><button class="parent-action send" data-phone="${phone}" data-message="${msg}" onclick="openParentWhatsApp(this.dataset.phone,this.dataset.message)">Send</button><label class="parent-sent"><input type="checkbox" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${s.id}',this.checked)"> Sent</label>`
+        ? `<a class="parent-phone">${maskedParentPhone(phone)}</a><button class="parent-action preview" data-message="${msg}" onclick="previewParentMessage(this.dataset.message,'${test.id}','${s.id}')">Preview</button><button class="parent-action edit" data-message="${msg}" onclick="editParentMessage('${test.id}','${s.id}',this.dataset.message,this.dataset.generated)">Edit message</button><button class="parent-action send" data-message="${msg}" onclick="sendParentRecipient('${test.id}','${s.id}',this.dataset.message)">Send</button><label class="parent-sent"><input type="checkbox" ${sent?'checked':''} onchange="setParentCardSent('${test.id}','${s.id}',this.checked)"> Sent</label>`
         : `<span class="parent-pill warn">Missing phone</span><button class="parent-action add-phone" onclick="appNavigate('students')">Add phone number</button>`;
     return `<div class="parent-recipient-row ${isAbsent?'is-absent':''}">${avatar(s.gender,s.name)}<div class="parent-recipient-main"><b>${s.name}</b><span>${details}</span></div><div class="parent-recipient-actions">${actions}</div></div>`;
   };
@@ -608,15 +622,51 @@ window.setWhatsAppApp = value=>{
   localStorage.setItem(LS_WHATSAPP_APP,value==='business'?'business':'personal');
 };
 
-window.previewParentMessage = message=>{
+const parentEsc = text=>String(text||'').replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
+
+window.previewParentMessage = (message,testId,studentId)=>{
   const panel=document.getElementById('parentPreviewPanel');
   if(!panel) return alert(message ? decodeURIComponent(message) : 'Select Preview on a recipient to review the WhatsApp message here.');
   if(!message){
     panel.innerHTML='<div class="parent-preview-placeholder"><b>Message preview</b><span>Select Preview on a recipient to review the WhatsApp message here.</span></div>';
     return;
   }
-  const text=decodeURIComponent(message).replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]));
-  panel.innerHTML=`<div class="parent-preview-content"><b>Message preview</b><pre>${text}</pre></div>`;
+  const text=decodeURIComponent(message);
+  PARENT_PREVIEW={testId:testId||'',studentId:studentId||'',message};
+  const editButton=testId&&studentId ? '<button class="parent-action edit" onclick="editParentMessageFromPreview()">Edit message</button>' : '';
+  panel.innerHTML=`<div class="parent-preview-content"><b>Message preview</b><pre>${parentEsc(text)}</pre><div class="parent-preview-actions">${editButton}</div></div>`;
+};
+
+window.editParentMessage = (testId,studentId,message)=>{
+  const panel=document.getElementById('parentPreviewPanel');
+  if(!panel) return;
+  const text=decodeURIComponent(message||'');
+  PARENT_PREVIEW={testId,studentId,message};
+  panel.innerHTML=`<div class="parent-preview-content"><b>Edit message</b><textarea id="parentMessageEditor" class="parent-message-editor">${parentEsc(text)}</textarea><div class="parent-preview-actions"><button class="primary" onclick="saveParentMessage('${testId}','${studentId}')">Save message</button><button class="parent-action" onclick="cancelParentMessageEdit()">Cancel</button><button class="parent-action" onclick="resetParentMessage('${testId}','${studentId}')">Reset generated</button></div></div>`;
+  document.getElementById('parentMessageEditor')?.focus();
+};
+
+window.editParentMessageFromPreview = ()=>editParentMessage(PARENT_PREVIEW.testId,PARENT_PREVIEW.studentId,PARENT_PREVIEW.message);
+window.cancelParentMessageEdit = ()=>previewParentMessage(PARENT_PREVIEW.message,PARENT_PREVIEW.testId,PARENT_PREVIEW.studentId);
+
+window.saveParentMessage = async (testId,studentId)=>{
+  const editor=document.getElementById('parentMessageEditor');
+  if(!editor) return;
+  const value=editor.value.trim();
+  if(!value){ alert('Message cannot be empty.'); return; }
+  PARENT_MESSAGE_OVERRIDES[parentMessageKey(testId,studentId)] = value;
+  await renderParents(await DB.listTests());
+};
+
+window.resetParentMessage = async (testId,studentId)=>{
+  delete PARENT_MESSAGE_OVERRIDES[parentMessageKey(testId,studentId)];
+  await renderParents(await DB.listTests());
+};
+
+window.sendParentRecipient = (testId,studentId,message)=>{
+  const phone=PARENT_PHONE_LOOKUP[parentMessageKey(testId,studentId)];
+  if(!phone) return alert('This student does not have a valid phone number.');
+  openParentWhatsApp(phone,message);
 };
 
 window.setParentSearch = async value=>{
@@ -667,9 +717,11 @@ window.sendAllParentCards = ()=>{
 
 window.setParentFilter = async (key,value)=>{
   const tests = await DB.listTests();
+  const previousTestId=PARENT_FILTER.testId;
   if(key==='recent'){
     const selected = tests.find(t=>t.id===value);
     if(selected){
+      if(previousTestId && previousTestId!==selected.id) PARENT_MESSAGE_OVERRIDES={};
       PARENT_FILTER = {
         cls:String(selected.class_level||''),
         section:selected.section||'All',
@@ -682,6 +734,7 @@ window.setParentFilter = async (key,value)=>{
     }
   } else {
     PARENT_FILTER[key] = value;
+    if(key==='testId' && previousTestId!==value) PARENT_MESSAGE_OVERRIDES={};
     if(key==='cls' || key==='section' || key==='subject'){
       PARENT_FILTER.testId = '';
       PARENT_FILTER.student = 'All';
