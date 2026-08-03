@@ -41,6 +41,19 @@ button,select,input,textarea{max-width:100%}
   .home-timeline-row{min-height:60px!important;padding-top:7px!important;padding-bottom:7px!important}
   .home-timeline-dot{top:24px!important}
   .home-test-scope em{margin-top:2px!important}
+  .home-workflow{padding:16px!important}
+  .workflow-heading p{margin:2px 0 9px!important}
+  .workflow-grid{padding:4px 0 0!important;gap:10px!important;align-items:start!important}
+  .workflow-grid:after{display:none!important}
+  .workflow-step,.workflow-tools{min-height:196px!important;padding:12px!important}
+  .workflow-enter,.workflow-parent,.workflow-tools{margin-top:0!important;min-height:196px!important}
+  .workflow-analyse{min-height:214px!important}
+  .workflow-enter .workflow-icon,.workflow-parent .workflow-icon{margin:12px auto 8px!important;width:42px!important;height:42px!important}
+  .workflow-enter>strong,.workflow-parent>strong{margin-top:9px!important;padding:8px 9px!important}
+  .workflow-analyse>.workflow-icon{width:40px!important;height:40px!important;margin:8px auto!important}
+  .workflow-analysis-tools{gap:4px!important}
+  .workflow-analysis-tools button{min-height:45px!important;padding:5px!important}
+  .workflow-tools button{min-height:43px!important}
 }
 
 @media screen and (min-width:721px) and (max-width:1100px){
