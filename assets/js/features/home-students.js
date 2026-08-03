@@ -110,7 +110,8 @@ async function home(){
     recent += `<article class="home-timeline-row">
       <span class="home-timeline-dot ${isNewTest(t)?'new':''}"></span>
       <div class="home-test-date" data-label="Date"><b>${fmtDate(testDate(t))}</b>${newTag}</div>
-      <div class="home-test-class" data-label="Class & section"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b><span>${t.subject}</span></div>
+      <div class="home-test-class" data-label="Class & section"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b></div>
+      <div class="home-test-subject" data-label="Subject"><b>${t.subject}</b></div>
       <div class="home-test-scope" data-label="Test & chapters"><b>${testTypeLabel(t.test_type)}</b><span>${chapterScope}</span><em>${chapterCount} chapter${chapterCount===1?'':'s'}</em></div>
       <div class="home-test-attendance" data-label="Attendance"><b class="home-attendance-value">${testAttendance==null?'—':testAttendance+'%'}</b><span>Attendance</span></div>
       <div class="home-test-value" data-label="Full marks"><b>${t.full_marks}</b><span>Full marks</span></div>
