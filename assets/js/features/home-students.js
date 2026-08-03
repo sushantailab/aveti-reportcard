@@ -112,7 +112,7 @@ async function home(){
       <div class="home-test-date" data-label="Date"><b>${fmtDate(testDate(t))}</b>${newTag}</div>
       <div class="home-test-class" data-label="Class & section"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b><span>${t.subject}</span></div>
       <div class="home-test-scope" data-label="Test & chapters"><b>${testTypeLabel(t.test_type)}</b><span>${chapterScope}</span><em>${chapterCount} chapter${chapterCount===1?'':'s'}</em></div>
-      <div class="home-test-attendance" data-label="Attendance"><i style="--attendance:${testAttendance||0}"><b>${testAttendance==null?'—':testAttendance+'%'}</b></i><span>Attendance</span></div>
+      <div class="home-test-attendance" data-label="Attendance"><b class="home-attendance-value">${testAttendance==null?'—':testAttendance+'%'}</b><span>Attendance</span></div>
       <div class="home-test-value" data-label="Full marks"><b>${t.full_marks}</b><span>Full marks</span></div>
       <div class="home-test-value" data-label="Average score"><b>${avg!=null?avg+'%':'—'}</b><span>Average score</span></div>
       <span class="home-status" data-label="Status">Report<br>ready</span>
