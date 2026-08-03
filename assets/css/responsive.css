@@ -10,6 +10,7 @@ button,select,input,textarea{max-width:100%}
 .workflow-analysis-tools button:hover{background:#dcf1e4!important;border-color:#76b994!important}
 .workflow-analysis-tools button:first-child{background:#e3f5e9!important}
 .workflow-analysis-tools button svg,.workflow-analysis-tools button>em{color:#08775a!important}
+.workflow-analyse .workflow-top>b{font-weight:800!important}
 
 /* Live Home calendar: green = one test; red = two or more tests on one date. */
 .home-mini-calendar{width:154px;padding:7px 8px;border:1px solid #dce8e1;border-radius:9px;background:#fff;box-shadow:0 4px 14px rgba(31,83,57,.05)}
