@@ -32,6 +32,8 @@ const homeIcon = type => ({
   certificate:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="m8.5 13-1 7 4.5-2 4.5 2-1-7M12 6.5v5m-2.5-2.5h5"/></svg>',
   activation:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 14-14M9 5h10v10"/></svg>'
 }[type] || '');
+const homeBars = (count,color='green') => `<span class="snapshot-bars ${color}">${[38,62,26,72,43,87,36,57,29,49,68,31].map(height=>`<i style="height:${height}%"></i>`).join('')}</span>`;
+const homeSparkline = () => '<svg class="snapshot-sparkline" viewBox="0 0 180 46" aria-hidden="true"><path d="M2 30 15 20 28 28 42 13 56 33 70 25 84 38 99 22 113 29 128 10 142 23 156 15 178 22" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M2 30 15 20 28 28 42 13 56 33 70 25 84 38 99 22 113 29 128 10 142 23 156 15 178 22" fill="none" stroke="currentColor" stroke-width="7" opacity=".08"/></svg>';
 
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
@@ -94,42 +96,38 @@ async function home(){
     const applicableStudents = rs.filter(r=>!r.na).length;
     const testAttendance = applicableStudents ? Math.round(appeared/applicableStudents*100) : null;
     const newTag = isNewTest(t) ? '<span class="new-tag">NEW</span>' : '';
-    recent += `<div class="recent-test">
-      <div class="recent-grid">
-        <div class="recent-field"><div class="label">Date</div><div class="value">${fmtDate(testDate(t))}${newTag}</div></div>
-        <div class="recent-field"><div class="label">Class</div><div class="value">Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</div></div>
-        <div class="recent-field"><div class="label">Subject</div><div class="value">${t.subject}</div></div>
-        <div class="recent-field"><div class="label">Test & chapter</div><div class="value">${testTypeLabel(t.test_type)} · ${chapterScope}</div></div>
-        <div class="recent-field"><div class="label">Full marks</div><div class="value">${t.full_marks}</div></div>
-        <div class="recent-field"><div class="label">Attendance</div><div class="value strong">${testAttendance==null?'—':testAttendance+'%'}</div></div>
-        <div class="recent-field"><div class="label">Average score</div><div class="value strong">${avg!=null?avg+'%':'—'}</div></div>
-        <div class="recent-field recent-status"><div class="label">Status</div><div class="value"><span class="home-status">Report ready</span></div></div>
-        <div class="recent-actions">
-          <button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button>
-          <button class="action parent" onclick="openParents('${t.id}')">Parent</button>
-        </div>
-      </div>
-    </div>`;
+    const chapterCount = chapterScope==='Ch —' ? 0 : chapterScope.split(',').length;
+    recent += `<article class="home-timeline-row">
+      <span class="home-timeline-dot ${isNewTest(t)?'new':''}"></span>
+      <div class="home-test-date"><b>${fmtDate(testDate(t))}</b>${newTag}</div>
+      <div class="home-test-class"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b><span>${t.subject}</span></div>
+      <div class="home-test-scope"><b>${testTypeLabel(t.test_type)}</b><span>${chapterScope}</span><em>${chapterCount} chapter${chapterCount===1?'':'s'}</em></div>
+      <div class="home-test-attendance"><i style="--attendance:${testAttendance||0}"><b>${testAttendance==null?'—':testAttendance+'%'}</b></i><span>Attendance</span></div>
+      <div class="home-test-value"><b>${t.full_marks}</b><span>Full marks</span></div>
+      <div class="home-test-value"><b>${avg!=null?avg+'%':'—'}</b><span>Average score</span></div>
+      <span class="home-status">Report<br>ready</span>
+      <div class="recent-actions"><button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button><button class="action parent" onclick="openParents('${t.id}')">Parent</button><button class="home-row-more" onclick="openTeacher('${t.id}')" aria-label="Open test report">›</button></div>
+    </article>`;
   }
   show(`
     ${demoNote}
     <div class="home-dashboard">
       <section class="home-overview card">
-        <div class="home-overview-head"><h1>Test activity overview</h1><div class="home-period-controls"><label>Month <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><label>Year <select onchange="setHomeYear(this.value)">${yearOptions}</select></label></div></div>
+        <div class="home-snapshot-head"><div><h1>${monthName} ${selectedYear} Snapshot</h1><p>A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select onchange="setHomeYear(this.value)">${yearOptions}</select></div><div class="snapshot-art" aria-hidden="true"><i class="snapshot-plant"></i><i class="snapshot-calendar"><b></b><em></em><em></em><em></em><em></em><em></em><em></em></i><i class="snapshot-clipboard">✓<br>✓<br>✓</i></div></div>
         <div class="home-stat-grid">
-          <article class="home-stat-card"><i class="home-icon tests">${homeIcon('tests')}</i><div><b>${periodTests.length}</b><span>Tests conducted</span></div></article>
-          <article class="home-stat-card"><i class="home-icon classes">${homeIcon('classes')}</i><div><b>${periodClasses.size}</b><span>Classes covered</span></div></article>
-          <article class="home-stat-card"><i class="home-icon subject">${homeIcon('subject')}</i><div><b>${periodSubjects.size}</b><span>Subjects assessed</span></div></article>
-          <article class="home-stat-card"><i class="home-icon attendance">${homeIcon('attendance')}</i><div><b>${attendance==null?'—':attendance+'%'}</b><span>Exam attendance</span></div></article>
+          <article class="home-stat-card"><div><i class="home-icon tests">${homeIcon('tests')}</i><b>${periodTests.length}</b><span>Tests conducted</span></div>${homeBars(periodTests.length)}</article>
+          <article class="home-stat-card"><div><i class="home-icon classes">${homeIcon('classes')}</i><b>${periodClasses.size}</b><span>Classes covered</span></div>${homeSparkline()}</article>
+          <article class="home-stat-card"><div><i class="home-icon subject">${homeIcon('subject')}</i><b>${periodSubjects.size}</b><span>Subjects assessed</span></div>${homeBars(periodSubjects.size,'orange')}</article>
+          <article class="home-stat-card attendance-card"><div class="attendance-ring" style="--attendance:${attendance||0}"><b>${attendance==null?'—':attendance+'%'}</b><span>Exam attendance</span></div></article>
         </div>
-        <div class="home-summary-grid"><div class="home-summary"><b>Tests by class</b><div>${periodClasses.size?[...periodClasses.entries()].sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,count])=>`<span>Class ${key} <strong>— ${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div><div class="home-summary"><b>Tests by subject</b><div>${periodSubjects.size?[...periodSubjects.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>`<span>${key} <strong>— ${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div></div>
+        <div class="home-summary-grid"><div class="home-summary"><b>Tests by class</b><div>${periodClasses.size?[...periodClasses.entries()].sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,count])=>`<span><label>Class ${key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodClasses.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div><div class="home-summary"><b>Tests by subject</b><div>${periodSubjects.size?[...periodSubjects.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>`<span><label>${key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodSubjects.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div></div>
       </section>
 
-      <section class="home-workflow card"><h2>Teaching workflow</h2><div class="workflow-grid">
-        <button class="workflow-step workflow-enter" onclick="enterMarks()"><span class="workflow-top"><i>1</i><b>Enter marks</b><span class="workflow-icon">${homeIcon('tests')}</span></span><small>Record a test and scores</small></button>
-        <div class="workflow-step workflow-analyse"><span class="workflow-top"><i>2</i><b>Analyse &amp; remedial</b><span class="workflow-icon">${homeIcon('chart')}</span></span><div class="workflow-analysis-tools"><button onclick="openTeacher()">${homeIcon('report')} <span><b>Teacher report</b><small>Results and remedial plan</small></span></button><button onclick="growth()">${homeIcon('chart')} <span><b>Growth tracker</b><small>Chapter-by-chapter progress</small></span></button><button onclick="classInsights()">${homeIcon('classes')} <span><b>Class insights</b><small>Leaderboard and support risks</small></span></button></div></div>
-        <button class="workflow-step workflow-parent" onclick="openParents()"><span class="workflow-top"><i>3</i><b>Parent communication</b><span class="workflow-icon">${homeIcon('parent')}</span></span><small>Open parent reports</small></button>
-        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} <span>Certificates</span></button><button onclick="teacherActivation()">${homeIcon('activation')} <span>Teacher activation</span></button></div>
+      <section class="home-workflow card"><div class="workflow-heading"><h2>Assessment Workflow</h2><p>Your assessment cycle, simplified</p></div><div class="workflow-grid">
+        <button class="workflow-step workflow-enter" onclick="enterMarks()"><span class="workflow-top"><i>1</i><b>Enter marks</b></span><span class="workflow-icon">${homeIcon('tests')}</span><small>Record a test and scores</small><strong>Enter marks <b>→</b></strong></button>
+        <div class="workflow-step workflow-analyse"><span class="workflow-top"><i>2</i><b>Analyse &amp; remedial</b><em>Core step</em></span><span class="workflow-icon">${homeIcon('chart')}</span><div class="workflow-analysis-tools"><button onclick="openTeacher()">${homeIcon('report')} <span><b>Teacher report</b><small>Report &amp; remedial plan</small></span><em>›</em></button><button onclick="growth()">${homeIcon('chart')} <span><b>Growth tracker</b><small>Chapter-by-chapter progress</small></span><em>›</em></button><button onclick="classInsights()">${homeIcon('classes')} <span><b>Class insights</b><small>Leaderboard and support risks</small></span><em>›</em></button></div></div>
+        <button class="workflow-step workflow-parent" onclick="openParents()"><span class="workflow-top"><i>3</i><b>Parent communication</b></span><span class="workflow-icon">${homeIcon('parent')}</span><small>Share reports and support<br>student progress</small><strong>Open parent reports <b>→</b></strong></button>
+        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} <span>Certificates</span><em>›</em></button><button onclick="teacherActivation()">${homeIcon('activation')} <span>Teacher activation</span><em>›</em></button></div>
       </div></section>
 
       <section class="card home-recent-card">
@@ -144,7 +142,7 @@ async function home(){
           <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
         </div>
       </div>
-      <div class="pad home-recent-table" style="padding-top:0">${recent?`<div class="recent-grid home-tests-table-head"><span>Date</span><span>Class &amp; section</span><span>Subject</span><span>Test &amp; chapter</span><span>Full marks</span><span>Attendance</span><span>Average score</span><span>Status</span><span>Reports</span></div>${recent}`:'<div class="home-empty">No tests found for this selection.</div>'}</div>
+      <div class="pad home-recent-table" style="padding-top:0"><div class="home-test-timeline">${recent||'<div class="home-empty">No tests found for this selection.</div>'}</div>${filteredTests.length>4?`<button class="home-view-all" onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent tests':'View all tests'} <b>→</b></button>`:''}</div>
       </section>
     </div>
   `);
