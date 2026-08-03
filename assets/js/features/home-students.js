@@ -99,21 +99,21 @@ async function home(){
     const chapterCount = chapterScope==='Ch —' ? 0 : chapterScope.split(',').length;
     recent += `<article class="home-timeline-row">
       <span class="home-timeline-dot ${isNewTest(t)?'new':''}"></span>
-      <div class="home-test-date"><b>${fmtDate(testDate(t))}</b>${newTag}</div>
-      <div class="home-test-class"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b><span>${t.subject}</span></div>
-      <div class="home-test-scope"><b>${testTypeLabel(t.test_type)}</b><span>${chapterScope}</span><em>${chapterCount} chapter${chapterCount===1?'':'s'}</em></div>
-      <div class="home-test-attendance"><i style="--attendance:${testAttendance||0}"><b>${testAttendance==null?'—':testAttendance+'%'}</b></i><span>Attendance</span></div>
-      <div class="home-test-value"><b>${t.full_marks}</b><span>Full marks</span></div>
-      <div class="home-test-value"><b>${avg!=null?avg+'%':'—'}</b><span>Average score</span></div>
-      <span class="home-status">Report<br>ready</span>
-      <div class="recent-actions"><button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button><button class="action parent" onclick="openParents('${t.id}')">Parent</button><button class="home-row-more" onclick="openTeacher('${t.id}')" aria-label="Open test report">›</button></div>
+      <div class="home-test-date" data-label="Date"><b>${fmtDate(testDate(t))}</b>${newTag}</div>
+      <div class="home-test-class" data-label="Class & section"><b>Class ${t.class_level}${t.section?(' · Sec '+t.section):' · All'}</b><span>${t.subject}</span></div>
+      <div class="home-test-scope" data-label="Test & chapters"><b>${testTypeLabel(t.test_type)}</b><span>${chapterScope}</span><em>${chapterCount} chapter${chapterCount===1?'':'s'}</em></div>
+      <div class="home-test-attendance" data-label="Attendance"><i style="--attendance:${testAttendance||0}"><b>${testAttendance==null?'—':testAttendance+'%'}</b></i><span>Attendance</span></div>
+      <div class="home-test-value" data-label="Full marks"><b>${t.full_marks}</b><span>Full marks</span></div>
+      <div class="home-test-value" data-label="Average score"><b>${avg!=null?avg+'%':'—'}</b><span>Average score</span></div>
+      <span class="home-status" data-label="Status">Report<br>ready</span>
+      <div class="recent-actions" data-label="Reports"><button class="action teacher" onclick="openTeacher('${t.id}')">Teacher</button><button class="action parent" onclick="openParents('${t.id}')">Parent</button><button class="home-row-more" onclick="openTeacher('${t.id}')" aria-label="Open test report">›</button></div>
     </article>`;
   }
   show(`
     ${demoNote}
     <div class="home-dashboard">
       <section class="home-overview card">
-        <div class="home-snapshot-head"><div><h1>${monthName} ${selectedYear} Snapshot</h1><p>A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select onchange="setHomeYear(this.value)">${yearOptions}</select></div><div class="snapshot-art" aria-hidden="true"><i class="snapshot-plant"></i><i class="snapshot-calendar"><b></b><em></em><em></em><em></em><em></em><em></em><em></em></i><i class="snapshot-clipboard">✓<br>✓<br>✓</i></div></div>
+        <div class="home-snapshot-head"><div><h1>Monthly Assessment &amp; Progress</h1><p>${monthName} ${selectedYear} · A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select aria-label="Reporting year" onchange="setHomeYear(this.value)">${yearOptions}</select></div><div class="snapshot-art" aria-hidden="true"><i class="snapshot-plant"></i><i class="snapshot-calendar"><b></b><em></em><em></em><em></em><em></em><em></em><em></em></i><i class="snapshot-clipboard">✓<br>✓<br>✓</i></div></div>
         <div class="home-stat-grid">
           <article class="home-stat-card"><div><i class="home-icon tests">${homeIcon('tests')}</i><b>${periodTests.length}</b><span>Tests conducted</span></div>${homeBars(periodTests.length)}</article>
           <article class="home-stat-card"><div><i class="home-icon classes">${homeIcon('classes')}</i><b>${periodClasses.size}</b><span>Classes covered</span></div>${homeSparkline()}</article>
@@ -142,7 +142,7 @@ async function home(){
           <button onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent':'Show all tests'}</button>
         </div>
       </div>
-      <div class="pad home-recent-table" style="padding-top:0"><div class="home-test-timeline">${recent||'<div class="home-empty">No tests found for this selection.</div>'}</div>${filteredTests.length>4?`<button class="home-view-all" onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent tests':'View all tests'} <b>→</b></button>`:''}</div>
+      <div class="pad home-recent-table" style="padding-top:0"><div class="home-tests-table-head" aria-hidden="true"><span>Date</span><span>Class &amp; section</span><span>Subject</span><span>Test &amp; chapters</span><span>Attendance</span><span>Full marks</span><span>Average score</span><span>Status</span><span>Reports</span></div><div class="home-test-timeline">${recent||'<div class="home-empty">No tests found for this selection.</div>'}</div>${filteredTests.length>4?`<button class="home-view-all" onclick="toggleHomeTests()">${HOME_SHOW_ALL?'Show recent tests':'View all tests'} <b>→</b></button>`:''}</div>
       </section>
     </div>
   `);
