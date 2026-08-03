@@ -34,6 +34,15 @@ const homeIcon = type => ({
 }[type] || '');
 const homeBars = (count,color='green') => `<span class="snapshot-bars ${color}">${[38,62,26,72,43,87,36,57,29,49,68,31].map(height=>`<i style="height:${height}%"></i>`).join('')}</span>`;
 const homeSparkline = () => '<svg class="snapshot-sparkline" viewBox="0 0 180 46" aria-hidden="true"><path d="M2 30 15 20 28 28 42 13 56 33 70 25 84 38 99 22 113 29 128 10 142 23 156 15 178 22" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M2 30 15 20 28 28 42 13 56 33 70 25 84 38 99 22 113 29 128 10 142 23 156 15 178 22" fill="none" stroke="currentColor" stroke-width="7" opacity=".08"/></svg>';
+const homeMiniCalendar = (month,year,tests) => {
+  const counts=new Map();
+  tests.forEach(test=>{const date=new Date(testDate(test));const day=date.getDate();counts.set(day,(counts.get(day)||0)+1);});
+  const firstDay=new Date(year,month,1).getDay();
+  const lastDay=new Date(year,month+1,0).getDate();
+  const blank=Array.from({length:firstDay},()=>'<i class="home-calendar-empty"></i>').join('');
+  const days=Array.from({length:lastDay},(_,index)=>{const day=index+1,count=counts.get(day)||0;return `<i class="home-calendar-day${count?' has-test':''}${count>1?' multiple-tests':''}">${day}${count?'<b aria-label="Test day"></b>':''}</i>`;}).join('');
+  return `<aside class="home-mini-calendar" aria-label="${new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(new Date(year,month,1))} test calendar"><div><b>${new Intl.DateTimeFormat('en-IN',{month:'short'}).format(new Date(year,month,1))} ${year}</b><span><i class="single"></i>Test <i class="multiple"></i>2+</span></div><section><em>Su</em><em>Mo</em><em>Tu</em><em>We</em><em>Th</em><em>Fr</em><em>Sa</em>${blank}${days}</section></aside>`;
+};
 
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
@@ -64,6 +73,7 @@ async function home(){
   const selectedYear = Number(HOME_PERIOD_YEAR || new Date().getFullYear());
   const monthName = new Intl.DateTimeFormat('en-IN',{month:'long'}).format(new Date(selectedYear,selectedMonth,1));
   const periodTests = datedTests.filter(test=>{ const date=new Date(testDate(test)); return date.getMonth()===selectedMonth && date.getFullYear()===selectedYear; });
+  const calendar = homeMiniCalendar(selectedMonth,selectedYear,periodTests);
   const periodData = await Promise.all(periodTests.map(async test=>({test,results:await activeResultsForTest(test,activeStudentIds)})));
   const applicable = periodData.reduce((total,item)=>total+item.results.filter(result=>!result.na).length,0);
   const attended = periodData.reduce((total,item)=>total+item.results.filter(result=>!result.na&&result.present).length,0);
@@ -113,7 +123,7 @@ async function home(){
     ${demoNote}
     <div class="home-dashboard">
       <section class="home-overview card">
-        <div class="home-snapshot-head"><div><h1>Monthly Assessment &amp; Progress</h1><p>${monthName} ${selectedYear} · A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select aria-label="Reporting year" onchange="setHomeYear(this.value)">${yearOptions}</select></div><div class="snapshot-art" aria-hidden="true"><i class="snapshot-plant"></i><i class="snapshot-calendar"><b></b><em></em><em></em><em></em><em></em><em></em><em></em></i><i class="snapshot-clipboard">✓<br>✓<br>✓</i></div></div>
+        <div class="home-snapshot-head"><div><h1>Monthly Assessment &amp; Progress</h1><p>${monthName} ${selectedYear} · A quick view of assessment activity <span>✦</span></p></div><div class="home-period-controls"><label>Reporting period <select onchange="setHomeMonth(this.value)">${monthOptions}</select></label><select aria-label="Reporting year" onchange="setHomeYear(this.value)">${yearOptions}</select></div>${calendar}</div>
         <div class="home-stat-grid">
           <article class="home-stat-card"><div><i class="home-icon tests">${homeIcon('tests')}</i><b>${periodTests.length}</b><span>Tests conducted</span></div>${homeBars(periodTests.length)}</article>
           <article class="home-stat-card"><div><i class="home-icon classes">${homeIcon('classes')}</i><b>${periodClasses.size}</b><span>Classes covered</span></div>${homeSparkline()}</article>
