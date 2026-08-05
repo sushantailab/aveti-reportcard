@@ -276,6 +276,11 @@ async function renderTeacher(tests){
     return;
   }
   CURRENT_TEST = test.id;
+  // Fallback for report loads that do not include the nested teacher relation.
+  let assignedTeacher = test.teacher || null;
+  if(!assignedTeacher && test.teacher_id){
+    assignedTeacher = (await DB.listTahTeachers()).find(teacher=>String(teacher.id)===String(test.teacher_id)) || null;
+  }
   const scopeLabel = await teacherScopeLabel(test);
   const students = await DB.listStudents();
   const studentById = new Map(students.map(s=>[s.id,s]));
@@ -390,7 +395,7 @@ async function renderTeacher(tests){
     <div class="card pad teacher-report teacher-insight-report">
       <div class="teacher-insight-title">Test result &amp; remedial planning report</div>
       <div class="teacher-insight-head">
-        <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div>${test.teacher?.name?`<div class="tiny muted">Assigned teacher: ${escapeHTML(test.teacher.name)}</div>`:''}</div></div>
+        <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1>${assignedTeacher?`<div class="teacher-assigned-teacher"><span>Assigned teacher</span><strong>${escapeHTML(assignedTeacher.name)}</strong></div>`:`<div class="teacher-assigned-teacher is-unassigned"><span>Assigned teacher</span><strong>Not assigned</strong></div>`}<div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
         <div class="teacher-test-meta"><div class="teacher-test-line">${teacherHeaderIcon('test')}<b>${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b></div><div class="teacher-scope-line">${teacherHeaderIcon('scope')}<span>Assessment scope: <strong>${scopeLabel}</strong></span></div></div>
       </div>
       <div class="teacher-summary-grid">
@@ -411,7 +416,7 @@ async function renderTeacher(tests){
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
         <button onclick="printTeacherReport()">🖨 Print / Save as PDF</button>
-        <button onclick="shareTeacherReport('${test.id}')">💬 Share report with teacher</button>
+        <button class="teacher-share-action" onclick="shareTeacherReport('${test.id}')">💬 ${assignedTeacher?`Share report with ${escapeHTML(assignedTeacher.name)}`:'Assign teacher to share'}</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
     </div>

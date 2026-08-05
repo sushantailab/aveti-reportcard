@@ -50,6 +50,17 @@
   @media(max-width:720px){.topnav .wrap{padding:0}.recent-grid{grid-template-columns:1fr 1fr}.tiles{grid-template-columns:1fr 1fr}.app-content{padding:18px 14px 24px}}
 }
 
+/* Assigned-teacher identity is kept visible in the on-screen and printed test report. */
+.teacher-assigned-teacher{display:flex;align-items:center;gap:8px;margin-top:8px;color:#1c6046;font-size:14px;font-weight:700}
+.teacher-assigned-teacher span{padding:3px 7px;border-radius:999px;background:#e6f3eb;color:#327257;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.teacher-assigned-teacher strong{color:#123d2e;font-size:15px}
+.teacher-assigned-teacher.is-unassigned span{background:#f3f1e9;color:#806d39}
+.teacher-assigned-teacher.is-unassigned strong{color:#737d77;font-weight:600}
+.teacher-share-action{border-color:#0b7450!important;background:#e8f6ee!important;color:#075a3d!important;font-weight:800!important}
+.teacher-share-action:hover{background:#d8f0e2!important}
+@media(max-width:620px){.teacher-assigned-teacher{margin-top:6px;font-size:13px}.teacher-assigned-teacher strong{font-size:14px}}
+@media print{.teacher-assigned-teacher{margin-top:1.5mm;font-size:8pt}.teacher-assigned-teacher span{padding:1mm 1.5mm;font-size:6.5pt}.teacher-assigned-teacher strong{font-size:8.5pt}}
+
 /* Final navigation override: must be the last screen layout rule. */
 @media screen and (min-width:721px){
   .app-shell,.app-shell.sidebar-collapsed{display:block!important;grid-template-columns:1fr!important}
