@@ -59,14 +59,29 @@ async function growth(){
     full:chapterDetail(t)
   }));
   const classSeries = testStats.map(item=>item.average);
+  // Highest attended score in each chapter/test, used as the topper benchmark line.
+  // This is calculated from the same live results as the class average and ignores
+  // absent/N.A. records, so the comparison stays meaningful for every chapter.
+  const topNames = testStats.map(item=>{
+    const best = allRes
+      .filter(result=>result.test_id===item.test.id && activeStudentIds.has(result.student_id) && !result.na && result.present && result.marks!=null)
+      .sort((a,b)=>pct(b.marks,item.test.full_marks)-pct(a.marks,item.test.full_marks))[0];
+    return best ? (students.find(student=>student.id===best.student_id)?.name||'Top student') : '';
+  });
+  const topSeries = testStats.map(item=>{
+    const scores = allRes
+      .filter(result=>result.test_id===item.test.id && activeStudentIds.has(result.student_id) && !result.na && result.present && result.marks!=null)
+      .map(result=>pct(result.marks,item.test.full_marks));
+    return scores.length ? Math.max(...scores) : null;
+  });
   const studentSeries = tests.map(t=>{
     const r = allRes.find(x=>x.test_id===t.id && x.student_id===GR.student);
     return (r&&!r.na&&r.present&&r.marks!=null)?pct(r.marks,t.full_marks):null;
   });
   const sName = (students.find(s=>s.id===GR.student)||{}).name||'';
   const series = GR.mode==='class'
-    ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3}]
-    : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true}];
+    ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3},{name:'Topper score',data:topSeries,details:topNames,color:'#d97706',w:2,dash:true}]
+    : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true},{name:'Topper score',data:topSeries,details:topNames,color:'#d97706',w:2,dash:true}];
   const chapterTiles = testStats.length ? testStats.map(item=>{
     const lowScore = item.average!=null && item.average<60;
     const lowAttendance = item.attendance!=null && item.attendance<75;
@@ -194,7 +209,8 @@ function lineChartSVG(labels, series){
       const p=[x(i),y(v)];
       d+=(open?'L':'M')+p[0]+' '+p[1]+' ';
       open=true;
-      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}: ${v}%</title></circle>${si===0?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
+      const detail = s.details?.[i] ? ` (${chartText(s.details[i])})` : '';
+      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}${detail}: ${v}%</title></circle>${si===0?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
     });
     if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
     legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
