@@ -80,8 +80,8 @@ async function growth(){
   });
   const sName = (students.find(s=>s.id===GR.student)||{}).name||'';
   const series = GR.mode==='class'
-    ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3},{name:'Topper score',data:topSeries,details:topNames,color:'#d97706',w:2,dash:true}]
-    : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true},{name:'Topper score',data:topSeries,details:topNames,color:'#d97706',w:2,dash:true}];
+    ? [{name:'Class average',data:classSeries,color:'#378ADD',w:3},{name:'Topper score',data:topSeries,details:topNames,color:'#7c3aed',w:2,dash:true}]
+    : [{name:sName,data:studentSeries,color:'var(--teal)',w:3},{name:'Class average',data:classSeries,color:'#888780',w:1.5,dash:true},{name:'Topper score',data:topSeries,details:topNames,color:'#7c3aed',w:2,dash:true}];
   const chapterTiles = testStats.length ? testStats.map(item=>{
     const lowScore = item.average!=null && item.average<60;
     const lowAttendance = item.attendance!=null && item.attendance<75;
@@ -210,7 +210,8 @@ function lineChartSVG(labels, series){
       d+=(open?'L':'M')+p[0]+' '+p[1]+' ';
       open=true;
       const detail = s.details?.[i] ? ` (${chartText(s.details[i])})` : '';
-      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}${detail}: ${v}%</title></circle>${si===0?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
+      const showValue = si===0 || s.name==='Topper score';
+      dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}${detail}: ${v}%</title></circle>${showValue?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
     });
     if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
     legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
