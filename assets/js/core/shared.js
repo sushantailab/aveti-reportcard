@@ -86,6 +86,22 @@ function chapterDetail(t){
 const chapterOptionLabel = c => chapterDetail({chapter_no:c.chapter_no, chapter_name:c.title});
 const testTypeLabel = value => ({CET:'Chapter End Test',PET1:'Periodic Test-1'}[value] || value || 'Test');
 const testOptionLabel = t => `Class ${t.class_level} · Section ${t.section||'All'} · ${t.subject} · ${chapterDetail(t)} · ${fmtDate(testDate(t))}`;
+// Keep browser print/save names meaningful across every report. Browsers use
+// document.title as the suggested PDF filename when the print dialog opens.
+function reportPdfFilename(...parts){
+  const safe = parts.filter(Boolean).map(part=>String(part).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')).filter(Boolean);
+  return (safe.join('-') || 'report') + '.pdf';
+}
+function printReportWithFilename(filename){
+  const previousTitle = document.title;
+  const nextTitle = String(filename||'report.pdf').replace(/\.pdf$/i,'');
+  const restore = ()=>{ document.title = previousTitle; };
+  document.title = nextTitle;
+  window.addEventListener('afterprint', restore, {once:true});
+  window.print();
+  // Some browsers do not emit afterprint when the dialog is cancelled.
+  setTimeout(restore, 5000);
+}
 const bandConfig = () => (CONFIG.BANDS||[]).slice().sort((a,b)=>b.min-a.min);
 const band = p => {
   const bands = bandConfig();

@@ -125,7 +125,7 @@ async function growth(){
       ${filterBar}
       <div class="growth-dashboard growth-individual-dashboard">
         <div class="report-style-title">Individual Student Progress Report</div>
-        <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — Individual student progress report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`} · ${currentSession()}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="window.print()">🖨 Print / Save as PDF</button><button class="growth-whatsapp-button" onclick="shareGrowthSummary()">💬 WhatsApp summary</button><div class="seg"><button onclick="setGrowthMode('class')">Class trend</button><button class="on" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+        <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — Individual student progress report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`} · ${currentSession()}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="printGrowthReport()">🖨 Print / Save as PDF</button><button class="growth-whatsapp-button" onclick="shareGrowthSummary()">💬 WhatsApp summary</button><div class="seg"><button onclick="setGrowthMode('class')">Class trend</button><button class="on" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
         ${growthReportMeta()}
         <div class="growth-student-band"><span class="growth-student-avatar">${String(selectedStudent?.name||'?').split(/\s+/).map(word=>word[0]).slice(0,2).join('')}</span><div><span class="tiny muted">Student</span><b>${selectedStudent?.name||'No student selected'}</b></div></div>
         <div class="growth-summary-grid individual-summary">
@@ -146,7 +146,7 @@ async function growth(){
     ${filterBar}
     <div class="growth-dashboard">
       <div class="report-style-title">Chapterwise Growth Report</div>
-      <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="window.print()">🖨 Print / Save as PDF</button><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="printGrowthReport()">🖨 Print / Save as PDF</button><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
       ${growthReportMeta()}
       <div class="growth-summary-grid">
         <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${classAverage==null?'—':classAverage+'%'}</strong><em>All attended exams</em></div></div>
@@ -194,6 +194,12 @@ window.setGrowthFilter = (key,value)=>{
 };
 window.setGrowthMode = m=>{ GR.mode=m; growth(); };
 window.setGrowthStudent = id=>{ GR.student=id; growth(); };
+window.printGrowthReport = ()=>{
+  const student = GR.student ? document.querySelector('.growth-student-band b')?.textContent : '';
+  const parts = [`Class-${GR.cls}`,GR.subject,GR.mode==='ind'?'Individual-Student-Progress':'Chapterwise-Growth','Report'];
+  if(student) parts.splice(2,0,student);
+  printReportWithFilename(reportPdfFilename(...parts));
+};
 window.shareGrowthSummary = ()=>{
   if(!GR.sharePhone){
     alert('No parent WhatsApp number is saved for this student. Add it in Students first, then try again.');

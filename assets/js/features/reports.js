@@ -179,7 +179,10 @@ window.shareTeacherReport = async testId => {
   const applicable = Math.max(0, data.enrolled - data.na);
   const attendance = applicable ? Math.round(data.appeared / applicable * 1000) / 10 : null;
   const test = data.test;
-  const body = `Hello ${teacher.name},\n\nClass ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)} report is ready.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nPlease find the detailed report PDF attached.`;
+  const teacherGender = String(teacher.gender||teacher.sex||'').toLowerCase();
+  const honorific = teacherGender.startsWith('f') ? 'madam' : 'sir';
+  const supportCount = data.rows.filter(row=>!row.na && row.present && row.p!=null && row.p<60).length;
+  const body = `Hello ${teacher.name} ${honorific},\n\nThis teacher report is ready for Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)}.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nTeacher action: Please focus on the ${supportCount} students in the Developing and Urgent Support groups. Review the report, form small groups, conduct a remedial class, and discuss a practical improvement plan with each student.\n\nPlease find the detailed report PDF attached.`;
   window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(body)}`,'_blank','noopener');
 };
 
@@ -415,7 +418,7 @@ async function renderTeacher(tests){
       <div class="row report-actions" style="margin-top:16px;gap:8px">
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
-        <button onclick="printTeacherReport()">🖨 Print / Save as PDF</button>
+        <button onclick="printTeacherReport('${test.id}')">🖨 Print / Save as PDF</button>
         <button class="teacher-share-action" onclick="shareTeacherReport('${test.id}')">💬 ${assignedTeacher?`Share report with ${escapeHTML(assignedTeacher.name)}`:'Assign teacher to share'}</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
@@ -448,8 +451,12 @@ window.setTeacherTrendShowAll = async ()=>{
   await renderTeacher(await DB.listTests());
 };
 
-window.printTeacherReport = ()=>{
-  window.print();
+window.printTeacherReport = async testId=>{
+  const data = await teacherReportData(testId || CURRENT_TEST);
+  if(!data){ window.print(); return; }
+  const teacher = data.test.teacher || (data.test.teacher_id ? (await DB.listTahTeachers()).find(item=>String(item.id)===String(data.test.teacher_id)) : null);
+  const scope = await teacherScopeLabel(data.test);
+  printReportWithFilename(reportPdfFilename(teacher?.name||'Teacher',`Class-${data.test.class_level}`,data.test.subject,scope,testTypeLabel(data.test.test_type),'Teacher-Report'));
 };
 
 window.exportTeacherCSV = async testId=>{
@@ -500,7 +507,9 @@ window.exportTeacherPDF = async testId=>{
   });
   if(ranked.length>28) lines.push({text:`+ ${ranked.length-28} more rows in CSV export`,x:40,y:y-8,size:9});
   lines.push({text:'Privacy note: parent phone numbers are not included in this teacher PDF.',x:40,y:38,size:8});
-  downloadBlob(`${fileSafe(test.subject+'-'+chapterDetail(test))}-teacher-report.pdf`,'application/pdf',simplePdf(lines));
+  const teacher = test.teacher || (test.teacher_id ? (await DB.listTahTeachers()).find(item=>String(item.id)===String(test.teacher_id)) : null);
+  const scope = await teacherScopeLabel(test);
+  downloadBlob(reportPdfFilename(teacher?.name||'Teacher',`Class-${test.class_level}`,test.subject,scope,testTypeLabel(test.test_type),'Teacher-Report'),'application/pdf',simplePdf(lines));
 };
 
 /* ---------- PARENT SHARE ---------- */
