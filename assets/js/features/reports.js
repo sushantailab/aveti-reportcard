@@ -160,6 +160,29 @@ async function openTeacher(testId){
   renderTeacher(tests);
 }
 
+window.shareTeacherReport = async testId => {
+  const data = await teacherReportData(testId);
+  if(!data) return alert('Test report not found.');
+  let teacher = data.test.teacher;
+  if(!teacher && data.test.teacher_id){
+    teacher = (await DB.listTahTeachers()).find(t=>String(t.id)===String(data.test.teacher_id));
+  }
+  if(!teacher){
+    if(confirm('No teacher is assigned to this test. Open Mark Entry to assign one now?')) enterMarks(testId);
+    return;
+  }
+  const phone = normalizeIndianPhone(teacher.mobile);
+  if(!phone){
+    if(confirm(`${teacher.name} does not have a valid WhatsApp number. Open Teachers to add it now?`)) teachers();
+    return;
+  }
+  const applicable = Math.max(0, data.enrolled - data.na);
+  const attendance = applicable ? Math.round(data.appeared / applicable * 1000) / 10 : null;
+  const test = data.test;
+  const body = `Hello ${teacher.name},\n\nClass ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)} report is ready.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nPlease find the detailed report PDF attached.`;
+  window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(body)}`,'_blank','noopener');
+};
+
 function teacherChapterTest(chapter, tests){
   const chapterId = String(chapter.id);
   return tests
@@ -367,7 +390,7 @@ async function renderTeacher(tests){
     <div class="card pad teacher-report teacher-insight-report">
       <div class="teacher-insight-title">Test result &amp; remedial planning report</div>
       <div class="teacher-insight-head">
-        <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div></div></div>
+        <div class="brandbar"><img class="brandlogo centre-output-logo" alt="${CONFIG.CENTRE.name} logo" src="${CONFIG.CENTRE.logo_url||'assets/images/aveti-logo.png'}"><div><div class="teacher-centre-name">${CONFIG.CENTRE.name}</div><h1>Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject}</h1><div class="teacher-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?' · Ph '+CONFIG.CENTRE.phone:''}</div>${test.teacher?.name?`<div class="tiny muted">Assigned teacher: ${escapeHTML(test.teacher.name)}</div>`:''}</div></div>
         <div class="teacher-test-meta"><div class="teacher-test-line">${teacherHeaderIcon('test')}<b>${testTypeLabel(test.test_type)} · ${test.full_marks} marks · ${fmtDate(testDate(test))}</b></div><div class="teacher-scope-line">${teacherHeaderIcon('scope')}<span>Assessment scope: <strong>${scopeLabel}</strong></span></div></div>
       </div>
       <div class="teacher-summary-grid">
@@ -388,6 +411,7 @@ async function renderTeacher(tests){
         <button onclick="enterMarks('${test.id}')">Edit marks</button>
         <button onclick="exportTeacherCSV('${test.id}')">Download CSV</button>
         <button onclick="printTeacherReport()">🖨 Print / Save as PDF</button>
+        <button onclick="shareTeacherReport('${test.id}')">💬 Share report with teacher</button>
         <button class="primary" onclick="openParents('${test.id}')">Share parent cards</button>
       </div>
     </div>

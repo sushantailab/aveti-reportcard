@@ -93,8 +93,8 @@ const demo = {
     {id:'tp2',event_id:'ev1',sequence_no:2,certificate_id:'AVT-PD-2026-000002',name:'Rakesh Kumar',phone:'9123456789',whatsapp:'9123456789',email:'rakesh@gmail.com',school:'OAV Bhubaneswar',whatsapp_sent_at:null,verified_at:null}
   ],
   tah_teachers: [
-    {id:'tah1',name:'Priya Sharma',mobile:'9876543210',school_name:'DAV Public School',class_level:'8',subject:'Science',board:'CBSE',language:'en',enrollment_date:'2026-06-23',journey_day:2,prepared:true,taught:false,loop_completed:false,nps_score:null,feedback_sentiment:null,status:'preparing',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'priya01',testimonial_consent:false,testimonial_sent:false,opted_out:false},
-    {id:'tah2',name:'Rakesh Kumar',mobile:'9123456789',school_name:'OAV Bhubaneswar',class_level:'7',subject:'Mathematics',board:'Odisha Board',language:'od',enrollment_date:'2026-06-23',journey_day:8,prepared:true,taught:true,loop_completed:true,nps_score:9,feedback_sentiment:'promoter',status:'activated',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'rakesh01',testimonial_consent:true,testimonial_sent:false,opted_out:false}
+    {id:'tah1',name:'Priya Sharma',mobile:'9876543210',email:'priya@example.com',school_name:'DAV Public School',class_level:'8',subject:'Science',board:'CBSE',language:'en',enrollment_date:'2026-06-23',journey_day:2,prepared:true,taught:false,loop_completed:false,nps_score:null,feedback_sentiment:null,status:'preparing',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'priya01',testimonial_consent:false,testimonial_sent:false,opted_out:false},
+    {id:'tah2',name:'Rakesh Kumar',mobile:'9123456789',email:'rakesh@example.com',school_name:'OAV Bhubaneswar',class_level:'7',subject:'Mathematics',board:'Odisha Board',language:'od',enrollment_date:'2026-06-23',journey_day:8,prepared:true,taught:true,loop_completed:true,nps_score:9,feedback_sentiment:'promoter',status:'activated',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'rakesh01',testimonial_consent:true,testimonial_sent:false,opted_out:false}
   ],
   tah_message_templates: [
     {id:'tmpl1',day_key:'D1',language:'en',category:'activation',app_target:'both',title:'Welcome + loop',body:'Dear {name}, welcome to Aveti! 🎉 Here’s how teachers get the best results: 1) Prepare your Class {class} {subject} lesson in the Teachers App, 2) Teach it live in the Smart Class App. ▶️ 30-sec overview: {video_link}  Start here: {app_link}',video_url:'',active:true},
@@ -163,7 +163,7 @@ const memoryDB = {
     return this.listTrainingParticipants(eventId);
   },
   async updateTrainingParticipant(id,patch){ const p=demo.training_participants.find(x=>x.id===id); Object.assign(p,patch); return p; },
-  async listTahTeachers(){ return [...demo.tah_teachers].sort((a,b)=>a.name.localeCompare(b.name)); },
+  async listTahTeachers(){ return demo.tah_teachers.filter(t=>!t.archived_at).sort((a,b)=>a.name.localeCompare(b.name)); },
   async saveTahTeachers(rows){
     rows.forEach(r=>{
       const existing = demo.tah_teachers.find(t=>cleanPhone(t.mobile)===cleanPhone(r.mobile));
@@ -184,6 +184,10 @@ const memoryDB = {
   async deleteTahTeacher(id){
     demo.tah_teachers = demo.tah_teachers.filter(t=>t.id!==id);
     demo.tah_message_logs = demo.tah_message_logs.filter(l=>l.teacher_id!==id);
+  },
+  async archiveTahTeacher(id){
+    const teacher=demo.tah_teachers.find(t=>t.id===id);
+    if(teacher) teacher.archived_at=new Date().toISOString();
   },
   async listTahTemplates(){ return [...demo.tah_message_templates]; },
   async updateTahTemplate(id,patch){
@@ -210,13 +214,13 @@ let ACCESS_CENTRES = [];
 const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
-const TEST_COLS = 'id,centre_id,class_level,section,subject,chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,duration_minutes,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
+const TEST_COLS = 'id,centre_id,class_level,section,subject,teacher_id,teacher:teacher_id(id,centre_id,name,mobile,opted_out),chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,duration_minutes,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const TEST_COLS_LEGACY = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
 const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
-const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,created_at,updated_at';
+const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,archived_at,created_at,updated_at';
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
@@ -230,7 +234,9 @@ const stripSession = obj => {
 };
 const missingExtendedTestColumns = error => /chapter_ids|chapter_names|duration_minutes/i.test(String(error?.message||''));
 const missingMultiChapterColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
+const missingTeacherColumn = error => /teacher_id|relationship.*teacher|tah_teachers/i.test(String(error?.message||''));
 const stripExtendedTestColumns = obj => { const copy={...obj}; delete copy.chapter_ids; delete copy.chapter_names; delete copy.duration_minutes; return copy; };
+const stripTeacherColumn = obj => { const copy={...obj}; delete copy.teacher_id; return copy; };
 const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
 const supaDB = {
   async listStudents(){
@@ -276,11 +282,13 @@ const supaDB = {
   },
   async listTests(){
     let res=await supa.from('tests').select(TEST_COLS).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
+    if(res.error && missingTeacherColumn(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
     if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
     return (res.data||[]).map(normalizeTest);
   },
   async addTest(t){
     let res=await supa.from('tests').insert({...t, centre_id:CENTRE_ID}).select(TEST_COLS).single();
+    if(res.error && missingTeacherColumn(res.error)) res=await supa.from('tests').insert({...stripTeacherColumn(t), centre_id:CENTRE_ID}).select(TEST_COLS_LEGACY).single();
     if(res.error && missingMultiChapterColumns(res.error)) throw new Error('Multi-chapter saving is not available in this database yet. Refresh and try again after the update finishes.');
     if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').insert({...stripExtendedTestColumns(t), centre_id:CENTRE_ID}).select(TEST_COLS_LEGACY).single();
     const {data,error}=res;
@@ -289,6 +297,7 @@ const supaDB = {
   },
   async updateTest(id,patch){
     let res=await supa.from('tests').update(patch).eq('id',id).select(TEST_COLS).single();
+    if(res.error && missingTeacherColumn(res.error)) res=await supa.from('tests').update(stripTeacherColumn(patch)).eq('id',id).select(TEST_COLS_LEGACY).single();
     if(res.error && missingMultiChapterColumns(res.error)) throw new Error('Multi-chapter saving is not available in this database yet. Refresh and try again after the update finishes.');
     if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').update(stripExtendedTestColumns(patch)).eq('id',id).select(TEST_COLS_LEGACY).single();
     const {data,error}=res;
@@ -359,7 +368,7 @@ const supaDB = {
     if(error) throw error;
     return data;
   },
-  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
+  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name'); if(error) throw error; return data||[]; },
   async saveTahTeachers(rows){
     if(!rows.length) return this.listTahTeachers();
     const {error}=await supa.from('tah_teachers').upsert(rows.map(r=>({...r,centre_id:CENTRE_ID})),{onConflict:'mobile'});
@@ -377,6 +386,10 @@ const supaDB = {
   },
   async deleteTahTeacher(id){
     const {error}=await supa.from('tah_teachers').delete().eq('id',id);
+    if(error) throw error;
+  },
+  async archiveTahTeacher(id){
+    const {error}=await supa.from('tah_teachers').update({archived_at:new Date().toISOString()}).eq('id',id);
     if(error) throw error;
   },
   async listTahTemplates(){

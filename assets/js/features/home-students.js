@@ -9,7 +9,7 @@ const LS_LAST_ROUTE = 'aveti:last-route';
 function setCrumb(t){
   crumb.textContent = t;
   const route = ({
-    'Home':'home','Students':'students','Enter test marks':'marks','Teacher report':'teacher',
+    'Home':'home','Students':'students','Teachers':'teachers','Enter test marks':'marks','Teacher report':'teacher',
     'Parent report':'parent','Growth tracker':'growth','Class insights':'insights',
     'Certificates':'certificates','Teacher Activation':'activation','Centre admin':'centre-admin'
   })[t];
@@ -139,7 +139,7 @@ async function home(){
         <button class="workflow-step workflow-enter" onclick="enterMarks()"><span class="workflow-top"><i>1</i><b>Enter marks</b></span><span class="workflow-icon">${homeIcon('tests')}</span><small>Record a test and scores</small><strong>Enter marks <b>→</b></strong></button>
         <div class="workflow-step workflow-analyse"><span class="workflow-top"><i>2</i><b>Analyse &amp; remedial</b><em>Core step</em></span><span class="workflow-icon">${homeIcon('chart')}</span><div class="workflow-analysis-tools"><button onclick="openTeacher()">${homeIcon('report')} <span><b>Teacher report</b><small>Report &amp; remedial plan</small></span><em>›</em></button><button onclick="growth()">${homeIcon('chart')} <span><b>Growth tracker</b><small>Chapter-by-chapter progress</small></span><em>›</em></button><button onclick="classInsights()">${homeIcon('classes')} <span><b>Class insights</b><small>Leaderboard and support risks</small></span><em>›</em></button></div></div>
         <button class="workflow-step workflow-parent" onclick="openParents()"><span class="workflow-top"><i>3</i><b>Parent communication</b></span><span class="workflow-icon">${homeIcon('parent')}</span><small>Share reports and support<br>student progress</small><strong>Open parent reports <b>→</b></strong></button>
-        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} <span>Certificates</span><em>›</em></button><button onclick="teacherActivation()">${homeIcon('activation')} <span>Teacher activation</span><em>›</em></button></div>
+        <div class="workflow-tools"><b>Other tools</b><button onclick="certificates()">${homeIcon('certificate')} <span>Certificates</span><em>›</em></button><button onclick="teachers()">${homeIcon('parent')} <span>Teachers</span><em>›</em></button></div>
       </div></section>
 
       <section class="card home-recent-card">
@@ -164,6 +164,88 @@ window.setHomeSubjectFilter = value=>{ HOME_SUBJECT_FILTER=value; home(); };
 window.toggleHomeTests = ()=>{ HOME_SHOW_ALL=!HOME_SHOW_ALL; home(); };
 window.setHomeMonth = value=>{ HOME_PERIOD_MONTH=value; home(); };
 window.setHomeYear = value=>{ HOME_PERIOD_YEAR=value; home(); };
+
+/* ---------- TEACHERS DIRECTORY ---------- */
+let TEACHER_SHOW_ADD = false, TEACHER_EDIT_ID = null, TEACHER_SEARCH = '';
+async function teachers(){
+  setCrumb('Teachers');
+  const all = await DB.listTahTeachers();
+  const query = normalizeText(TEACHER_SEARCH).toLowerCase();
+  const filtered = query ? all.filter(t=>[t.name,t.mobile,t.email].some(v=>String(v||'').toLowerCase().includes(query))) : all;
+  show(`
+    ${demoNote}
+    <div class="card">
+      <div class="pad row between" style="gap:12px;flex-wrap:wrap">
+        <div><h2 style="font-size:20px">Teachers</h2><div class="muted small">Add teacher names and WhatsApp contacts. Select a teacher while entering marks to share that class report.</div></div>
+        <button class="primary" onclick="toggleTeacherAdd()">+ Add teacher</button>
+      </div>
+      <div style="display:${TEACHER_SHOW_ADD?'block':'none'};padding:0 18px 8px">${teacherFormHTML()}</div>
+      <div class="pad row" style="padding-top:4px;padding-bottom:6px;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="small muted" for="teacherSearch">Find teacher</label>
+        <input id="teacherSearch" value="${escapeHTML(TEACHER_SEARCH)}" placeholder="Name, WhatsApp number or email" oninput="setTeacherSearch(this.value)" style="max-width:340px;flex:1;min-width:220px">
+        <span class="small muted">${filtered.length} teacher${filtered.length===1?'':'s'}</span>
+      </div>
+      <div class="pad" style="padding-top:4px">${filtered.length ? filtered.map(teacherDirectoryRow).join('') : '<div class="muted small" style="padding:10px 0">No teachers found. Add a teacher to use the Share with teacher action.</div>'}</div>
+    </div>`);
+}
+function teacherDirectoryRow(t){
+  if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t);
+  return `<div class="listrow" style="gap:12px;flex-wrap:wrap">
+    <div class="avatar" aria-hidden="true">${escapeHTML((t.name||'?').trim().slice(0,1).toUpperCase())}</div>
+    <div style="flex:1;min-width:170px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}</div></div>
+    <span class="pill ${t.opted_out?'warn':'ok'}">${t.opted_out?'sharing paused':'ready to share'}</span>
+    <button onclick="startTeacherEdit('${t.id}')">Edit</button>
+    <button onclick="archiveTeacher('${t.id}','${escapeHTML(t.name).replace(/'/g,'')}')" style="color:var(--red)">Archive</button>
+  </div>`;
+}
+function teacherFormHTML(){
+  return `<div style="background:#f8faf7;border-radius:11px;padding:12px"><div class="row" style="gap:8px;flex-wrap:wrap">
+    <input id="teacherAddName" placeholder="Teacher name" style="flex:1;min-width:180px">
+    <input id="teacherAddMobile" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
+    <input id="teacherAddEmail" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <button class="primary" onclick="saveNewTeacher()">Add teacher</button>
+    <button onclick="toggleTeacherAdd()">Cancel</button>
+  </div><div class="tiny muted" style="margin-top:7px">A teacher can be selected for any test. Class, section and subject remain part of the selected test — they do not need to be entered again here.</div></div>`;
+}
+function teacherEditRow(t){
+  return `<div class="listrow" style="gap:8px;flex-wrap:wrap;background:#f8faf7">
+    <input id="teacherEditName" value="${escapeHTML(t.name)}" placeholder="Teacher name" style="flex:1;min-width:180px">
+    <input id="teacherEditMobile" value="${escapeHTML(t.mobile||'')}" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
+    <input id="teacherEditEmail" value="${escapeHTML(t.email||'')}" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <label class="small muted"><input id="teacherEditPaused" type="checkbox" ${t.opted_out?'checked':''}> Pause sharing</label>
+    <button class="primary" onclick="saveTeacherEdit('${t.id}')">Save</button>
+    <button onclick="cancelTeacherEdit()">Cancel</button>
+  </div>`;
+}
+function teacherPayload(prefix){
+  const name=normalizeText(val(prefix+'Name'));
+  const rawMobile=val(prefix+'Mobile').trim();
+  const mobile=normalizeIndianPhone(rawMobile);
+  const email=normalizeText(val(prefix+'Email')).toLowerCase();
+  if(!name){ alert('Enter the teacher name.'); return null; }
+  if(!mobile){ alert('Enter a valid 10-digit WhatsApp number.'); return null; }
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email address or leave it blank.'); return null; }
+  return {name,mobile,email:email||null};
+}
+window.setTeacherSearch = value=>{ TEACHER_SEARCH=value; teachers(); };
+window.toggleTeacherAdd = ()=>{ TEACHER_SHOW_ADD=!TEACHER_SHOW_ADD; teachers(); };
+window.saveNewTeacher = async ()=>{
+  const teacher=teacherPayload('teacherAdd'); if(!teacher) return;
+  try{ await DB.saveTahTeachers([teacher]); TEACHER_SHOW_ADD=false; await teachers(); }
+  catch(e){ alert(e.message||'Could not save this teacher.'); }
+};
+window.startTeacherEdit = id=>{ TEACHER_EDIT_ID=id; teachers(); };
+window.cancelTeacherEdit = ()=>{ TEACHER_EDIT_ID=null; teachers(); };
+window.saveTeacherEdit = async id=>{
+  const teacher=teacherPayload('teacherEdit'); if(!teacher) return;
+  try{ await DB.updateTahTeacher(id,{...teacher,opted_out:document.getElementById('teacherEditPaused').checked}); TEACHER_EDIT_ID=null; await teachers(); }
+  catch(e){ alert(e.message||'Could not update this teacher.'); }
+};
+window.archiveTeacher = async (id,name)=>{
+  if(!confirm(`Archive ${name}? Existing reports will remain linked, but this teacher will not appear in the Mark Entry dropdown.`)) return;
+  try{ await DB.archiveTahTeacher(id); await teachers(); }
+  catch(e){ alert(e.message||'Could not archive this teacher.'); }
+};
 
 /* ---------- ROSTER ---------- */
 let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();

@@ -1,6 +1,9 @@
 /* ---------- ENTER MARKS ---------- */
-let EM = { full:25, rows:[], editId:null, draftDirty:false };
+let EM = { full:25, rows:[], editId:null, draftDirty:false, teachers:[] };
 let RESTORE_MARK_DRAFT = false;
+function markTeacherOptions(teachers, selected=''){
+  return ['<option value="">No teacher assigned</option>'].concat((teachers||[]).filter(t=>!t.opted_out).map(t=>`<option value="${escapeHTML(t.id)}" ${String(t.id)===String(selected)?'selected':''}>${escapeHTML(t.name)}</option>`)).join('');
+}
 async function enterMarks(testId){
   setCrumb('Enter test marks');
   const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
@@ -10,7 +13,9 @@ async function enterMarks(testId){
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
   const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
   const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
-  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[], draftDirty:!!useDraft };
+  let markTeachers=[];
+  try { markTeachers = await DB.listTahTeachers(); } catch(e) { markTeachers=[]; }
+  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[], draftDirty:!!useDraft, teachers:markTeachers };
   if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null, removedResultStudentIds:draft.removed_result_student_ids||[], draftDirty:true};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
   const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
@@ -22,6 +27,7 @@ async function enterMarks(testId){
   const selectedTestType = testTypeLabel(editTest ? editTest.test_type : (useDraft ? draft.test_type : 'Chapter End Test'));
   const selectedDate = editTest ? String(editTest.test_date).slice(0,10) : (useDraft ? draft.test_date : new Date().toISOString().slice(0,10));
   const selectedTime = editTest?.duration_minutes || (useDraft ? draft.duration_minutes : 60) || 60;
+  const selectedTeacher = editTest?.teacher_id || (useDraft ? draft.teacher_id : '') || '';
   const draftNotice = draft && !useDraft ? `
     <div class="banner row between" style="margin-bottom:12px;padding:10px 12px;gap:10px;flex-wrap:wrap">
       <span class="small">An unsaved marks draft is available.</span>
@@ -37,7 +43,8 @@ async function enterMarks(testId){
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
         <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptionsForClass(selectedClass,selectedSubject)}</select></div>
-        <div class="field" style="flex:2"><label>Chapter(s) <span class="tiny muted">(up to 3)</span></label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
+        <div class="field"><label>Teacher <span class="muted">(optional)</span></label><select id="emTeacher" aria-describedby="emTeacherHelp">${markTeacherOptions(markTeachers,selectedTeacher)}</select><span class="tiny muted" id="emTeacherHelp">Name only — WhatsApp contact is taken from the teacher directory.</span></div>
+        <div class="field" style="flex:2"><label>Chapter(s)</label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
         <div class="field"><label>Chapter no.</label><input id="newChapNo" type="number" min="1" step="1" placeholder="1"></div>
@@ -103,6 +110,7 @@ function snapshotDraft(){
     academic_session:val('emSession'),
     section:val('emSec'),
     subject:val('emSub'),
+    teacher_id:val('emTeacher')||null,
     chapter_ids:Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(Boolean),
     test_type:val('emType')||'Chapter End Test',
     duration_minutes:Number(val('emTime'))||60,
@@ -154,8 +162,6 @@ window.updateChapterPicker = (id,checked)=>{
   const sel=document.getElementById('emChap');
   const option=Array.from(sel?.options||[]).find(o=>o.value===id);
   if(!option) return;
-  const selected=Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value);
-  if(checked && selected.length>=3){ renderChapterPicker(); alert('You can select up to 3 chapters.'); return; }
   option.selected=checked;
   EM.selectedChapterIds=Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value);
   renderChapterPicker(); saveDraft();
@@ -526,7 +532,7 @@ window.saveTest = async ()=>{
   if(blank){ if(!confirm(blank.name+' has no marks. Save anyway? (Cancel to go back and mark absent or N.A.)')) return; }
   const clsNum = parseInt(val('emClass'));
   const chapterIds = Array.from(document.getElementById('emChap')?.selectedOptions||[]).map(o=>o.value).filter(id=>id!=='__new__');
-  if(!chapterIds.length || chapterIds.length>3){ alert('Select between 1 and 3 chapters.'); return; }
+  if(!chapterIds.length){ alert('Select at least one chapter.'); return; }
   const chapters = chapterIds.map(id=>(EM.chapters||[]).find(c=>c.id===id)).filter(Boolean);
   if(chapters.length!==chapterIds.length){ alert('Chapter not found. Please select the chapters again.'); return; }
   const chapter = chapters[0];
@@ -534,6 +540,7 @@ window.saveTest = async ()=>{
   const testData = {
     class_level: clsNum, section: secVal==='All'?null:secVal,
     subject: val('emSub'),
+    teacher_id: val('emTeacher')||null,
     chapter_id: chapter.id,
     chapter_ids: chapterIds,
     chapter_no: chapter.chapter_no,

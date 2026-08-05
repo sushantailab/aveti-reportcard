@@ -26,6 +26,7 @@
       <button data-route="home" class="nav-item active" onclick="appNavigate('home')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></span><span>Home</span></button>
       <button data-route="marks" class="nav-item" onclick="appNavigate('marks')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span>Enter marks</span></button>
       <button data-route="students" class="nav-item" onclick="appNavigate('students')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M15 5.5a2.5 2.5 0 1 1 0 5M15 14c2.7.2 4.5 2.1 5 5"/></svg></span><span>Students</span></button>
+      <button data-route="teachers" class="nav-item" onclick="appNavigate('teachers')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6m.4-5c2.7.2 4.5 2.1 5 5"/></svg></span><span>Teachers</span></button>
       <button data-route="centre-admin" data-master-only class="nav-item" onclick="centreAdmin()"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20h16M5 20V5h14v15M8 8h2m4 0h2M8 12h2m4 0h2M8 16h2m4 0h2"/></svg></span><span>Centres</span></button>
     </nav>
     <div class="sidebar-label">Reports & tools</div>
@@ -35,7 +36,6 @@
       <button data-route="growth" class="nav-item" onclick="appNavigate('growth')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7H3"/></svg></span><span>Growth tracker</span></button>
       <button data-route="insights" class="nav-item" onclick="appNavigate('insights')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h3v3H8zm5 0h3v3h-3zM8 13h3v3H8zm5 0h3v3h-3z"/></svg></span><span>Class insights</span></button>
       <button data-route="certificates" class="nav-item" onclick="appNavigate('certificates')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 14.3 8l5.4.6-4 3.6 1.1 5.3-4.8-2.7-4.8 2.7 1.1-5.3-4-3.6L9.7 8zM9 17v4l3-1.5 3 1.5v-4"/></svg></span><span>Certificates</span></button>
-      <button data-route="activation" class="nav-item" onclick="appNavigate('activation')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19 19 5m-9 0h9v9"/></svg></span><span>Teacher Activation</span></button>
     </nav>
     <button class="sidebar-signout" data-signout type="button" style="display:none">Sign out</button>
   </aside>
@@ -44,7 +44,7 @@
       <div class="topnav-inner">
         <button class="mobile-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open navigation">☰</button>
         <div class="topnav-brand"><img class="topnav-logo" alt="Aveti Learning Tuition Center" src="assets/images/aveti-logo.png"><div><div class="topbar-kicker">Aveti Learning Tuition Center</div><div class="crumb" id="crumb">Home</div></div></div>
-        <nav class="topnav-primary" aria-label="Primary navigation"><button data-route="home" class="active" onclick="appNavigate('home')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></span><span>Home</span></button><button data-route="students" onclick="appNavigate('students')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M15 5.5a2.5 2.5 0 1 1 0 5M15 14c2.7.2 4.5 2.1 5 5"/></svg></span><span>Students</span></button><button data-route="marks" class="top-enter" onclick="enterMarks()"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3"/></svg></span><span>Enter marks</span></button></nav>
+        <nav class="topnav-primary" aria-label="Primary navigation"><button data-route="home" class="active" onclick="appNavigate('home')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></span><span>Home</span></button><button data-route="students" onclick="appNavigate('students')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M15 5.5a2.5 2.5 0 1 1 0 5M15 14c2.7.2 4.5 2.1 5 5"/></svg></span><span>Students</span></button><button data-route="teachers" onclick="appNavigate('teachers')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6m.4-5c2.7.2 4.5 2.1 5 5"/></svg></span><span>Teachers</span></button><button data-route="marks" class="top-enter" onclick="enterMarks()"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3"/></svg></span><span>Enter marks</span></button></nav>
         <div class="topnav-actions"><div id="centreSwitcher"></div><button class="account-menu" type="button" onclick="toggleMoreMenu()" aria-label="Open account and tools">◉ <span>Menu</span>⌄</button><button class="ghost" id="navSignout" data-signout style="display:none">Sign out</button></div>
       </div>
     </header>
@@ -57,7 +57,7 @@
   <button data-route="students" onclick="appNavigate('students')"><span>◎</span>Students</button>
   <button onclick="toggleMoreMenu()"><span>•••</span>More</button>
 </nav>
-<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button onclick="appNavigate('activation');toggleMoreMenu()">Teacher Activation</button><button data-master-only onclick="appNavigate('centre-admin');toggleMoreMenu()">Centres</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
+<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teachers');toggleMoreMenu()">Teachers</button><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button data-master-only onclick="appNavigate('centre-admin');toggleMoreMenu()">Centres</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
 
 <!-- Save confirmation modal -->
 <div class="overlay" id="saveOverlay">
@@ -70,6 +70,7 @@
     </div>
     <div class="row" style="gap:8px">
       <button style="flex:1" id="saveToTeacher">Teacher report</button>
+      <button style="flex:1" id="saveToTeacherWhatsApp">Share with teacher</button>
       <button style="flex:1" id="saveToGrowth">Growth</button>
     </div>
     <div style="margin-top:12px"><a class="link small" id="saveDone" href="#">Done — back to home</a></div>
@@ -92,16 +93,16 @@
   </div>
 </div>
 
-<script src="assets/js/core/database.js?v=20260802-2"></script>
+<script src="assets/js/core/database.js?v=20260805-2"></script>
 <script src="assets/js/core/shared.js?v=20260802-2"></script>
-<script src="assets/js/features/home-students.js?v=20260803-10"></script>
-<script src="assets/js/features/marks.js?v=20260801-12"></script>
-<script src="assets/js/features/reports.js?v=20260803-12"></script>
+<script src="assets/js/features/home-students.js?v=20260805-1"></script>
+<script src="assets/js/features/marks.js?v=20260805-2"></script>
+<script src="assets/js/features/reports.js?v=20260805-1"></script>
 <script src="assets/js/features/growth.js?v=20260805-3"></script>
 <script src="assets/js/features/insights.js?v=20260803-7"></script>
 <script src="assets/js/features/certificates.js?v=20260802-1"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
 <script src="assets/js/features/centre-admin.js?v=20260724-5"></script>
-<script src="assets/js/app.js?v=20260803-2"></script>
+<script src="assets/js/app.js?v=20260805-2"></script>
 </body>
 </html>
