@@ -51,7 +51,7 @@ async function enterMarks(testId){
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
         <div class="field"><label>Subject</label><select id="emSub" onchange="onEMSubjectChange()">${subjectOptionsForClass(selectedClass,selectedSubject)}</select></div>
-        <div class="field"><label>Teacher <span class="muted">(optional)</span></label><select id="emTeacher" aria-describedby="emTeacherHelp">${markTeacherOptions(markTeachers,selectedTeacher,selectedClass,selectedSubject)}</select><span class="tiny muted" id="emTeacherHelp">Names match the selected class and subject. WhatsApp contact is taken from the teacher directory.</span></div>
+        <div class="field"><label>Teacher <span class="muted">(optional)</span></label><select id="emTeacher">${markTeacherOptions(markTeachers,selectedTeacher,selectedClass,selectedSubject)}</select></div>
         <div class="field" style="flex:2"><label>Chapter(s)</label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
