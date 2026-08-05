@@ -233,6 +233,11 @@
   .tile h3{font-size:16px;margin-bottom:4px}
   .listrow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
   .listrow:last-child{border-bottom:none}
+  .teacher-multi{position:relative;min-width:190px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .teacher-multi summary{display:flex;justify-content:space-between;gap:10px;align-items:center;min-height:42px;padding:0 11px;cursor:pointer;font-size:13px;font-weight:600;list-style:none}
+  .teacher-multi summary::-webkit-details-marker{display:none}.teacher-multi summary span{font-size:11px;color:var(--muted);font-weight:500}
+  .teacher-multi[open]{z-index:5;border-color:#94c9aa}.teacher-multi[open]>div{position:absolute;z-index:10;top:calc(100% + 3px);left:0;min-width:250px;max-height:220px;overflow:auto;padding:8px;background:#fff;border:1px solid #b9d9c6;border-radius:8px;box-shadow:0 12px 24px rgba(12,58,37,.14)}
+  .teacher-multi[open]>div label{display:block;padding:6px 4px;font-size:13px;cursor:pointer}.teacher-multi[open]>div input{width:auto;min-height:auto;margin-right:5px}
   .section-title{font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;color:var(--ink)}
   .recent-test{padding:8px 0;border-bottom:1px solid var(--line)}
   .recent-test:last-child{border-bottom:none}

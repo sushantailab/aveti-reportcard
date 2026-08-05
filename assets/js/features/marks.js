@@ -1,8 +1,16 @@
 /* ---------- ENTER MARKS ---------- */
 let EM = { full:25, rows:[], editId:null, draftDirty:false, teachers:[] };
 let RESTORE_MARK_DRAFT = false;
-function markTeacherOptions(teachers, selected=''){
-  return ['<option value="">No teacher assigned</option>'].concat((teachers||[]).filter(t=>!t.opted_out).map(t=>`<option value="${escapeHTML(t.id)}" ${String(t.id)===String(selected)?'selected':''}>${escapeHTML(t.name)}</option>`)).join('');
+function teacherMatchesMarkEntry(teacher, cls, subject){
+  const classes=(teacher.class_levels||[]).map(Number).filter(Number.isInteger);
+  const subjects=(teacher.subjects||[]).filter(Boolean);
+  const legacyClasses=classes.length ? classes : String(teacher.class_level||'').split(/[,\s]+/).map(Number).filter(Number.isInteger);
+  const legacySubjects=subjects.length ? subjects : String(teacher.subject||'').split(',').map(s=>s.trim()).filter(Boolean);
+  return (!legacyClasses.length || legacyClasses.includes(Number(cls))) && (!legacySubjects.length || legacySubjects.includes(subject));
+}
+function markTeacherOptions(teachers, selected='', cls, subject){
+  const matching=(teachers||[]).filter(t=>!t.opted_out && (String(t.id)===String(selected) || teacherMatchesMarkEntry(t,cls,subject)));
+  return ['<option value="">No teacher assigned</option>'].concat(matching.map(t=>`<option value="${escapeHTML(t.id)}" ${String(t.id)===String(selected)?'selected':''}>${escapeHTML(t.name)}</option>`)).join('');
 }
 async function enterMarks(testId){
   setCrumb('Enter test marks');
@@ -42,8 +50,8 @@ async function enterMarks(testId){
         <div class="field"><label>Session</label><select id="emSession" onchange="loadEMRoster()">${sessionOptions(selectedSession)}</select></div>
         <div class="field"><label>Class</label><select id="emClass" onchange="onEMClassChange()">${classOptions(selectedClass)}</select></div>
         <div class="field"><label>Section</label><select id="emSec" onchange="loadEMRoster()">${sectionOptions(selectedSection,true)}</select></div>
-        <div class="field"><label>Subject</label><select id="emSub" onchange="loadEMChapters()">${subjectOptionsForClass(selectedClass,selectedSubject)}</select></div>
-        <div class="field"><label>Teacher <span class="muted">(optional)</span></label><select id="emTeacher" aria-describedby="emTeacherHelp">${markTeacherOptions(markTeachers,selectedTeacher)}</select><span class="tiny muted" id="emTeacherHelp">Name only — WhatsApp contact is taken from the teacher directory.</span></div>
+        <div class="field"><label>Subject</label><select id="emSub" onchange="onEMSubjectChange()">${subjectOptionsForClass(selectedClass,selectedSubject)}</select></div>
+        <div class="field"><label>Teacher <span class="muted">(optional)</span></label><select id="emTeacher" aria-describedby="emTeacherHelp">${markTeacherOptions(markTeachers,selectedTeacher,selectedClass,selectedSubject)}</select><span class="tiny muted" id="emTeacherHelp">Names match the selected class and subject. WhatsApp contact is taken from the teacher directory.</span></div>
         <div class="field" style="flex:2"><label>Chapter(s)</label><div id="emChapterPicker" class="chapter-picker"><button type="button" class="chapter-picker-button" onclick="toggleChapterPicker()"><span id="emChapterSummary">Select chapter</span><span>⌄</span></button><div id="emChapterMenu" class="chapter-picker-menu"></div><select id="emChap" multiple style="display:none"></select></div></div>
       </div>
       <div id="newChapterBox" class="wrap-fields" style="display:none;margin:-2px 0 12px;background:#f8faf7;border-radius:11px;padding:12px">
@@ -93,12 +101,19 @@ async function enterMarks(testId){
   else await loadEMRoster(false);
   loadEMChapters(false);
 }
+window.refreshEMTeachers = ()=>{
+  const select=document.getElementById('emTeacher');
+  if(!select) return;
+  const selected=select.value;
+  select.innerHTML=markTeacherOptions(EM.teachers||[],selected,Number(val('emClass')),val('emSub'));
+};
+window.onEMSubjectChange = ()=>{ loadEMChapters(); refreshEMTeachers(); };
 window.onEMClassChange = ()=>{
   const cls=Number(val('emClass')), sub=document.getElementById('emSub');
   const allowed=subjectsForClass(cls);
   if(sub && !allowed.includes(sub.value)) sub.value=allowed.includes('EVS')?'EVS':allowed.includes('Mathematics')?'Mathematics':allowed[0];
   if(sub && cls>=1 && cls<=12) sub.innerHTML=subjectOptionsForClass(cls,sub.value);
-  loadEMRoster(); loadEMChapters();
+  loadEMRoster(); loadEMChapters(); refreshEMTeachers();
 };
 function snapshotDraft(){
   const clsEl=document.getElementById('emClass');

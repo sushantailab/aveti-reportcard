@@ -19,6 +19,8 @@ const subjectsForClass = cls => {
   if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);
   return subjects;
 };
+const teacherClasses = () => Array.from({length:8},(_,index)=>index+3);
+const teacherSubjects = () => [...new Set(teacherClasses().flatMap(subjectsForClass))];
 const subjectDisplayName = (subject,cls) => {
   const n=Number(cls);
   if((n===7 || n===8) && subject==='Mathematics') return 'Mathematics I';

@@ -171,7 +171,7 @@ async function teachers(){
   setCrumb('Teachers');
   const all = await DB.listTahTeachers();
   const query = normalizeText(TEACHER_SEARCH).toLowerCase();
-  const filtered = query ? all.filter(t=>[t.name,t.mobile,t.email].some(v=>String(v||'').toLowerCase().includes(query))) : all;
+  const filtered = query ? all.filter(t=>[t.name,t.mobile,t.email,...(t.subjects||[])].some(v=>String(v||'').toLowerCase().includes(query))) : all;
   show(`
     ${demoNote}
     <div class="card">
@@ -192,26 +192,37 @@ function teacherDirectoryRow(t){
   if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t);
   return `<div class="listrow" style="gap:12px;flex-wrap:wrap">
     <div class="avatar" aria-hidden="true">${escapeHTML((t.name||'?').trim().slice(0,1).toUpperCase())}</div>
-    <div style="flex:1;min-width:170px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}</div></div>
+    <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
     <span class="pill ${t.opted_out?'warn':'ok'}">${t.opted_out?'sharing paused':'ready to share'}</span>
     <button onclick="startTeacherEdit('${t.id}')">Edit</button>
     <button onclick="archiveTeacher('${t.id}','${escapeHTML(t.name).replace(/'/g,'')}')" style="color:var(--red)">Archive</button>
   </div>`;
+}
+function teacherMultiChoice(id,items,selected,label){
+  const values=(selected||[]).map(String);
+  return `<details class="teacher-multi"><summary>${label} <span>${values.length?`${values.length} selected`:'Select'}</span></summary><div>${items.map(item=>`<label><input type="checkbox" name="${id}" value="${escapeHTML(item.value)}" ${values.includes(String(item.value))?'checked':''}> ${escapeHTML(item.label)}</label>`).join('')}</div></details>`;
 }
 function teacherFormHTML(){
   return `<div style="background:#f8faf7;border-radius:11px;padding:12px"><div class="row" style="gap:8px;flex-wrap:wrap">
     <input id="teacherAddName" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherAddMobile" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherAddEmail" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <select id="teacherAddGender" style="width:auto"><option value="">Sex</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select>
+  </div><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+    ${teacherMultiChoice('teacherAddClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),[],'Classes taught')}
+    ${teacherMultiChoice('teacherAddSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),[],'Subjects taught')}
     <button class="primary" onclick="saveNewTeacher()">Add teacher</button>
     <button onclick="toggleTeacherAdd()">Cancel</button>
-  </div><div class="tiny muted" style="margin-top:7px">A teacher can be selected for any test. Class, section and subject remain part of the selected test — they do not need to be entered again here.</div></div>`;
+  </div><div class="tiny muted" style="margin-top:7px">Select every class and subject the teacher teaches. The Teacher dropdown in Mark Entry will show only matching teachers. Leave both lists empty only when the teacher can teach any class and subject.</div></div>`;
 }
 function teacherEditRow(t){
   return `<div class="listrow" style="gap:8px;flex-wrap:wrap;background:#f8faf7">
     <input id="teacherEditName" value="${escapeHTML(t.name)}" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherEditMobile" value="${escapeHTML(t.mobile||'')}" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherEditEmail" value="${escapeHTML(t.email||'')}" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <select id="teacherEditGender" style="width:auto"><option value="">Sex</option><option value="female" ${t.gender==='female'?'selected':''}>Female</option><option value="male" ${t.gender==='male'?'selected':''}>Male</option><option value="other" ${t.gender==='other'?'selected':''}>Other</option></select>
+    ${teacherMultiChoice('teacherEditClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),t.class_levels||[],'Classes taught')}
+    ${teacherMultiChoice('teacherEditSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),t.subjects||[],'Subjects taught')}
     <label class="small muted"><input id="teacherEditPaused" type="checkbox" ${t.opted_out?'checked':''}> Pause sharing</label>
     <button class="primary" onclick="saveTeacherEdit('${t.id}')">Save</button>
     <button onclick="cancelTeacherEdit()">Cancel</button>
@@ -222,10 +233,13 @@ function teacherPayload(prefix){
   const rawMobile=val(prefix+'Mobile').trim();
   const mobile=normalizeIndianPhone(rawMobile);
   const email=normalizeText(val(prefix+'Email')).toLowerCase();
+  const gender=val(prefix+'Gender');
+  const class_levels=Array.from(document.querySelectorAll(`input[name="${prefix}Classes"]:checked`)).map(input=>Number(input.value)).filter(Number.isInteger).sort((a,b)=>a-b);
+  const subjects=Array.from(document.querySelectorAll(`input[name="${prefix}Subjects"]:checked`)).map(input=>input.value).filter(Boolean);
   if(!name){ alert('Enter the teacher name.'); return null; }
   if(!mobile){ alert('Enter a valid 10-digit WhatsApp number.'); return null; }
   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email address or leave it blank.'); return null; }
-  return {name,mobile,email:email||null};
+  return {name,mobile,email:email||null,gender:gender||null,class_levels,subjects,class_level:class_levels.join(', '),subject:subjects.join(', ')};
 }
 window.setTeacherSearch = value=>{ TEACHER_SEARCH=value; teachers(); };
 window.toggleTeacherAdd = ()=>{ TEACHER_SHOW_ADD=!TEACHER_SHOW_ADD; teachers(); };
