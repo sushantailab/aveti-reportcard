@@ -79,6 +79,69 @@ button,select,input,textarea{max-width:100%}
   .workflow-tools button{min-height:43px!important}
 }
 
+/* Final readable-balanced UI layer (screen only). Print styles remain unchanged. */
+@media screen {
+  :root {
+    --ui-body-size: 15px;
+    --ui-meta-size: 12px;
+    --ui-nav-size: 17px;
+    --ui-heading-size: 30px;
+    --ui-section-size: 22px;
+  }
+  body { font-size: var(--ui-body-size); }
+  .app-sidebar .sidebar-label { font-size: var(--ui-meta-size); letter-spacing: .08em; }
+  .app-sidebar .nav-item {
+    min-height: 46px;
+    gap: 12px;
+    padding: 10px 12px;
+    font-size: var(--ui-nav-size);
+    line-height: 1.2;
+    border-radius: 9px;
+  }
+  .app-sidebar .nav-icon,
+  .topnav-primary .nav-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    font-size: inherit;
+    line-height: 1;
+  }
+  .app-sidebar .nav-icon svg,
+  .topnav-primary .nav-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .app-sidebar .nav-item.active { font-weight: 700; box-shadow: inset 3px 0 0 #08775a; }
+  .topnav-primary button { min-height: 44px; font-size: 15px; display: inline-flex; align-items: center; gap: 7px; }
+  .topnav-primary .top-enter { min-height: 44px; }
+  .topnav-primary .nav-icon { width: 19px; height: 19px; flex-basis: 19px; }
+  .topnav-primary .nav-icon svg { width: 18px; height: 18px; }
+  .app-content h1, .screen > h1 { font-size: var(--ui-heading-size); line-height: 1.15; }
+  .app-content h2, .screen h2 { font-size: var(--ui-section-size); line-height: 1.2; }
+  .app-content h3, .screen h3 { font-size: 17px; line-height: 1.25; }
+  .tiny, .small, .muted.small { font-size: var(--ui-meta-size); }
+  .field label, .recent-field .label { font-size: var(--ui-meta-size); }
+  .app-sidebar .sidebar-collapse { min-width: 32px; min-height: 32px; }
+  .app-shell.sidebar-collapsed .app-sidebar .nav-item { min-height: 46px; padding: 10px 8px; }
+  .app-shell.sidebar-collapsed .app-sidebar .nav-icon { width: 26px; height: 26px; flex-basis: 26px; }
+  .app-shell.sidebar-collapsed .app-sidebar .nav-icon svg { width: 23px; height: 23px; }
+}
+
+@media screen and (max-width: 720px) {
+  :root { --ui-heading-size: 25px; --ui-section-size: 20px; }
+  .app-content h1, .screen > h1 { font-size: var(--ui-heading-size); }
+  .app-content h2, .screen h2 { font-size: var(--ui-section-size); }
+  .more-menu-sheet button { min-height: 44px; font-size: 16px; }
+  .mobile-bottom-nav button { min-height: 48px; font-size: 12px; }
+}
+
 @media screen and (min-width:721px) and (max-width:1100px){
   .app-shell{grid-template-columns:74px minmax(0,1fr)!important}
   .app-sidebar{width:74px!important;min-width:74px!important;padding:18px 12px!important;overflow:visible!important}
@@ -173,3 +236,27 @@ button,select,input,textarea{max-width:100%}
 @media(max-width:720px){.parent-filter-grid{grid-template-columns:1fr 1fr!important}.parent-filter-grid .field:first-child,.parent-filter-grid .field:last-child{grid-column:1/-1}.parent-report-head{grid-template-columns:1fr!important;gap:12px}.parent-brand{align-items:flex-start}.parent-brand img{width:62px;height:38px}.parent-brand h1{font-size:19px}.parent-brand span{font-size:10px}.parent-summary-grid{grid-template-columns:1fr 1fr!important}.parent-summary{min-height:62px}.parent-sendbar{align-items:stretch}.parent-sendbar label,.parent-sendbar select,.parent-sendbar button{width:100%}.parent-sendbar>span{width:100%;margin-left:0}.parent-report-body{grid-template-columns:1fr!important}.parent-list-tools{display:grid!important;grid-template-columns:1fr!important}.parent-list-tools input{width:100%}.parent-status-tabs{justify-content:stretch}.parent-status-tabs button{flex:1}.parent-recipient-row{grid-template-columns:32px minmax(0,1fr);align-items:start;padding:10px}.parent-recipient-actions{grid-column:1/-1;justify-content:flex-start;padding-top:7px;border-top:1px solid #e8efeb}.parent-preview-panel{min-height:180px}.parent-preview-placeholder{min-height:150px}.parent-report-card{padding:10px!important}.parent-message-editor{min-height:240px}.parent-preview-actions .parent-action,.parent-preview-actions .primary{flex:1;min-width:120px}}
 
 @media print{.mobile-bottom-nav,.more-menu,.report-style-title{display:none!important}}
+
+/* Final typography and navigation overrides: screen only. */
+@media screen {
+  :root{--ui-body-size:15px;--ui-meta-size:12px;--ui-nav-size:17px;--ui-heading-size:30px;--ui-section-size:22px}
+  body{font-size:var(--ui-body-size)}
+  .app-sidebar .sidebar-label{font-size:var(--ui-meta-size);letter-spacing:.08em}
+  .app-sidebar .nav-item{min-height:46px;gap:12px;padding:10px 12px;font-size:var(--ui-nav-size);line-height:1.2;border-radius:9px}
+  .app-sidebar .nav-icon,.topnav-primary .nav-icon{display:inline-grid;place-items:center;width:24px;height:24px;flex:0 0 24px;line-height:1}
+  .app-sidebar .nav-icon svg,.topnav-primary .nav-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .app-sidebar .nav-item.active{font-weight:700;box-shadow:inset 3px 0 0 #08775a}
+  .topnav-primary button{min-height:44px;font-size:15px;display:inline-flex;align-items:center;gap:7px}
+  .topnav-primary .nav-icon{width:19px;height:19px;flex-basis:19px}.topnav-primary .nav-icon svg{width:18px;height:18px}
+  .app-content h1,.screen>h1{font-size:var(--ui-heading-size);line-height:1.15}
+  .app-content h2,.screen h2{font-size:var(--ui-section-size);line-height:1.2}
+  .app-content h3,.screen h3{font-size:17px;line-height:1.25}
+  .tiny,.small,.muted.small,.field label,.recent-field .label{font-size:var(--ui-meta-size)}
+  .app-shell.sidebar-collapsed .app-sidebar .nav-item{min-height:46px;padding:10px 8px}
+  .app-shell.sidebar-collapsed .app-sidebar .nav-icon{width:26px;height:26px;flex-basis:26px}.app-shell.sidebar-collapsed .app-sidebar .nav-icon svg{width:23px;height:23px}
+}
+@media screen and (max-width:720px){
+  :root{--ui-heading-size:25px;--ui-section-size:20px}
+  .app-content h1,.screen>h1{font-size:var(--ui-heading-size)}.app-content h2,.screen h2{font-size:var(--ui-section-size)}
+  .more-menu-sheet button{min-height:44px;font-size:16px}.mobile-bottom-nav button{min-height:48px;font-size:12px}
+}
