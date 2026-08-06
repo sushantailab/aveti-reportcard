@@ -1,6 +1,17 @@
 /* =============================================================
    ROUTER + SCREENS
    ============================================================= */
+// Native <details> elements stay open until toggled again. Close teacher
+// multi-select menus when the user clicks anywhere outside the open menu so
+// the form stays compact and never leaves an orphaned dropdown on screen.
+if(!window.__teacherMultiOutsideHandler){
+  document.addEventListener('click', event=>{
+    document.querySelectorAll('.teacher-multi[open]').forEach(menu=>{
+      if(!menu.contains(event.target)) menu.removeAttribute('open');
+    });
+  });
+  window.__teacherMultiOutsideHandler = true;
+}
 const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
 let CURRENT_TEST = null;
