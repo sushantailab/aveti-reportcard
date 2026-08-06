@@ -202,7 +202,7 @@ async function teachers(){
 function teacherDirectoryRow(t){
   if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t);
   return `<div class="listrow" style="gap:12px;flex-wrap:wrap">
-    <div class="avatar" aria-hidden="true">${escapeHTML((t.name||'?').trim().slice(0,1).toUpperCase())}</div>
+    ${avatar(t.gender,t.name)}
     <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
     <span class="pill ${t.opted_out?'warn':'ok'}">${t.opted_out?'sharing paused':'ready to share'}</span>
     <button onclick="startTeacherEdit('${t.id}')">Edit</button>
@@ -218,7 +218,7 @@ function teacherFormHTML(){
     <input id="teacherAddName" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherAddMobile" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherAddEmail" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
-    <select id="teacherAddGender" style="width:auto"><option value="">Sex</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select>
+    <select id="teacherAddGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select>
   </div><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
     ${teacherMultiChoice('teacherAddClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),[],'Classes taught')}
     ${teacherMultiChoice('teacherAddSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),[],'Subjects taught')}
@@ -231,7 +231,7 @@ function teacherEditRow(t){
     <input id="teacherEditName" value="${escapeHTML(t.name)}" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherEditMobile" value="${escapeHTML(t.mobile||'')}" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherEditEmail" value="${escapeHTML(t.email||'')}" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
-    <select id="teacherEditGender" style="width:auto"><option value="">Sex</option><option value="female" ${t.gender==='female'?'selected':''}>Female</option><option value="male" ${t.gender==='male'?'selected':''}>Male</option><option value="other" ${t.gender==='other'?'selected':''}>Other</option></select>
+    <select id="teacherEditGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female" ${t.gender==='female'?'selected':''}>Female</option><option value="male" ${t.gender==='male'?'selected':''}>Male</option><option value="other" ${t.gender==='other'?'selected':''}>Other</option></select>
     ${teacherMultiChoice('teacherEditClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),t.class_levels||[],'Classes taught')}
     ${teacherMultiChoice('teacherEditSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),t.subjects||[],'Subjects taught')}
     <label class="small muted"><input id="teacherEditPaused" type="checkbox" ${t.opted_out?'checked':''}> Pause sharing</label>
