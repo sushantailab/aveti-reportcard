@@ -42,6 +42,7 @@ async function enterMarks(testId){
       <span class="row" style="gap:7px"><button type="button" class="ghost" onclick="discardMarksDraft()">Discard</button><button type="button" onclick="restoreMarksDraft()">Restore draft</button></span>
     </div>` : '';
   show(`
+    ${schoolResultTabs('aveti')}
     ${demoNote}
     ${draftNotice}
     <div class="card pad">

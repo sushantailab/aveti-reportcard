@@ -1,6 +1,11 @@
 /* ---------- GROWTH ---------- */
 let GR = { mode:'class', student:null, cls:'', section:'All', subject:'' };
 
+function schoolComparisonHTML(rows){
+  if(!rows?.length) return `<div class="card school-comparison"><h2>${growthIcon('subject')}School exam comparison</h2><p class="muted">No school results entered yet. Add PT1, Term1, PT2 or Annual marks from Enter marks → School Results.</p></div>`;
+  return `<div class="card school-comparison"><h2>${growthIcon('subject')}School exam comparison</h2><p class="muted">Aveti preparation compared with school performance · percentages only</p><div class="school-comparison-table"><div class="school-comparison-head"><span>Exam</span><span>Aveti internal</span><span>School</span><span>Difference</span></div>${rows.map(r=>{const diff=r.difference; const status=diff==null?'awaiting':Math.abs(diff)<=5?'stable':diff>0?'positive':'negative'; return `<div class="school-comparison-row"><div><b>${r.exam}</b><small>${r.school_exam_date||''}${r.school?.name?` · ${r.school.name}`:''}</small></div><strong>${r.aveti_percentage==null?'—':r.aveti_percentage+'%'}</strong><strong>${r.result_status==='absent'?'Absent':r.school_percentage==null?'Awaiting School Result':r.school_percentage+'%'}</strong><span class="school-diff ${status}">${r.result_status==='absent'?'Absent — no percentage comparison':diff==null?'Awaiting School Result':`${diff>=0?'+':''}${diff} pp`}</span></div>`;}).join('')}</div></div>`;
+}
+
 async function growth(){
   setCrumb('Growth tracker');
   const allTests = await DB.listTests();
@@ -121,6 +126,8 @@ async function growth(){
     const latestDelta = latestStudentScore==null || latestClassScore==null ? null : round1(latestStudentScore-latestClassScore);
     GR.sharePhone = normalizeIndianPhone(selectedStudent?.parent_phone||'');
     GR.shareText = `Hello, sharing ${selectedStudent?.name||'the student'}'s Class ${GR.cls} ${GR.subject} progress report. Overall average: ${selectedStudent?.percent==null?'No score yet':selectedStudent.percent+'%'}; latest score: ${latestStudentScore==null?'No latest score':latestStudentScore+'%'} — please see the attached PDF for chapterwise progress and next steps.`;
+    let schoolComparisons=[];
+    try { schoolComparisons = await DB.getStudentSchoolComparison(selectedStudent?.id,{academic_session:currentSession(),subject:GR.subject}); } catch(e) { schoolComparisons=[]; }
     show(`
       ${filterBar}
       <div class="growth-dashboard growth-individual-dashboard">
@@ -135,6 +142,7 @@ async function growth(){
           <div class="growth-summary-card attendance"><span>${growthIcon('attendance')}</span><div><small>Exam attendance</small><strong>${studentAttendance==null?'—':studentAttendance+'%'}</strong><em>${selectedStudent?`${selectedStudent.appeared} / ${selectedStudent.applicable} tests attended`:'No exam data'}</em></div></div>
         </div>
         <div class="growth-journey card"><div class="growth-journey-head"><div><h2>${growthIcon('journey')}${selectedStudent?.name||'Student'}’s performance journey</h2><p>Student score compared with class average in each chapter</p></div></div><div class="growth-chart">${tests.length?lineChartSVG(labels,series):'<div class="empty-good">Add a completed chapter exam to see the journey.</div>'}</div>${latestStudentIndex>=0?`<div class="growth-attention ${latestDelta!=null&&latestDelta<0?'show':''}"><b>${latestDelta!=null&&latestDelta<0?'Priority revision':'Latest result'}</b><span>${latestDelta==null?'Class comparison unavailable':latestDelta<0?`${testStats[latestStudentIndex].label} is ${Math.abs(latestDelta)} points below the class average.`:`${testStats[latestStudentIndex].label} is ${latestDelta} points above the class average.`}</span><strong>${latestStudentScore}%</strong></div>`:''}</div>
+        ${schoolComparisonHTML(schoolComparisons)}
         <div class="growth-chapter-grid individual-chapter-grid">${individualTiles||'<div class="empty-good">No chapter results yet.</div>'}</div>
         <div class="growth-bottom-grid"><div class="card growth-action"><h2>${growthIcon('action')}Teacher next steps</h2><ol class="growth-next-steps">${nextSteps.map(step=>`<li>${step}</li>`).join('')}</ol></div></div>
         <div class="growth-footer"><button onclick="classInsights({cls:GR.cls,section:GR.section,subject:GR.subject})">View class insights</button></div>

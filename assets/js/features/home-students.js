@@ -319,9 +319,11 @@ window.archiveTeacher = async (id,name)=>{
 
 /* ---------- ROSTER ---------- */
 let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();
+let ROSTER_SCHOOLS = [], ROSTER_ENROLMENTS = [];
 async function roster(){
   setCrumb('Students');
-  const all = await DB.listStudents();
+  const [all,schools,enrolments] = await Promise.all([DB.listStudents(),DB.listSchools().catch(()=>[]),DB.listStudentSchoolEnrolments(SESSION_FILTER).catch(()=>[])]);
+  ROSTER_SCHOOLS=schools; ROSTER_ENROLMENTS=enrolments;
   const sessionStudents = all.filter(s=>(s.academic_session||currentSession())===SESSION_FILTER);
   const classStudents = CLASS_FILTER==='All' ? sessionStudents : sessionStudents.filter(s=>String(s.class_level)===String(CLASS_FILTER));
   const students = SEC_FILTER==='All' ? classStudents : classStudents.filter(s=>(s.section||'')===SEC_FILTER);
@@ -357,9 +359,10 @@ window.setClassFilter = v=>{ CLASS_FILTER=v; roster(); };
 window.setSessionFilter = v=>{ SESSION_FILTER=v; roster(); };
 function studentRow(s){
   if(EDIT_ID===s.id) return editRow(s);
+  const school=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school?.name;
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
-    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth?(' · DOB '+fmtDate(s.date_of_birth)):''}</div></div>
+    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth ? ' · DOB '+fmtDate(s.date_of_birth) : ''}${school?(' · '+school):' · No school assigned'}</div></div>
     <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
     <button onclick="archiveStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Archive</button>
@@ -373,6 +376,7 @@ function editRow(s){
     <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
     <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>
     <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
+    <select id="ed_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===x.id?'selected':''}>${x.name}</option>`).join('')}</select>
     <input id="ed_dob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(s.date_of_birth||'').slice(0,10)}" style="width:auto">
     <select id="ed_opt" style="width:auto">${optionalOptions(s.optional_subject)}</select>
     <input id="ed_phone" value="${s.parent_phone||''}" placeholder="+91 parent number" style="flex:1;min-width:150px">
@@ -388,6 +392,7 @@ function addFormHTML(){
       <select id="ad_class" style="width:auto">${classOptions(9)}</select>
       <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
       <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
+      <select id="ad_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select>
       <input id="ad_dob" type="date" aria-label="Date of birth" title="Date of birth" style="width:auto">
       <select id="ad_opt" style="width:auto">${optionalOptions('N.A.')}</select>
       <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
@@ -411,7 +416,7 @@ window.submitAdd = async ()=>{
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
   const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, optional_subject:normalizeOptional(val('ad_opt')), parent_name:'', parent_phone:phone };
   if(!(await warnStudentDuplicates(student))) return;
-  await DB.addStudent(student);
+  const saved=await DB.addStudent(student); const schoolId=val('ad_school'); if(saved&&schoolId) await DB.saveStudentSchoolEnrolment({student_id:saved.id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
   SHOW_ADD=false; roster();
 };
 window.downloadStudentCSVTemplate = ()=>{
@@ -484,6 +489,7 @@ window.saveEdit = async id=>{
   const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, optional_subject:normalizeOptional(val('ed_opt')), parent_phone:phone };
   if(!(await warnStudentDuplicates(student,id))) return;
   await DB.updateStudent(id,student);
+  const schoolId=val('ed_school'); if(schoolId) await DB.saveStudentSchoolEnrolment({student_id:id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section}); else await DB.removeStudentSchoolEnrolment(id,student.academic_session);
   EDIT_ID=null; roster();
 };
 window.archiveStudent = async (id,name)=>{

@@ -16,6 +16,17 @@ const demo = {
     { id:'s3', name:'Guruprasad', academic_session:'2026-27', class_level:9, section:'A', gender:'male',   date_of_birth:'2012-09-03', parent_name:'', parent_phone:'+919000000044' },
     { id:'s4', name:'Asman',      academic_session:'2026-27', class_level:9, section:'A', gender:'female', date_of_birth:'2012-09-18', parent_name:'', parent_phone:'' },
   ],
+  schools: [
+    {id:'school1',name:'DAV Public School',board:'CBSE'},
+    {id:'school2',name:'OAV Bhubaneswar',board:'State Board'}
+  ],
+  student_school_enrolments: [
+    {id:'en1',student_id:'s1',school_id:'school1',academic_session:'2026-27',class_level:9,section:'A'},
+    {id:'en2',student_id:'s2',school_id:'school1',academic_session:'2026-27',class_level:9,section:'A'},
+    {id:'en3',student_id:'s3',school_id:'school2',academic_session:'2026-27',class_level:9,section:'A'},
+    {id:'en4',student_id:'s4',school_id:'school2',academic_session:'2026-27',class_level:9,section:'A'}
+  ],
+  school_exam_results: [],
   chapters: [
     { id:'c1', class_level:9, subject:'Hindi', chapter_no:1, title:'दो बैलों की कथा' },
     { id:'c2', class_level:9, subject:'Hindi', chapter_no:2, title:'ल्हासा की ओर' },
@@ -122,6 +133,19 @@ const memoryDB = {
   async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
   async archiveStudent(id){ const s=demo.students.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
   async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
+  async listSchools(){ return demo.schools.filter(s=>!s.archived_at).sort((a,b)=>a.name.localeCompare(b.name)); },
+  async createSchool(payload){ const existing=demo.schools.find(s=>s.name.toLowerCase()===String(payload.name||'').trim().toLowerCase()); if(existing) return existing; const r={id:uid(),...payload}; demo.schools.push(r); return r; },
+  async updateSchool(id,patch){ const s=demo.schools.find(x=>x.id===id); if(s) Object.assign(s,patch,{updated_at:new Date().toISOString()}); return s; },
+  async archiveSchool(id){ const s=demo.schools.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
+  async listStudentSchoolEnrolments(session){ return demo.student_school_enrolments.filter(e=>!session||e.academic_session===session).map(e=>({...e,school:demo.schools.find(s=>s.id===e.school_id)||null})); },
+  async saveStudentSchoolEnrolment(row){ const old=demo.student_school_enrolments.find(e=>e.student_id===row.student_id&&e.academic_session===row.academic_session); if(old) Object.assign(old,row); else demo.student_school_enrolments.push({id:uid(),...row}); return row; },
+  async removeStudentSchoolEnrolment(studentId,session){ demo.student_school_enrolments=demo.student_school_enrolments.filter(e=>!(e.student_id===studentId&&e.academic_session===session)); },
+  async listSchoolResults(filters={}){ return demo.school_exam_results.filter(r=>(!filters.student_id||r.student_id===filters.student_id)&&(!filters.academic_session||r.academic_session===filters.academic_session)&&(!filters.subject||r.subject===filters.subject)&&(!filters.exam_type||r.exam_type===filters.exam_type)&&(!filters.school_exam_date||r.school_exam_date===filters.school_exam_date)); },
+  async loadSchoolResults(filters={}){ return this.listSchoolResults(filters); },
+  async saveSchoolExamResults(rows){ rows.forEach(row=>{ const full=Number(row.full_marks), marks=row.marks_obtained===''||row.marks_obtained==null?null:Number(row.marks_obtained); if(!Number.isFinite(full)||full<=0) throw new Error('Full marks must be greater than zero.'); if(row.result_status==='scored'&&(!Number.isFinite(marks)||marks<0||marks>full)) throw new Error('Marks must be between zero and full marks.'); const clean={...row,marks_obtained:row.result_status==='scored'?marks:null,full_marks:full,percentage:row.result_status==='scored'?Math.round(marks/full*1000)/10:null}; const old=demo.school_exam_results.find(r=>r.student_id===row.student_id&&r.academic_session===row.academic_session&&r.subject===row.subject&&r.exam_type===row.exam_type&&r.school_exam_date===row.school_exam_date); if(old) Object.assign(old,clean,{updated_at:new Date().toISOString()}); else demo.school_exam_results.push({id:uid(),...clean,created_at:new Date().toISOString()}); }); return rows; },
+  async updateSchoolResult(id,patch){ const r=demo.school_exam_results.find(x=>x.id===id); if(r) Object.assign(r,patch); return r; },
+  async deleteSchoolResult(id){ demo.school_exam_results=demo.school_exam_results.filter(r=>r.id!==id); },
+  async getStudentSchoolComparison(studentId,filters={}){ const schoolRows=await this.listSchoolResults({student_id:studentId,academic_session:filters.academic_session||currentSession(),subject:filters.subject}); const enrolment=(await this.listStudentSchoolEnrolments(filters.academic_session||currentSession())).find(e=>e.student_id===studentId); const tests=await this.listTests(); const results=await this.allResults(); const out=[]; for(const row of schoolRows){ const candidates=tests.filter(t=>t.subject===row.subject&&new Date(t.test_date)<=new Date(row.school_exam_date)).map(t=>{const r=results.find(x=>x.test_id===t.id&&x.student_id===studentId&&x.present&&!x.na&&x.marks!=null); return r?{t,r}:null}).filter(Boolean).sort((a,b)=>new Date(b.t.test_date)-new Date(a.t.test_date)); const aveti=candidates[0]?Math.round(candidates[0].r.marks/candidates[0].t.full_marks*1000)/10:null; out.push({...row,school:enrolment?.school||null,school_percentage:row.percentage,aveti_percentage:aveti,difference:aveti==null||row.percentage==null?null:Math.round((aveti-row.percentage)*10)/10,exam:row.exam_type}); } return out.sort((a,b)=>new Date(a.school_exam_date)-new Date(b.school_exam_date)); },
   async listChapters(cls,subject){ return demo.chapters.filter(c=>String(c.class_level)===String(cls) && c.subject===subject).sort((a,b)=>a.chapter_no-b.chapter_no); },
   async addChapter(ch){
     const title = normalizeText(ch.title);
@@ -224,6 +248,9 @@ const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,gender,date_of_birth,cl
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
+const SCHOOL_COLS = 'id,centre_id,name,board,archived_at,created_at,updated_at';
+const SCHOOL_ENROLMENT_COLS = 'id,centre_id,student_id,school_id,academic_session,class_level,section,created_at,updated_at,school:school_id(id,centre_id,name,board)';
+const SCHOOL_RESULT_COLS = 'id,centre_id,student_id,academic_session,subject,exam_type,school_exam_date,marks_obtained,full_marks,percentage,result_status,entered_by,created_at,updated_at';
 const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const missingBirthdayColumn = error => /date_of_birth|column .* does not exist/i.test(String(error?.message||''));
@@ -273,6 +300,19 @@ const supaDB = {
     if(error) throw error;
   },
   async deleteStudent(id){ const {error}=await supa.from('students').delete().eq('id',id); if(error) throw error; },
+  async listSchools(){ const {data,error}=await supa.from('schools').select(SCHOOL_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name'); if(error) throw error; return data||[]; },
+  async createSchool(payload){ const {data,error}=await supa.from('schools').insert({...payload,centre_id:CENTRE_ID}).select(SCHOOL_COLS).single(); if(error) throw error; return data; },
+  async updateSchool(id,patch){ const {data,error}=await supa.from('schools').update(patch).eq('id',id).eq('centre_id',CENTRE_ID).select(SCHOOL_COLS).single(); if(error) throw error; return data; },
+  async archiveSchool(id){ const {error}=await supa.from('schools').update({archived_at:new Date().toISOString()}).eq('id',id).eq('centre_id',CENTRE_ID); if(error) throw error; },
+  async listStudentSchoolEnrolments(session){ let q=supa.from('student_school_enrolments').select(SCHOOL_ENROLMENT_COLS).eq('centre_id',CENTRE_ID); if(session) q=q.eq('academic_session',session); const {data,error}=await q; if(error) throw error; return data||[]; },
+  async saveStudentSchoolEnrolment(row){ const {data,error}=await supa.from('student_school_enrolments').upsert({...row,centre_id:CENTRE_ID},{onConflict:'student_id,academic_session'}).select(SCHOOL_ENROLMENT_COLS).single(); if(error) throw error; return data; },
+  async removeStudentSchoolEnrolment(studentId,session){ const {error}=await supa.from('student_school_enrolments').delete().eq('centre_id',CENTRE_ID).eq('student_id',studentId).eq('academic_session',session); if(error) throw error; },
+  async listSchoolResults(filters={}){ let q=supa.from('school_exam_results').select(SCHOOL_RESULT_COLS).eq('centre_id',CENTRE_ID); ['student_id','academic_session','subject','exam_type','school_exam_date'].forEach(k=>{if(filters[k]) q=q.eq(k,filters[k]);}); const {data,error}=await q.order('school_exam_date'); if(error) throw error; return data||[]; },
+  async loadSchoolResults(filters={}){ return this.listSchoolResults(filters); },
+  async saveSchoolExamResults(rows){ const payload=rows.map(row=>{const full=Number(row.full_marks), marks=row.marks_obtained===''||row.marks_obtained==null?null:Number(row.marks_obtained); if(!Number.isFinite(full)||full<=0) throw new Error('Full marks must be greater than zero.'); if(row.result_status==='scored'&&(!Number.isFinite(marks)||marks<0||marks>full)) throw new Error('Marks must be between zero and full marks.'); const clean={...row,centre_id:CENTRE_ID,entered_by:CURRENT_USER_ID,marks_obtained:row.result_status==='scored'?marks:null,full_marks:full}; delete clean.percentage; return clean;}); const {data,error}=await supa.from('school_exam_results').upsert(payload,{onConflict:'student_id,academic_session,subject,exam_type,school_exam_date'}).select(SCHOOL_RESULT_COLS); if(error) throw error; return data||[]; },
+  async updateSchoolResult(id,patch){ const clean={...patch}; delete clean.percentage; const {data,error}=await supa.from('school_exam_results').update(clean).eq('id',id).eq('centre_id',CENTRE_ID).select(SCHOOL_RESULT_COLS).single(); if(error) throw error; return data; },
+  async deleteSchoolResult(id){ const {error}=await supa.from('school_exam_results').delete().eq('id',id).eq('centre_id',CENTRE_ID); if(error) throw error; },
+  async getStudentSchoolComparison(studentId,filters={}){ const rows=await this.listSchoolResults({student_id:studentId,academic_session:filters.academic_session||currentSession(),subject:filters.subject}); const enrolment=(await this.listStudentSchoolEnrolments(filters.academic_session||currentSession())).find(e=>e.student_id===studentId); const tests=await this.listTests(); const results=await this.allResults(); return rows.map(row=>{const candidates=tests.filter(t=>t.subject===row.subject&&new Date(t.test_date)<=new Date(row.school_exam_date)).map(t=>{const r=results.find(x=>x.test_id===t.id&&x.student_id===studentId&&x.present&&!x.na&&x.marks!=null); return r?{t,r}:null}).filter(Boolean).sort((a,b)=>new Date(b.t.test_date)-new Date(a.t.test_date)); const aveti=candidates[0]?Math.round(candidates[0].r.marks/candidates[0].t.full_marks*1000)/10:null; return {...row,school:enrolment?.school||null,school_percentage:row.percentage,aveti_percentage:aveti,difference:aveti==null||row.percentage==null?null:Math.round((aveti-row.percentage)*10)/10,exam:row.exam_type};}).sort((a,b)=>new Date(a.school_exam_date)-new Date(b.school_exam_date)); },
   async listChapters(cls,subject){ const {data}=await supa.from('chapters').select(CHAPTER_COLS).eq('centre_id',CENTRE_ID).eq('class_level',cls).eq('subject',subject).order('chapter_no'); return data||[]; },
   async addChapter(ch){
     const title = normalizeText(ch.title);
