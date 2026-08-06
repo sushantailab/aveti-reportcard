@@ -11,10 +11,10 @@ const uid = () => Math.random().toString(36).slice(2,10);
 /* ---- Demo seed (used when USE_SUPABASE = false) ---- */
 const demo = {
   students: [
-    { id:'s1', name:'Saswat',     academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919800000021' },
-    { id:'s2', name:'Anshuman',   academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919900000007' },
-    { id:'s3', name:'Guruprasad', academic_session:'2026-27', class_level:9, section:'A', gender:'male',   parent_name:'', parent_phone:'+919000000044' },
-    { id:'s4', name:'Asman',      academic_session:'2026-27', class_level:9, section:'A', gender:'female', parent_name:'', parent_phone:'' },
+    { id:'s1', name:'Saswat',     academic_session:'2026-27', class_level:9, section:'A', gender:'male',   date_of_birth:'2012-08-12', parent_name:'', parent_phone:'+919800000021' },
+    { id:'s2', name:'Anshuman',   academic_session:'2026-27', class_level:9, section:'A', gender:'male',   date_of_birth:'2012-08-21', parent_name:'', parent_phone:'+919900000007' },
+    { id:'s3', name:'Guruprasad', academic_session:'2026-27', class_level:9, section:'A', gender:'male',   date_of_birth:'2012-09-03', parent_name:'', parent_phone:'+919000000044' },
+    { id:'s4', name:'Asman',      academic_session:'2026-27', class_level:9, section:'A', gender:'female', date_of_birth:'2012-09-18', parent_name:'', parent_phone:'' },
   ],
   chapters: [
     { id:'c1', class_level:9, subject:'Hindi', chapter_no:1, title:'दो बैलों की कथा' },
@@ -93,8 +93,8 @@ const demo = {
     {id:'tp2',event_id:'ev1',sequence_no:2,certificate_id:'AVT-PD-2026-000002',name:'Rakesh Kumar',phone:'9123456789',whatsapp:'9123456789',email:'rakesh@gmail.com',school:'OAV Bhubaneswar',whatsapp_sent_at:null,verified_at:null}
   ],
   tah_teachers: [
-    {id:'tah1',name:'Priya Sharma',mobile:'9876543210',email:'priya@example.com',gender:'female',class_levels:[7,8],subjects:['Science','Social Science','Social Science II'],school_name:'DAV Public School',class_level:'7, 8',subject:'Science, Social Science, Social Science II',board:'CBSE',language:'en',enrollment_date:'2026-06-23',journey_day:2,prepared:true,taught:false,loop_completed:false,nps_score:null,feedback_sentiment:null,status:'preparing',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'priya01',testimonial_consent:false,testimonial_sent:false,opted_out:false},
-    {id:'tah2',name:'Rakesh Kumar',mobile:'9123456789',email:'rakesh@example.com',gender:'male',class_levels:[6,7,8],subjects:['Mathematics','Mathematics II'],school_name:'OAV Bhubaneswar',class_level:'6, 7, 8',subject:'Mathematics, Mathematics II',board:'Odisha Board',language:'od',enrollment_date:'2026-06-23',journey_day:8,prepared:true,taught:true,loop_completed:true,nps_score:9,feedback_sentiment:'promoter',status:'activated',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'rakesh01',testimonial_consent:true,testimonial_sent:false,opted_out:false}
+    {id:'tah1',name:'Priya Sharma',mobile:'9876543210',email:'priya@example.com',gender:'female',date_of_birth:'1990-08-15',class_levels:[7,8],subjects:['Science','Social Science','Social Science II'],school_name:'DAV Public School',class_level:'7, 8',subject:'Science, Social Science, Social Science II',board:'CBSE',language:'en',enrollment_date:'2026-06-23',journey_day:2,prepared:true,taught:false,loop_completed:false,nps_score:null,feedback_sentiment:null,status:'preparing',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'priya01',testimonial_consent:false,testimonial_sent:false,opted_out:false},
+    {id:'tah2',name:'Rakesh Kumar',mobile:'9123456789',email:'rakesh@example.com',gender:'male',date_of_birth:'1988-09-02',class_levels:[6,7,8],subjects:['Mathematics','Mathematics II'],school_name:'OAV Bhubaneswar',class_level:'6, 7, 8',subject:'Mathematics, Mathematics II',board:'Odisha Board',language:'od',enrollment_date:'2026-06-23',journey_day:8,prepared:true,taught:true,loop_completed:true,nps_score:9,feedback_sentiment:'promoter',status:'activated',rated:false,referrals_sent:0,referral_conversions:0,referral_code:'rakesh01',testimonial_consent:true,testimonial_sent:false,opted_out:false}
   ],
   tah_message_templates: [
     {id:'tmpl1',day_key:'D1',language:'en',category:'activation',app_target:'both',title:'Welcome + loop',body:'Dear {name}, welcome to Aveti! 🎉 Here’s how teachers get the best results: 1) Prepare your Class {class} {subject} lesson in the Teachers App, 2) Teach it live in the Smart Class App. ▶️ 30-sec overview: {video_link}  Start here: {app_link}',video_url:'',active:true},
@@ -211,8 +211,8 @@ let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
 let ACCESS_ROLE = 'centre_admin';
 let ACCESS_CENTRES = [];
-const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
-const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,optional_subject,parent_name,parent_phone,centre_id';
+const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
+const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,teacher_id,teacher:teacher_id(id,centre_id,name,mobile,opted_out),chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,duration_minutes,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
 const TEST_COLS_LEGACY = 'id,centre_id,class_level,section,subject,chapter_id,chapter_no,chapter_name,test_type,full_marks,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
@@ -220,18 +220,20 @@ const RESULT_COLS = 'id,test_id,student_id,marks,present,na';
 const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_marks,new_marks,old_present,new_present,old_na,new_na';
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
 const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
-const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,gender,class_levels,subjects,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,archived_at,created_at,updated_at';
+const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,gender,date_of_birth,class_levels,subjects,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,archived_at,created_at,updated_at';
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
 const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
+const missingBirthdayColumn = error => /date_of_birth|column .* does not exist/i.test(String(error?.message||''));
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
 const stripSession = obj => {
   const copy = {...obj};
   delete copy.academic_session;
   return copy;
 };
+const stripBirthday = obj => { const copy={...obj}; delete copy.date_of_birth; return copy; };
 const missingExtendedTestColumns = error => /chapter_ids|chapter_names|duration_minutes/i.test(String(error?.message||''));
 const missingMultiChapterColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
 const missingTeacherColumn = error => /teacher_id|relationship.*teacher|tah_teachers/i.test(String(error?.message||''));
@@ -241,8 +243,9 @@ const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,ch
 const supaDB = {
   async listStudents(){
     const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
-    if(res.error && missingAcademicSession(res.error)){
-      const legacy = await supa.from('students').select(STUDENT_COLS_LEGACY).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
+      const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
+      const legacy = await supa.from('students').select(cols).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
       return withDefaultSession(legacy.data);
     }
     return withDefaultSession(res.data);
@@ -250,16 +253,18 @@ const supaDB = {
   async addStudent(s){
     const payload = {...s, centre_id:CENTRE_ID};
     let res = await supa.from('students').insert(payload).select(STUDENT_COLS).single();
-    if(res.error && missingAcademicSession(res.error)){
-      res = await supa.from('students').insert(stripSession(payload)).select(STUDENT_COLS_LEGACY).single();
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
+      const legacyPayload = missingBirthdayColumn(res.error) ? stripBirthday(stripSession(payload)) : stripSession(payload);
+      const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
+      res = await supa.from('students').insert(legacyPayload).select(cols).single();
       return res.data ? {...res.data,academic_session:s.academic_session||currentSession()} : null;
     }
     return res.data;
   },
   async updateStudent(id,patch){
     let res = await supa.from('students').update(patch).eq('id',id);
-    if(res.error && missingAcademicSession(res.error)){
-      res = await supa.from('students').update(stripSession(patch)).eq('id',id);
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
+      res = await supa.from('students').update(missingBirthdayColumn(res.error) ? stripBirthday(stripSession(patch)) : stripSession(patch)).eq('id',id);
     }
     if(res.error) throw res.error;
   },
@@ -368,10 +373,17 @@ const supaDB = {
     if(error) throw error;
     return data;
   },
-  async listTahTeachers(){ const {data,error}=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name'); if(error) throw error; return data||[]; },
+  async listTahTeachers(){
+    let res=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+    if(res.error && missingBirthdayColumn(res.error)) res=await supa.from('tah_teachers').select(TAH_TEACHER_COLS.replace(',date_of_birth','')).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+    if(res.error) throw res.error;
+    return res.data||[];
+  },
   async saveTahTeachers(rows){
     if(!rows.length) return this.listTahTeachers();
-    const {error}=await supa.from('tah_teachers').upsert(rows.map(r=>({...r,centre_id:CENTRE_ID})),{onConflict:'mobile'});
+    const payload=rows.map(r=>({...r,centre_id:CENTRE_ID}));
+    let {error}=await supa.from('tah_teachers').upsert(payload,{onConflict:'mobile'});
+    if(error && missingBirthdayColumn(error)){ ({error}=await supa.from('tah_teachers').upsert(payload.map(stripBirthday),{onConflict:'mobile'})); }
     if(error) throw error;
     return this.listTahTeachers();
   },
@@ -380,7 +392,8 @@ const supaDB = {
     if(patch.prepared) payload.prepared_at = new Date().toISOString();
     if(patch.taught) payload.taught_at = new Date().toISOString();
     if(patch.loop_completed) payload.loop_completed_at = new Date().toISOString();
-    const {data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS).single();
+    let {data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS).single();
+    if(error && missingBirthdayColumn(error)){ delete payload.date_of_birth; ({data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS.replace(',date_of_birth','')).single()); }
     if(error) throw error;
     return data;
   },

@@ -58,6 +58,45 @@ const homeMiniCalendar = (month,year,tests) => {
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
 let HOME_PERIOD_MONTH = '', HOME_PERIOD_YEAR = '';
+function birthdayEntries(students,teachers){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const entries=[];
+  const add=(person,role,phone,extra)=>{
+    if(!person.date_of_birth) return;
+    const parts=String(person.date_of_birth).slice(0,10).split('-').map(Number);
+    if(parts.length<3 || !parts[1] || !parts[2]) return;
+    let date=new Date(today.getFullYear(),parts[1]-1,parts[2]);
+    if(date<today) date.setFullYear(today.getFullYear()+1);
+    const days=Math.round((date-today)/86400000);
+    if(days>30) return;
+    entries.push({...extra,name:person.name,role,phone:normalizeIndianPhone(phone),date,days,gender:person.gender||''});
+  };
+  students.forEach(s=>add(s,'Student',s.parent_phone,{detail:`Class ${s.class_level}${s.section?` · Sec ${s.section}`:''}`,target:'parent'}));
+  teachers.forEach(t=>add(t,'Teacher',t.mobile,{detail:`${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'All classes'} · ${(t.subjects||[]).length?(t.subjects||[]).join(', '):'All subjects'}`,target:'teacher'}));
+  return entries.sort((a,b)=>a.days-b.days || a.name.localeCompare(b.name));
+}
+function birthdayPanel(entries){
+  const groups=new Map();
+  entries.forEach(item=>{ const key=item.date.toISOString().slice(0,10); if(!groups.has(key)) groups.set(key,[]); groups.get(key).push(item); });
+  const body=[...groups.entries()].map(([key,items])=>{
+    const date=new Date(`${key}T00:00:00`);
+    const label=items[0].days===0?'Today':items[0].days===1?'Tomorrow':new Intl.DateTimeFormat('en-IN',{weekday:'short',day:'numeric',month:'short'}).format(date);
+    return `<div class="birthday-day"><div class="birthday-date"><b>${label}</b><span>${items.length} birthday${items.length===1?'':'s'}</span></div>${items.map(item=>`<div class="birthday-person"><span class="birthday-avatar">${item.role==='Teacher'?'👩‍🏫':'🎂'}</span><div><b>${escapeHTML(item.name)}</b><small>${escapeHTML(item.role)} · ${escapeHTML(item.detail)}</small></div><button class="birthday-wish" ${item.phone?'':'disabled'} onclick="sendBirthdayWish('${encodeURIComponent(item.phone||'')}','${encodeURIComponent(item.name)}','${item.role}','${item.gender}')">${item.phone?'💬 Wish':'No WhatsApp'}</button></div>`).join('')}</div>`;
+  }).join('');
+  return `<section class="card birthday-panel"><div class="birthday-heading"><div><h2>🎉 Birthdays</h2><p>Today and the next 30 days</p></div><span>${entries.length} listed</span></div>${body||'<div class="birthday-empty">No birthdays in the next 30 days. Add dates in Students or Teachers.</div>'}</section>`;
+}
+window.sendBirthdayWish=(encodedPhone,encodedName,role,gender)=>{
+  const phone=decodeURIComponent(encodedPhone||'');
+  const name=decodeURIComponent(encodedName||'')||'there';
+  if(!phone){ alert(`Add a WhatsApp number for ${name} first.`); return; }
+  const isTeacher=role==='Teacher';
+  const honorific=String(gender||'').toLowerCase().startsWith('f')?'madam':'sir';
+  const greeting=isTeacher?`Hello ${name} ${honorific}`:'Namaste';
+  const message=isTeacher
+    ? `${greeting}, aaj aapka birthday hai 🎂\n\nAveti Learning Tuition Center ki taraf se aapko janamdin ki bahut-bahut shubhkamnayein. Aapko achhi health, happiness aur continued success mile. Students ko inspire karte rahiye! Hamesha khush rahiye 🎉`
+    : `${greeting}, aaj ${name} ka birthday hai 🎂\n\nAveti Learning Tuition Center ki taraf se ${name} ko janamdin ki bahut-bahut shubhkamnayein. Bhagwan use achhi health, khushi aur success de. Hamesha muskurate rahiye aur seekhte rahiye! 🎉`;
+  window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(message)}`,'_blank','noopener');
+};
 async function homeChapterScope(test){
   const selectedIds = Array.isArray(test.chapter_ids) ? test.chapter_ids.map(String) : [];
   let chapterNumbers = [];
@@ -73,7 +112,9 @@ async function homeChapterScope(test){
 async function home(){
   setCrumb('Home');
   const tests = (await DB.listTests()).slice().sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
-  const activeStudentIds = new Set((await DB.listStudents()).map(student=>student.id));
+  const allStudents = await DB.listStudents();
+  const allTeachers = await DB.listTahTeachers();
+  const activeStudentIds = new Set(allStudents.map(student=>student.id));
   const datedTests = tests.filter(test=>!Number.isNaN(new Date(testDate(test)).getTime()));
   if((!HOME_PERIOD_MONTH || !HOME_PERIOD_YEAR) && datedTests.length){
     const latest = new Date(testDate(datedTests[0]));
@@ -145,6 +186,7 @@ async function home(){
         </div>
         <div class="home-summary-grid"><div class="home-summary"><b>Tests by class</b><div>${periodClasses.size?[...periodClasses.entries()].sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,count])=>`<span><label>Class ${key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodClasses.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div><div class="home-summary"><b>Tests by subject</b><div>${periodSubjects.size?[...periodSubjects.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>`<span><label>${key==='Mathematics'?'Math':key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodSubjects.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div></div>
       </section>
+      ${birthdayPanel(birthdayEntries(allStudents,allTeachers))}
 
       <section class="home-workflow card"><div class="workflow-heading"><h2>Assessment Workflow</h2><p>Your assessment cycle, simplified</p></div><div class="workflow-grid">
         <button class="workflow-step workflow-enter" onclick="enterMarks()"><span class="workflow-top"><i>1</i><b>Enter marks</b></span><span class="workflow-icon">${homeIcon('tests')}</span><small>Record a test and scores</small><strong>Enter marks <b>→</b></strong></button>
@@ -203,7 +245,7 @@ function teacherDirectoryRow(t){
   if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t);
   return `<div class="listrow" style="gap:12px;flex-wrap:wrap">
     ${avatar(t.gender,t.name)}
-    <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
+    <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}${t.date_of_birth?` · DOB ${fmtDate(t.date_of_birth)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
     <span class="pill ${t.opted_out?'warn':'ok'}">${t.opted_out?'sharing paused':'ready to share'}</span>
     <button onclick="startTeacherEdit('${t.id}')">Edit</button>
     <button onclick="archiveTeacher('${t.id}','${escapeHTML(t.name).replace(/'/g,'')}')" style="color:var(--red)">Archive</button>
@@ -218,6 +260,7 @@ function teacherFormHTML(){
     <input id="teacherAddName" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherAddMobile" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherAddEmail" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <input id="teacherAddDob" type="date" aria-label="Date of birth" title="Date of birth" style="width:auto">
     <select id="teacherAddGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select>
   </div><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
     ${teacherMultiChoice('teacherAddClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),[],'Classes taught')}
@@ -231,6 +274,7 @@ function teacherEditRow(t){
     <input id="teacherEditName" value="${escapeHTML(t.name)}" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherEditMobile" value="${escapeHTML(t.mobile||'')}" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
     <input id="teacherEditEmail" value="${escapeHTML(t.email||'')}" type="email" placeholder="Email (optional)" style="flex:1;min-width:190px">
+    <input id="teacherEditDob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(t.date_of_birth||'').slice(0,10)}" style="width:auto">
     <select id="teacherEditGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female" ${t.gender==='female'?'selected':''}>Female</option><option value="male" ${t.gender==='male'?'selected':''}>Male</option><option value="other" ${t.gender==='other'?'selected':''}>Other</option></select>
     ${teacherMultiChoice('teacherEditClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),t.class_levels||[],'Classes taught')}
     ${teacherMultiChoice('teacherEditSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),t.subjects||[],'Subjects taught')}
@@ -250,7 +294,8 @@ function teacherPayload(prefix){
   if(!name){ alert('Enter the teacher name.'); return null; }
   if(!mobile){ alert('Enter a valid 10-digit WhatsApp number.'); return null; }
   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email address or leave it blank.'); return null; }
-  return {name,mobile,email:email||null,gender:gender||null,class_levels,subjects,class_level:class_levels.join(', '),subject:subjects.join(', ')};
+  const dob=val(prefix+'Dob');
+  return {name,mobile,email:email||null,gender:gender||null,date_of_birth:dob||null,class_levels,subjects,class_level:class_levels.join(', '),subject:subjects.join(', ')};
 }
 window.setTeacherSearch = value=>{ TEACHER_SEARCH=value; teachers(); };
 window.toggleTeacherAdd = ()=>{ TEACHER_SHOW_ADD=!TEACHER_SHOW_ADD; teachers(); };
@@ -314,7 +359,7 @@ function studentRow(s){
   if(EDIT_ID===s.id) return editRow(s);
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
-    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}</div></div>
+    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth?(' · DOB '+fmtDate(s.date_of_birth)):''}</div></div>
     <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
     <button onclick="archiveStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Archive</button>
@@ -328,6 +373,7 @@ function editRow(s){
     <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
     <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>
     <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
+    <input id="ed_dob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(s.date_of_birth||'').slice(0,10)}" style="width:auto">
     <select id="ed_opt" style="width:auto">${optionalOptions(s.optional_subject)}</select>
     <input id="ed_phone" value="${s.parent_phone||''}" placeholder="+91 parent number" style="flex:1;min-width:150px">
     <button class="primary" onclick="saveEdit('${s.id}')">Save</button>
@@ -342,6 +388,7 @@ function addFormHTML(){
       <select id="ad_class" style="width:auto">${classOptions(9)}</select>
       <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
       <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
+      <input id="ad_dob" type="date" aria-label="Date of birth" title="Date of birth" style="width:auto">
       <select id="ad_opt" style="width:auto">${optionalOptions('N.A.')}</select>
       <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
       <button class="primary" onclick="submitAdd()">Add</button>
@@ -362,7 +409,7 @@ window.submitAdd = async ()=>{
   const rawPhone = val('ad_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, optional_subject:normalizeOptional(val('ad_opt')), parent_name:'', parent_phone:phone };
+  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, optional_subject:normalizeOptional(val('ad_opt')), parent_name:'', parent_phone:phone };
   if(!(await warnStudentDuplicates(student))) return;
   await DB.addStudent(student);
   SHOW_ADD=false; roster();
@@ -434,7 +481,7 @@ window.saveEdit = async id=>{
   const rawPhone = val('ed_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, optional_subject:normalizeOptional(val('ed_opt')), parent_phone:phone };
+  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, optional_subject:normalizeOptional(val('ed_opt')), parent_phone:phone };
   if(!(await warnStudentDuplicates(student,id))) return;
   await DB.updateStudent(id,student);
   EDIT_ID=null; roster();

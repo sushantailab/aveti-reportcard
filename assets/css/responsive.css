@@ -222,6 +222,13 @@ button,select,input,textarea{max-width:100%}
   .cert-hero,.cert-workspace,.cert-form-grid,.cert-form-grid-3,.cert-form-grid-4,.cert-focus,.cert-meta,.cert-verify-grid{grid-template-columns:1fr!important}.cert-hero{padding:16px!important}.certificate-paper{min-height:0!important;padding:24px 16px!important}.cert-name{font-size:30px!important}.cert-kicker{font-size:22px!important}.cert-signatures{gap:22px!important;margin-top:35px!important}.tah-hero,.tah-loop,.tah-table-head,.tah-row{grid-template-columns:1fr!important}.tah-table-head{display:none!important}.tah-actions{justify-content:flex-start!important}
 }
 
+@media screen and (max-width:700px){
+  .birthday-panel{padding:14px}
+  .birthday-person{align-items:flex-start}
+  .birthday-person small{white-space:normal}
+  .birthday-wish{margin-left:auto;flex-shrink:0}
+}
+
 @media screen and (max-width:390px){
   .home-stat-grid,.teacher-summary-grid,.growth-chapter-grid{grid-template-columns:1fr!important}
   .topbar-kicker{max-width:170px!important}.home-snapshot-head h1{font-size:20px!important}.workflow-tools{grid-template-columns:1fr!important}
