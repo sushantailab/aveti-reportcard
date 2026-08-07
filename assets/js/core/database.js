@@ -133,8 +133,8 @@ const memoryDB = {
   async updateStudent(id,patch){ Object.assign(demo.students.find(x=>x.id===id),patch); },
   async archiveStudent(id){ const s=demo.students.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
   async deleteStudent(id){ demo.students = demo.students.filter(x=>x.id!==id); demo.results = demo.results.filter(r=>r.student_id!==id); },
-  async listSchools(){ return demo.schools.filter(s=>!s.archived_at).sort((a,b)=>a.name.localeCompare(b.name)); },
-  async createSchool(payload){ const existing=demo.schools.find(s=>s.name.toLowerCase()===String(payload.name||'').trim().toLowerCase()); if(existing) return existing; const r={id:uid(),...payload}; demo.schools.push(r); return r; },
+  async listSchools(){ return demo.schools.filter(s=>!s.archived_at).sort((a,b)=>(a.name||'').localeCompare(b.name||'')); },
+  async createSchool(payload){ const name=String(payload.school_name||payload.name||'').trim(); const existing=demo.schools.find(s=>(s.name||'').toLowerCase()===name.toLowerCase()); if(existing) return existing; const r={id:uid(),name,school_name:name,city:payload.city||'',is_active:true,...payload}; demo.schools.push(r); return r; },
   async updateSchool(id,patch){ const s=demo.schools.find(x=>x.id===id); if(s) Object.assign(s,patch,{updated_at:new Date().toISOString()}); return s; },
   async archiveSchool(id){ const s=demo.schools.find(x=>x.id===id); if(s) s.archived_at=new Date().toISOString(); },
   async listStudentSchoolEnrolments(session){ return demo.student_school_enrolments.filter(e=>!session||e.academic_session===session).map(e=>({...e,school:demo.schools.find(s=>s.id===e.school_id)||null})); },
@@ -235,7 +235,7 @@ let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
 let ACCESS_ROLE = 'centre_admin';
 let ACCESS_CENTRES = [];
-const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
+const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,school_id,centre_id';
 const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,teacher_id,teacher:teacher_id(id,centre_id,name,mobile,opted_out),chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,duration_minutes,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
@@ -248,12 +248,13 @@ const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,gender,date_of_birth,cl
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
-const SCHOOL_COLS = 'id,centre_id,name,board,archived_at,created_at,updated_at';
+const SCHOOL_COLS = 'id,centre_id,school_name,city,is_active,archived_at,created_at,updated_at';
 const SCHOOL_ENROLMENT_COLS = 'id,centre_id,student_id,school_id,academic_session,class_level,section,created_at,updated_at,school:school_id(id,centre_id,name,board)';
 const SCHOOL_RESULT_COLS = 'id,centre_id,student_id,academic_session,subject,exam_type,school_exam_date,marks_obtained,full_marks,percentage,result_status,entered_by,created_at,updated_at';
 const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const missingBirthdayColumn = error => /date_of_birth|column .* does not exist/i.test(String(error?.message||''));
+const missingSchoolColumn = error => /school_id|school_name|city|is_active/i.test(String(error?.message||''));
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
 const stripSession = obj => {
   const copy = {...obj};
@@ -261,6 +262,8 @@ const stripSession = obj => {
   return copy;
 };
 const stripBirthday = obj => { const copy={...obj}; delete copy.date_of_birth; return copy; };
+const stripSchoolId = obj => { const copy={...obj}; delete copy.school_id; return copy; };
+const normalizeSchool = s => s ? {...s,name:s.name||s.school_name} : s;
 const missingExtendedTestColumns = error => /chapter_ids|chapter_names|duration_minutes/i.test(String(error?.message||''));
 const missingMultiChapterColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
 const missingTeacherColumn = error => /teacher_id|relationship.*teacher|tah_teachers/i.test(String(error?.message||''));
@@ -270,7 +273,7 @@ const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,ch
 const supaDB = {
   async listStudents(){
     const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
-    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
       const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
       const legacy = await supa.from('students').select(cols).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
       return withDefaultSession(legacy.data);
@@ -280,8 +283,8 @@ const supaDB = {
   async addStudent(s){
     const payload = {...s, centre_id:CENTRE_ID};
     let res = await supa.from('students').insert(payload).select(STUDENT_COLS).single();
-    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
-      const legacyPayload = missingBirthdayColumn(res.error) ? stripBirthday(stripSession(payload)) : stripSession(payload);
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
+      const legacyPayload = missingSchoolColumn(res.error) ? stripSchoolId(payload) : (missingBirthdayColumn(res.error) ? stripBirthday(stripSession(payload)) : stripSession(payload));
       const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
       res = await supa.from('students').insert(legacyPayload).select(cols).single();
       return res.data ? {...res.data,academic_session:s.academic_session||currentSession()} : null;
@@ -290,8 +293,8 @@ const supaDB = {
   },
   async updateStudent(id,patch){
     let res = await supa.from('students').update(patch).eq('id',id);
-    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error))){
-      res = await supa.from('students').update(missingBirthdayColumn(res.error) ? stripBirthday(stripSession(patch)) : stripSession(patch)).eq('id',id);
+    if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
+      res = await supa.from('students').update(missingSchoolColumn(res.error) ? stripSchoolId(patch) : (missingBirthdayColumn(res.error) ? stripBirthday(stripSession(patch)) : stripSession(patch))).eq('id',id);
     }
     if(res.error) throw res.error;
   },
@@ -300,9 +303,9 @@ const supaDB = {
     if(error) throw error;
   },
   async deleteStudent(id){ const {error}=await supa.from('students').delete().eq('id',id); if(error) throw error; },
-  async listSchools(){ const {data,error}=await supa.from('schools').select(SCHOOL_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name'); if(error) throw error; return data||[]; },
-  async createSchool(payload){ const {data,error}=await supa.from('schools').insert({...payload,centre_id:CENTRE_ID}).select(SCHOOL_COLS).single(); if(error) throw error; return data; },
-  async updateSchool(id,patch){ const {data,error}=await supa.from('schools').update(patch).eq('id',id).eq('centre_id',CENTRE_ID).select(SCHOOL_COLS).single(); if(error) throw error; return data; },
+  async listSchools(){ const {data,error}=await supa.from('schools').select(SCHOOL_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).eq('is_active',true).order('school_name'); if(error) throw error; return (data||[]).map(normalizeSchool); },
+  async createSchool(payload){ const name=String(payload.school_name||payload.name||'').trim(); const {data,error}=await supa.from('schools').insert({name,school_name:name,board:payload.board||null,city:payload.city||null,is_active:true,centre_id:CENTRE_ID}).select(SCHOOL_COLS).single(); if(error) throw error; return normalizeSchool(data); },
+  async updateSchool(id,patch){ const clean={...patch}; if(clean.name&&!clean.school_name){clean.school_name=clean.name;delete clean.name;} const {data,error}=await supa.from('schools').update(clean).eq('id',id).eq('centre_id',CENTRE_ID).select(SCHOOL_COLS).single(); if(error) throw error; return normalizeSchool(data); },
   async archiveSchool(id){ const {error}=await supa.from('schools').update({archived_at:new Date().toISOString()}).eq('id',id).eq('centre_id',CENTRE_ID); if(error) throw error; },
   async listStudentSchoolEnrolments(session){ let q=supa.from('student_school_enrolments').select(SCHOOL_ENROLMENT_COLS).eq('centre_id',CENTRE_ID); if(session) q=q.eq('academic_session',session); const {data,error}=await q; if(error) throw error; return data||[]; },
   async saveStudentSchoolEnrolment(row){ const {data,error}=await supa.from('student_school_enrolments').upsert({...row,centre_id:CENTRE_ID},{onConflict:'student_id,academic_session'}).select(SCHOOL_ENROLMENT_COLS).single(); if(error) throw error; return data; },

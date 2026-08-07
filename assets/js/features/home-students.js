@@ -318,7 +318,7 @@ window.archiveTeacher = async (id,name)=>{
 };
 
 /* ---------- ROSTER ---------- */
-let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SESSION_FILTER = currentSession();
+let SHOW_ADD = false, EDIT_ID = null, SEC_FILTER = 'All', CLASS_FILTER = 'All', SCHOOL_FILTER = 'All', SESSION_FILTER = currentSession();
 let ROSTER_SCHOOLS = [], ROSTER_ENROLMENTS = [];
 async function roster(){
   setCrumb('Students');
@@ -326,7 +326,8 @@ async function roster(){
   ROSTER_SCHOOLS=schools; ROSTER_ENROLMENTS=enrolments;
   const sessionStudents = all.filter(s=>(s.academic_session||currentSession())===SESSION_FILTER);
   const classStudents = CLASS_FILTER==='All' ? sessionStudents : sessionStudents.filter(s=>String(s.class_level)===String(CLASS_FILTER));
-  const students = SEC_FILTER==='All' ? classStudents : classStudents.filter(s=>(s.section||'')===SEC_FILTER);
+  const sectionStudents = SEC_FILTER==='All' ? classStudents : classStudents.filter(s=>(s.section||'')===SEC_FILTER);
+  const students = SCHOOL_FILTER==='All' ? sectionStudents : sectionStudents.filter(s=>ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===SCHOOL_FILTER || s.school_id===SCHOOL_FILTER);
   const rows = students.length ? students.map(studentRow).join('')
     : '<div class="muted small" style="padding:8px 0">No students here yet.</div>';
   const fbtn = (v,label)=>`<button class="${SEC_FILTER===v?'on':''}" onclick="setSecFilter('${v}')">${label}</button>`;
@@ -349,17 +350,22 @@ async function roster(){
           <option value="A" ${SEC_FILTER==='A'?'selected':''}>Section A</option>
           <option value="B" ${SEC_FILTER==='B'?'selected':''}>Section B</option>
         </select>
+        <span class="small muted">School</span>
+        <select style="width:auto;max-width:220px" onchange="setSchoolFilter(this.value)"><option value="All">All schools</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${SCHOOL_FILTER===x.id?'selected':''}>${x.name}</option>`).join('')}</select>
       </div>
-      <div class="pad" style="padding-top:8px">${rows}</div>
+    <div class="pad" style="padding-top:8px">${rows}</div>
     </div>
+    <div class="school-master-modal" id="schoolMasterModal" aria-hidden="true"><div class="school-master-dialog"><h3>Add new school</h3><p class="muted small">Create it once, then it will be searchable for every student.</p><label>School name *</label><input id="newSchoolName" placeholder="e.g. DAV Public School"><label>City <span class="muted">(optional)</span></label><input id="newSchoolCity" placeholder="City"><div class="row" style="justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" onclick="closeSchoolModal()">Cancel</button><button type="button" class="primary" onclick="saveNewSchool()">Save</button></div></div></div>
   `);
 }
 window.setSecFilter = v=>{ SEC_FILTER=v; roster(); };
 window.setClassFilter = v=>{ CLASS_FILTER=v; roster(); };
-window.setSessionFilter = v=>{ SESSION_FILTER=v; roster(); };
+window.setSessionFilter = v=>{ SESSION_FILTER=v; SCHOOL_FILTER='All'; roster(); };
+window.setSchoolFilter = v=>{ SCHOOL_FILTER=v; roster(); };
 function studentRow(s){
   if(EDIT_ID===s.id) return editRow(s);
-  const school=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school?.name;
+  const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id);
+  const school=ROSTER_SCHOOLS.find(x=>x.id===(s.school_id||enrollment?.school_id))?.name||enrollment?.school?.name;
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
     <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth ? ' · DOB '+fmtDate(s.date_of_birth) : ''}${school?(' · '+school):' · No school assigned'}</div></div>
@@ -369,7 +375,14 @@ function studentRow(s){
     <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
   </div>`;
 }
+function schoolDatalist(){ return `<datalist id="schoolMasterOptions">${ROSTER_SCHOOLS.map(x=>`<option value="${escapeHTML(x.name)}">`).join('')}</datalist>`; }
+function schoolField(prefix,selectedId){ const selected=ROSTER_SCHOOLS.find(x=>x.id===selectedId); return `<div class="school-search-field"><label>School</label><div class="row" style="gap:6px"><input id="${prefix}_school_search" list="schoolMasterOptions" value="${escapeHTML(selected?.name||'')}" placeholder="Search school..." oninput="schoolSearchChanged('${prefix}')"><input id="${prefix}_school" type="hidden" value="${selectedId||''}"><button type="button" onclick="openSchoolModal('${prefix}')" title="Add new school">＋</button></div></div>${schoolDatalist()}`; }
+window.schoolSearchChanged=prefix=>{ const input=document.getElementById(`${prefix}_school_search`), hidden=document.getElementById(`${prefix}_school`); const found=ROSTER_SCHOOLS.find(x=>x.name.toLowerCase()===String(input?.value||'').trim().toLowerCase()); if(hidden) hidden.value=found?.id||''; };
+window.openSchoolModal=prefix=>{ const modal=document.getElementById('schoolMasterModal'); if(!modal) return; modal.dataset.target=prefix; modal.querySelector('#newSchoolName').value=''; modal.querySelector('#newSchoolCity').value=''; modal.classList.add('open'); modal.querySelector('#newSchoolName').focus(); };
+window.closeSchoolModal=()=>document.getElementById('schoolMasterModal')?.classList.remove('open');
+window.saveNewSchool=async()=>{ const modal=document.getElementById('schoolMasterModal'), name=val('newSchoolName').trim(), city=val('newSchoolCity').trim(); if(!name){alert('Enter a school name.');return;} try{ let school=ROSTER_SCHOOLS.find(x=>x.name.toLowerCase()===name.toLowerCase()); if(!school) school=await DB.createSchool({school_name:name,city}); ROSTER_SCHOOLS=await DB.listSchools(); const prefix=modal.dataset.target||'ad'; const search=document.getElementById(`${prefix}_school_search`), hidden=document.getElementById(`${prefix}_school`); if(search) search.value=school.name||school.school_name||name; if(hidden) hidden.value=school.id; closeSchoolModal(); }catch(e){alert(e.message||'Could not create school.');} };
 function editRow(s){
+  const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id), schoolId=s.school_id||enrollment?.school_id||'';
   return `<div class="listrow" style="flex-wrap:wrap;gap:8px">
     <input id="ed_name" value="${s.name}" placeholder="Name" style="flex:1;min-width:120px">
     <select id="ed_session" style="width:auto">${sessionOptions(s.academic_session)}</select>
@@ -378,7 +391,7 @@ function editRow(s){
     <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
     <select id="ed_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===x.id?'selected':''}>${x.name}</option>`).join('')}</select>
     <input id="ed_dob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(s.date_of_birth||'').slice(0,10)}" style="width:auto">
-    <select id="ed_opt" style="width:auto">${optionalOptions(s.optional_subject)}</select>
+    ${schoolField('ed',schoolId)}
     <input id="ed_phone" value="${s.parent_phone||''}" placeholder="+91 parent number" style="flex:1;min-width:150px">
     <button class="primary" onclick="saveEdit('${s.id}')">Save</button>
     <button onclick="cancelEdit()">Cancel</button>
@@ -394,7 +407,7 @@ function addFormHTML(){
       <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
       <select id="ad_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select>
       <input id="ad_dob" type="date" aria-label="Date of birth" title="Date of birth" style="width:auto">
-      <select id="ad_opt" style="width:auto">${optionalOptions('N.A.')}</select>
+      ${schoolField('ad','')}
       <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
       <button class="primary" onclick="submitAdd()">Add</button>
     </div>
@@ -414,7 +427,7 @@ window.submitAdd = async ()=>{
   const rawPhone = val('ad_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, optional_subject:normalizeOptional(val('ad_opt')), parent_name:'', parent_phone:phone };
+  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, parent_name:'', parent_phone:phone, school_id:val('ad_school')||null };
   if(!(await warnStudentDuplicates(student))) return;
   const saved=await DB.addStudent(student); const schoolId=val('ad_school'); if(saved&&schoolId) await DB.saveStudentSchoolEnrolment({student_id:saved.id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
   SHOW_ADD=false; roster();
@@ -486,7 +499,7 @@ window.saveEdit = async id=>{
   const rawPhone = val('ed_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, optional_subject:normalizeOptional(val('ed_opt')), parent_phone:phone };
+  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, parent_phone:phone, school_id:val('ed_school')||null };
   if(!(await warnStudentDuplicates(student,id))) return;
   await DB.updateStudent(id,student);
   const schoolId=val('ed_school'); if(schoolId) await DB.saveStudentSchoolEnrolment({student_id:id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section}); else await DB.removeStudentSchoolEnrolment(id,student.academic_session);
