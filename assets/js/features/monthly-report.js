@@ -13,6 +13,15 @@ const MONTHLY_SAMPLE = {
   plan:['Practice English reading','Revise Chapter 2','Solve weekly worksheets','Attempt more practice tests']
 };
 const escMonthly=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const monthlyIcon=(name)=>({
+  chart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7H3"/></svg>',
+  check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 5-5 4 3 7-8M15 6h5v5"/></svg>',
+  attendance:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M16 14l2 2 3-4"/></svg>',
+  focus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.3 5.2 5.7.6-4.2 3.8 1.2 5.6-5-2.9-5 2.9 1.2-5.6L4 8.8l5.7-.6z"/></svg>',
+  star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/></svg>',
+  badge:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2 2 3-.2.8 2.8 2.5 1.6-1.4 2.7.8 2.9-2.8.8-1.8 2.4-2.6-1.5-2.6 1.5-1.8-2.4-2.8-.8.8-2.9-1.4-2.7 2.5-1.6.8-2.8L10 5z"/><path d="m9 12 2 2 4-4"/></svg>'
+}[name]||'');
 function monthlyTrendSvg(){
   const t=MONTHLY_SAMPLE.trend, w=760,h=230,p={l:42,r:18,t:18,b:34}, max=100,min=0;
   const x=i=>p.l+i*(w-p.l-p.r)/(t.labels.length-1), y=v=>p.t+(max-v)*(h-p.t-p.b)/(max-min);
@@ -25,16 +34,16 @@ function monthlyReport(){
   const d=MONTHLY_SAMPLE;
   document.getElementById('app').innerHTML=`<main class="monthly-report" id="monthlyReport">
     <div class="monthly-actions"><button class="primary" onclick="printMonthlyReport()">🖨 Print / Save as PDF</button></div>
-    <header class="monthly-cover"><div class="monthly-brand"><img src="assets/images/aveti-logo.png" alt="Aveti Learning Tuition Center"><div><div class="monthly-eyebrow">AVETI LEARNING TUITION CENTER</div><h1>MONTHLY PROGRESS REPORT</h1></div></div><div class="monthly-watermark">A</div></header>
+    <header class="monthly-cover"><div class="monthly-brand"><img src="assets/images/aveti-logo.png" alt="Aveti Learning Tuition Center"><div><div class="monthly-eyebrow">AVETI LEARNING TUITION CENTER</div><h1>MONTHLY PROGRESS REPORT</h1></div></div><span class="monthly-month-badge">${d.month}</span><div class="monthly-watermark">A</div></header>
     <section class="monthly-student-meta"><div><span>Student name</span><b>${d.student}</b></div><div><span>Learning at</span><b>Aveti Learning Tuition Center</b></div><div><span>Class</span><b>${d.grade}</b></div><div><span>Section</span><b>${d.section}</b></div><div><span>School</span><b>${d.school}</b></div><div><span>Report month</span><b>${d.month}</b></div></section>
     <section class="monthly-summary"><h2>Executive summary</h2><p>${d.summary}</p></section>
-    <section class="monthly-kpis">${d.kpis.map((k,i)=>`<article class="monthly-kpi kpi-${i}"><span class="monthly-kpi-icon">${['▥','✓','↗','◉','◆','★'][i]}</span><div><small>${k[0]}</small><strong>${k[1]}</strong></div></article>`).join('')}</section>
+    <section class="monthly-kpis">${d.kpis.map((k,i)=>`<article class="monthly-kpi kpi-${i}"><span class="monthly-kpi-icon">${monthlyIcon(['chart','check','trend','attendance','focus','star'][i])}</span><div><small>${k[0]}</small><strong>${k[1]}</strong></div></article>`).join('')}</section>
     <section class="monthly-panel"><div class="monthly-section-title"><h2>Subject performance summary</h2><span>July 2026</span></div><div class="monthly-table-wrap"><table class="monthly-subject-table"><thead><tr><th>Subject</th><th>Tests</th><th>Student average</th><th>Class average</th><th>Topper average</th><th>Status</th></tr></thead><tbody>${d.subjects.map(s=>`<tr><td><b>${s[0]}</b></td><td>${s[1]}</td><td>${s[2]}</td><td>${s[3]}</td><td>${s[4]}</td><td><span class="status-${s[5].replace(' ','-')}">${s[5]}</span></td></tr>`).join('')}</tbody></table></div></section>
     <section class="monthly-panel monthly-chart-panel"><div class="monthly-section-title"><h2>Student vs Class vs Topper</h2><div class="monthly-legend"><span class="student-key">Student</span><span class="class-key">Class average</span><span class="topper-key">Topper</span></div></div>${monthlyTrendSvg()}</section>
     <section class="monthly-highlights">${d.highlights.map(h=>`<article class="highlight-${h[4]}"><small>${h[0]}</small><b>${h[1]}</b><span>${h[2]}</span><strong>${h[3]}</strong></article>`).join('')}</section>
     <section class="monthly-panel monthly-insight-plan"><div><h2>Teacher insight</h2><ul>${d.insight.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h2>Next month plan</h2><div class="monthly-plan-grid">${d.plan.map((x,i)=>`<div><span>${i+1}</span><b>${x}</b></div>`).join('')}</div></div></section>
     <div class="monthly-page-break"></div>
-    <section class="monthly-page-two"><h2>Overall summary</h2><div class="monthly-overall">${[['Overall progress','Excellent','good'],['Improvement','Good','good'],['Consistency','Very good','best'],['Discipline','Good','good']].map(x=>`<article class="${x[2]}"><small>${x[0]}</small><strong>${x[1]}</strong></article>`).join('')}</div><h2>Achievement badges</h2><div class="monthly-badges">${['Science star','Most improved student','Perfect exam attendance','Homework champion','Excellent discipline'].map((x,i)=>`<div><span>${['★','↗','✓','▣','◆'][i]}</span><b>${x}</b></div>`).join('')}</div><section class="monthly-parent-guide"><h2>Parent action guide</h2><ul><li>Encourage daily reading.</li><li>Ask one question after every class.</li><li>Help your child attempt more practice tests.</li></ul></section><div class="monthly-signatures"><div><b>Parent signature</b><hr><span>Date: __________________</span></div><div><b>Academic head</b><strong>AVETI Learning Tuition Center</strong><hr><span>Date: __________________</span></div></div></section>
+    <section class="monthly-page-two"><h2>Overall summary</h2><div class="monthly-overall">${[['Overall progress','Excellent','good'],['Improvement','Good','good'],['Consistency','Very good','best'],['Discipline','Good','good']].map(x=>`<article class="${x[2]}"><small>${x[0]}</small><strong>${x[1]}</strong></article>`).join('')}</div><h2>Achievement badges</h2><div class="monthly-badges">${['Science star','Most improved student','Perfect exam attendance','Homework champion','Excellent discipline'].map((x,i)=>`<div><span>${monthlyIcon('badge')}</span><b>${x}</b></div>`).join('')}</div><section class="monthly-parent-guide"><h2>Parent action guide</h2><ul><li>Encourage daily reading.</li><li>Ask one question after every class.</li><li>Help your child attempt more practice tests.</li></ul></section><div class="monthly-signatures"><div><b>Parent signature</b><hr><span>Date: __________________</span></div><div><b>Academic head</b><strong>AVETI Learning Tuition Center</strong><hr><span>Date: __________________</span></div></div></section>
   </main>`;
 }
 function printMonthlyReport(){printReportWithFilename('Rahul-Kumar-Monthly-Progress-Report-July-2026.pdf')}
