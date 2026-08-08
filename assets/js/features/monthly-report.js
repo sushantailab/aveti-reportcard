@@ -28,12 +28,49 @@ const monthlyIcon=(name)=>({
   star:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/></svg>',
   badge:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2 2 3-.2.8 2.8 2.5 1.6-1.4 2.7.8 2.9-2.8.8-1.8 2.4-2.6-1.5-2.6 1.5-1.8-2.4-2.8-.8.8-2.9-1.4-2.7 2.5-1.6.8-2.8L10 5z"/><path d="m9 12 2 2 4-4"/></svg>'
 }[name]||'');
-function monthlyTrendSvg(){
-  const t=MONTHLY_SAMPLE.trend, w=760,h=230,p={l:42,r:18,t:18,b:34}, max=100,min=0;
-  const x=i=>p.l+i*(w-p.l-p.r)/(t.labels.length-1), y=v=>p.t+(max-v)*(h-p.t-p.b)/(max-min);
+function monthlyTrendSvg(trend=MONTHLY_SAMPLE.trend){
+  const t=trend||{labels:[],student:[],klass:[],topper:[]}, w=760,h=230,p={l:42,r:18,t:18,b:34}, max=100,min=0;
+  const x=i=>p.l+i*(w-p.l-p.r)/Math.max(1,t.labels.length-1), y=v=>p.t+(max-v)*(h-p.t-p.b)/(max-min);
   const line=(arr,color,dash='')=>`<polyline points="${arr.map((v,i)=>`${x(i)},${y(v)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="3" ${dash?`stroke-dasharray="${dash}"`:''}/>`;
   const dots=(arr,color)=>arr.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${color}"/>`).join('');
   return `<svg class="monthly-trend-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Student, class and topper growth trend"><g class="grid">${[0,25,50,75,100].map(v=>`<line x1="${p.l}" x2="${w-p.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${p.l-9}" y="${y(v)+4}" text-anchor="end">${v}%</text>`).join('')}</g>${line(t.topper,'#ed9a28','5 5')}${line(t.klass,'#347fd1','5 5')}${line(t.student,'#087454')}${dots(t.topper,'#ed9a28')}${dots(t.klass,'#347fd1')}${dots(t.student,'#087454')}${t.labels.map((l,i)=>`<text x="${x(i)}" y="${h-8}" text-anchor="middle">${l}</text>`).join('')}</svg>`;
+}
+const monthlyPercent=(marks,full)=>Number.isFinite(Number(marks))&&Number(full)>0?Math.round(Number(marks)/Number(full)*1000)/10:null;
+const monthlyMonthKey=date=>{const d=new Date(date);return Number.isNaN(d.getTime())?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
+const monthlyMonthLabel=key=>{if(!key)return 'No test data';const [y,m]=key.split('-').map(Number);return new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(new Date(y,m-1,1));};
+async function monthlyBuildData(selected,students){
+  const base=MONTHLY_SAMPLE;
+  if(!selected) return {...base,subjects:[],trend:{labels:[],student:[],klass:[],topper:[]},month:'No test data',kpis:[['Overall Average','—',''],['Tests Conducted','0',''],['Improvement','—',''],['Exam Attendance','—',''],['Focus Subject','—',''],['Discipline','—','']],highlights:[],insight:['No tests are available for this student yet.','Add an Aveti test to begin monthly tracking.','Monthly insights will appear after marks are entered.','Continue attempting chapter tests.'],plan:['Enter the next assessment marks','Review the first available report','Schedule targeted revision','Attempt more practice tests']};
+  const session=monthlyStudentSession(selected), cls=String(selected.class_level);
+  const allTests=(await DB.listTests()).filter(t=>String(t.class_level)===cls&&(t.academic_session||session)===session&&(!t.section||t.section==='All'||t.section===selected.section));
+  const results=await DB.allResults();
+  const latestKey=allTests.map(t=>monthlyMonthKey(t.test_date)).filter(Boolean).sort().pop()||'';
+  const periodTests=allTests.filter(t=>monthlyMonthKey(t.test_date)===latestKey);
+  const classStudents=students.filter(s=>monthlyStudentSession(s)===session&&String(s.class_level)===cls&&(!selected.section||monthlyStudentSection(s)===monthlyStudentSection(selected)));
+  const resultFor=(test,student)=>results.find(r=>r.test_id===test.id&&r.student_id===student.id);
+  const scored=(r,t)=>r&&!r.na&&r.present!==false&&r.marks!=null&&monthlyPercent(r.marks,t.full_marks)!=null;
+  const subjectNames=[...new Set(periodTests.map(t=>t.subject).filter(Boolean))].filter(subject=>periodTests.some(t=>t.subject===subject&&classStudents.some(s=>scored(resultFor(t,s),t))));
+  const subjectRows=subjectNames.map(subject=>{
+    const subjectTests=periodTests.filter(t=>t.subject===subject);
+    const studentScores=subjectTests.map(t=>{const r=resultFor(t,selected);return scored(r,t)?monthlyPercent(r.marks,t.full_marks):null}).filter(v=>v!=null);
+    const classScores=subjectTests.flatMap(t=>classStudents.map(s=>{const r=resultFor(t,s);return scored(r,t)?monthlyPercent(r.marks,t.full_marks):null})).filter(v=>v!=null);
+    const perStudent=classStudents.map(s=>subjectTests.map(t=>{const r=resultFor(t,s);return scored(r,t)?monthlyPercent(r.marks,t.full_marks):null}).filter(v=>v!=null)).filter(a=>a.length).map(a=>a.reduce((x,y)=>x+y,0)/a.length);
+    const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:null;
+    const studentAvg=avg(studentScores), classAvg=avg(classScores), topper=perStudent.length?Math.round(Math.max(...perStudent)*10)/10:null;
+    const status=studentAvg==null?'Awaiting marks':studentAvg>=80?'Above class':studentAvg>=60?'Good':'Needs practice';
+    return [subject,subjectTests.length,studentAvg==null?'—':`${studentAvg}%`,classAvg==null?'—':`${classAvg}%`,topper==null?'—':`${topper}%`,status];
+  });
+  const currentScores=periodTests.map(t=>{const r=resultFor(t,selected);return scored(r,t)?monthlyPercent(r.marks,t.full_marks):null}).filter(v=>v!=null);
+  const attempted=periodTests.flatMap(t=>classStudents.map(s=>resultFor(t,s))).filter(Boolean), attended=attempted.filter(r=>r.present!==false&&!r.na&&r.marks!=null).length;
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:null;
+  const overall=avg(currentScores), attendance=attempted.length?Math.round(attended/attempted.length*1000)/10:null;
+  const previousKey=allTests.map(t=>monthlyMonthKey(t.test_date)).filter(k=>k&&k<latestKey).sort().pop();
+  const previousTests=allTests.filter(t=>monthlyMonthKey(t.test_date)===previousKey);
+  const previousScores=previousTests.map(t=>{const r=resultFor(t,selected);return scored(r,t)?monthlyPercent(r.marks,t.full_marks):null}).filter(v=>v!=null);
+  const improvement=overall!=null&&previousScores.length?Math.round((overall-avg(previousScores))*10)/10:null;
+  const sorted=subjectRows.filter(s=>s[2]!=='—').sort((a,b)=>parseFloat(a[2])-parseFloat(b[2]));
+  const best=sorted[sorted.length-1], weak=sorted[0];
+  return {...base,month:monthlyMonthLabel(latestKey),summary:overall==null?'No scored assessments are available for this student in the selected period.':`${selected.name} has an overall average of ${overall}% across ${currentScores.length} attended assessment${currentScores.length===1?'':'s'}. ${best?`${best[0]} is the strongest subject.`:''} ${weak&&weak!==best?`${weak[0]} needs additional practice.`:''}`,kpis:[['Overall Average',overall==null?'—':`${overall}%`,''],['Tests Conducted',String(periodTests.length),''],['Improvement',improvement==null?'—':`${improvement>=0?'+':''}${improvement}%`,''],['Exam Attendance',attendance==null?'—':`${attendance}%`,''],['Focus Subject',weak?weak[0]:'—',''],['Discipline','—','']],subjects:subjectRows,trend:{labels:subjectRows.map(s=>s[0]),student:subjectRows.map(s=>parseFloat(s[2])||0),klass:subjectRows.map(s=>parseFloat(s[3])||0),topper:subjectRows.map(s=>parseFloat(s[4])||0)},highlights:[best&&['Best performance',best[0],'Highest score this month',best[2],'best'],weak&&['Needs revision',weak[0],'Focus subject',weak[2],'needs'],improvement!=null&&['Most improved',selected.name,'Compared with previous month',`${improvement>=0?'+':''}${improvement}%`,'improved']].filter(Boolean),insight:[best?`${best[0]} is the strongest subject this month.`:'No strength identified yet.',weak?`${weak[0]} needs more practice.`:'Add more assessments to identify a focus area.',improvement!=null?`Performance changed ${improvement>=0?'up':'down'} ${Math.abs(improvement)} points from the previous month.`:'Keep attempting regular chapter tests.',],plan:[weak?`Revise ${weak[0]} concepts`:'Review the next available chapter','Practise weekly worksheets','Discuss progress with the teacher','Attempt more practice tests']};
 }
 function monthlyProgressBar(value,color='#0f6b4b'){
   const numeric=Math.max(0,Math.min(100,parseFloat(String(value).replace('%',''))||0));
@@ -87,7 +124,7 @@ function monthlySelectorMarkup(students,current){
   return {selected,html:`<div class="monthly-report-selectors">
     <label>Session <select onchange="monthlySetFilter('session',this.value)">${sessions.map(v=>monthlyOption(v,v,v===session)).join('')}</select></label>
     <label>Class <select onchange="monthlySetFilter('className',this.value)">${classes.map(v=>monthlyOption(v,v,v===cls)).join('')}</select></label>
-    <label>Student <select onchange="monthlySetFilter('studentId',this.value)">${filtered.map(s=>monthlyOption(s.id,`${s.name||'Unnamed student'} · ${monthlyStudentSection(s)}`,String(s.id)===String(MONTHLY_FILTER.studentId))).join('')}</select></label>
+    <label>Student <select onchange="monthlySetFilter('studentId',this.value)">${filtered.map(s=>monthlyOption(s.id,s.name||'Unnamed student',String(s.id)===String(MONTHLY_FILTER.studentId))).join('')}</select></label>
     <label>Section <select onchange="monthlySetFilter('section',this.value)">${sections.map(v=>monthlyOption(v,v,v===sec)).join('')}</select></label>
   </div>`};
 }
@@ -100,9 +137,10 @@ async function monthlyReport(){
     MONTHLY_SAMPLE.student=selected.name||'Unnamed student';
     MONTHLY_SAMPLE.grade=monthlyStudentClass(selected)||MONTHLY_SAMPLE.grade;
     MONTHLY_SAMPLE.section=selected.section||MONTHLY_SAMPLE.section;
-    MONTHLY_SAMPLE.school=selected.school||selected.school_name||MONTHLY_SAMPLE.school;
+    MONTHLY_SAMPLE.school=selected.school||selected.school_name||'';
     MONTHLY_SAMPLE.parent_phone=selected.parent_phone||MONTHLY_SAMPLE.parent_phone;
   }
+  Object.assign(MONTHLY_SAMPLE,await monthlyBuildData(selected,live));
   const d=MONTHLY_SAMPLE;
   document.getElementById('app').innerHTML=`<main class="monthly-report" id="monthlyReport">
     <div class="monthly-actions">${selector.html}<div class="monthly-report-actions"><button class="monthly-whatsapp-button" onclick="monthlyShareWhatsApp()">💬 Share WhatsApp</button><button class="primary" onclick="printMonthlyReport()">🖨 Print / Save as PDF</button></div></div>
@@ -112,7 +150,7 @@ async function monthlyReport(){
     <section class="monthly-kpis">${d.kpis.map((k,i)=>`<article class="monthly-kpi kpi-${i}"><span class="monthly-kpi-icon">${monthlyIcon(['chart','check','trend','attendance','focus','star'][i])}</span><div><small>${k[0]}</small><strong>${k[1]}</strong></div></article>`).join('')}</section>
     <section class="monthly-panel monthly-health-panel"><div class="monthly-section-title"><h2>Subject health</h2><span>Quick view</span></div><div class="monthly-health-strip">${monthlySubjectHealth(d.subjects)}</div></section>
     <section class="monthly-panel"><div class="monthly-section-title"><h2>Subject performance summary</h2><span>July 2026</span></div><div class="monthly-table-wrap"><table class="monthly-subject-table"><thead><tr><th>Subject</th><th>Tests</th><th>Student average</th><th>Class average</th><th>Topper average</th><th>Status</th></tr></thead><tbody>${d.subjects.map(s=>`<tr><td><b>${s[0]}</b></td><td>${s[1]}</td><td>${monthlyProgressBar(s[2],'#0f6b4b')}</td><td>${monthlyProgressBar(s[3],'#1e5eff')}</td><td>${monthlyProgressBar(s[4],'#f59e0b')}</td><td><span class="status-${s[5].replace(' ','-')}">${s[5]}</span></td></tr>`).join('')}</tbody></table></div></section>
-    <section class="monthly-panel monthly-chart-panel"><div class="monthly-section-title"><h2>Student vs Class vs Topper</h2><div class="monthly-legend"><span class="student-key">Student</span><span class="class-key">Class average</span><span class="topper-key">Topper</span></div></div>${monthlyTrendSvg()}</section>
+    <section class="monthly-panel monthly-chart-panel"><div class="monthly-section-title"><h2>Student vs Class vs Topper</h2><div class="monthly-legend"><span class="student-key">Student</span><span class="class-key">Class average</span><span class="topper-key">Topper</span></div></div>${monthlyTrendSvg(d.trend)}</section>
     <section class="monthly-highlights">${d.highlights.map(h=>`<article class="highlight-${h[4]}"><small>${h[0]}</small><b>${h[1]}</b><span>${h[2]}</span><strong>${h[3]}</strong></article>`).join('')}</section>
     <section class="monthly-panel monthly-insight-plan"><div><h2>Teacher insight</h2><div class="monthly-insight-cards"><article class="insight-strength"><b>Strength</b><span>${escMonthly(d.insight[0])}</span></article><article class="insight-focus"><b>Focus</b><span>${escMonthly(d.insight[1])}</span></article><article class="insight-recommendation"><b>Recommendation</b><span>${escMonthly(d.insight[3])}</span></article></div></div><div><h2>Next month plan</h2><div class="monthly-plan-grid">${d.plan.map((x,i)=>`<div><span>${i+1}</span><b>${x}</b></div>`).join('')}</div></div></section>
     <div class="monthly-page-break"></div>
