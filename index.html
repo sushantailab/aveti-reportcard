@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="assets/css/styles.css?v=20260806-1">
 <link rel="stylesheet" href="assets/css/home-nav.css?v=20260803-10">
 <link rel="stylesheet" href="assets/css/responsive.css?v=20260806-1">
+<link rel="stylesheet" href="assets/css/monthly-report.css?v=20260808-1">
 </head>
 <body>
 
@@ -36,6 +37,7 @@
       <button data-route="growth" class="nav-item" onclick="appNavigate('growth')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7H3"/></svg></span><span>Growth tracker</span></button>
       <button data-route="insights" class="nav-item" onclick="appNavigate('insights')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h3v3H8zm5 0h3v3h-3zM8 13h3v3H8zm5 0h3v3h-3z"/></svg></span><span>Class insights</span></button>
       <button data-route="certificates" class="nav-item" onclick="appNavigate('certificates')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 14.3 8l5.4.6-4 3.6 1.1 5.3-4.8-2.7-4.8 2.7 1.1-5.3-4-3.6L9.7 8zM9 17v4l3-1.5 3 1.5v-4"/></svg></span><span>Certificates</span></button>
+      <button data-route="monthly-report" class="nav-item" onclick="appNavigate('monthly-report')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span>Monthly progress</span></button>
     </nav>
     <button class="sidebar-signout" data-signout type="button" style="display:none">Sign out</button>
   </aside>
@@ -57,7 +59,7 @@
   <button data-route="students" onclick="appNavigate('students')"><span>◎</span>Students</button>
   <button onclick="toggleMoreMenu()"><span>•••</span>More</button>
 </nav>
-<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teachers');toggleMoreMenu()">Teachers</button><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button data-master-only onclick="appNavigate('centre-admin');toggleMoreMenu()">Centres</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
+<div class="more-menu" id="moreMenu" aria-hidden="true"><div class="more-menu-sheet"><div class="more-menu-handle"></div><div class="more-menu-title">More tools</div><button onclick="appNavigate('teachers');toggleMoreMenu()">Teachers</button><button onclick="appNavigate('teacher');toggleMoreMenu()">Teacher report</button><button onclick="appNavigate('parent');toggleMoreMenu()">Parent report</button><button onclick="appNavigate('growth');toggleMoreMenu()">Growth tracker</button><button onclick="appNavigate('insights');toggleMoreMenu()">Class insights</button><button onclick="appNavigate('monthly-report');toggleMoreMenu()">Monthly progress</button><button onclick="appNavigate('certificates');toggleMoreMenu()">Certificates</button><button data-master-only onclick="appNavigate('centre-admin');toggleMoreMenu()">Centres</button><button class="more-signout" data-signout type="button" style="display:none">Sign out</button></div></div>
 
 <!-- Save confirmation modal -->
 <div class="overlay" id="saveOverlay">
@@ -102,6 +104,7 @@
 <script src="assets/js/features/growth.js?v=20260806-1"></script>
 <script src="assets/js/features/insights.js?v=20260806-1"></script>
 <script src="assets/js/features/certificates.js?v=20260802-1"></script>
+<script src="assets/js/features/monthly-report.js?v=20260808-1"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
 <script src="assets/js/features/centre-admin.js?v=20260724-5"></script>
 <script src="assets/js/app.js?v=20260805-2"></script>

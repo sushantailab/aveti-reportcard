@@ -8,9 +8,9 @@ const navHome = document.getElementById('navHome');
 const navRoster = document.getElementById('navRoster');
 if(navHome) navHome.onclick=home;
 if(navRoster) navRoster.onclick=roster;
-window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks; window.teachers=teachers;
+window.openTeacher=openTeacher; window.openParents=openParents; window.growth=growth; window.classInsights=classInsights; window.certificates=certificates; window.monthlyReport=monthlyReport; window.teacherActivation=teacherActivation; window.enterMarks=enterMarks; window.teachers=teachers;
 window.appNavigate = route => {
-  const target = ({home,marks:enterMarks,students:roster,teachers,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,activation:teacherActivation}[route]||home);
+  const target = ({home,marks:enterMarks,students:roster,teachers,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,'monthly-report':monthlyReport,activation:teacherActivation}[route]||home);
   localStorage.setItem('aveti:last-route',route);
   return target();
 };
