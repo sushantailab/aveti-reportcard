@@ -33,3 +33,15 @@
 .monthly-kpi.kpi-negative{border-top-color:#dc5548;background:#fff5f3}.monthly-kpi.kpi-negative .monthly-kpi-icon{background:#ffe3df;color:#c33c31}.monthly-kpi.kpi-negative strong{color:#c33c31}.monthly-kpi.kpi-positive{border-top-color:#0f6b4b}
 .monthly-brand-contact{font-size:12px;color:#63766d;margin:2px 0 3px}.monthly-eyebrow{font-size:15px;font-weight:900}.monthly-cover .monthly-brand img{width:112px;height:58px}.monthly-badges .badge-0{background:#fff5d9;border-color:#edc464}.monthly-badges .badge-1{background:#eef5ff;border-color:#a8cbee}.monthly-badges .badge-2{background:#eef8ef;border-color:#a8d4b4}.monthly-badges .badge-3{background:#fff0e2;border-color:#f1bd8d}.monthly-badges .badge-4{background:#f2edff;border-color:#c4b2f2}.monthly-badges .badge-0 span{color:#d18a0b}.monthly-badges .badge-1 span{color:#2774bb}.monthly-badges .badge-2 span{color:#0f7c57}.monthly-badges .badge-3 span{color:#d46e0c}.monthly-badges .badge-4 span{color:#7c3aed}
 @media(max-width:760px){.monthly-cover .monthly-brand img{width:82px;height:44px}.monthly-eyebrow{font-size:11px}.monthly-brand-contact{font-size:9px}.monthly-cover h1{font-size:20px}}
+
+/* A4 pagination: page one is academic data; page two is interpretation and action. */
+@media print {
+  .monthly-page-break{break-before:page;page-break-before:always;height:0;margin:0}
+  .monthly-panel{break-inside:avoid;page-break-inside:avoid}
+  .monthly-subject-table tr{break-inside:avoid;page-break-inside:avoid}
+  .monthly-chart-panel{break-inside:avoid;page-break-inside:avoid}
+  .monthly-page-two{padding-top:0}
+  .monthly-page-two .monthly-insight-plan{margin-top:0}
+  .monthly-parent-guide{break-inside:avoid;page-break-inside:avoid}
+  .monthly-signatures{margin-top:10mm}
+}
