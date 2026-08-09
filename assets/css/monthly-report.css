@@ -47,6 +47,8 @@
 }
 
 .monthly-action-footer{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.8fr);gap:14px;align-items:stretch;margin-top:12px}
+.monthly-kpi em{display:block;font-size:11px;line-height:1.2;color:#6c7e74;font-style:normal}
+.monthly-watermark{display:none}
 .monthly-action-footer .monthly-parent-guide{margin:0}
 .monthly-action-footer .monthly-signatures{margin:0;padding:16px;border:1px solid #cce0d4;border-radius:8px;background:#f4faf6;display:flex;align-items:center}
 .monthly-action-footer .monthly-signatures>div{width:100%}
