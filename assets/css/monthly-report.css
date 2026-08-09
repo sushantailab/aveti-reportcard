@@ -107,3 +107,6 @@
   .monthly-action-footer .monthly-signatures{padding:2.5mm}
   .monthly-action-footer .monthly-signatures hr{margin-top:7mm}
 }
+/* Five KPI cards: discipline is intentionally omitted because no source data exists. */
+.monthly-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media print{.monthly-kpis{grid-template-columns:repeat(5,1fr)}}
