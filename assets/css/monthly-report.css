@@ -54,3 +54,55 @@
 .monthly-action-footer .monthly-signatures>div{width:100%}
 @media(max-width:760px){.monthly-action-footer{grid-template-columns:1fr}.monthly-action-footer .monthly-signatures{padding:14px}}
 @media print{.monthly-action-footer{grid-template-columns:minmax(0,1.45fr) minmax(55mm,.8fr);gap:4mm;margin-top:3mm}.monthly-action-footer .monthly-signatures{padding:4mm}.monthly-action-footer .monthly-signatures hr{margin-top:10mm}}
+
+/* Single-page A4 layout: preserve content, compress spacing and chart height. */
+@media print {
+  @page{size:A4 portrait;margin:7mm}
+  .monthly-report{max-width:none;width:100%;font-size:8.5pt}
+  .monthly-page-break{display:none!important;break-before:auto!important;page-break-before:auto!important}
+  .monthly-page-two{break-before:auto!important;page-break-before:auto!important;padding:0}
+  .monthly-cover{padding:3mm 4mm;border-top-width:1mm}
+  .monthly-cover .monthly-brand{gap:3mm}
+  .monthly-cover .monthly-brand img{width:24mm;height:12mm}
+  .monthly-eyebrow{font-size:10pt}
+  .monthly-brand-contact{font-size:8pt;margin:0}
+  .monthly-cover h1{font-size:18pt;padding:1mm 2mm;margin:1mm 0 0}
+  .monthly-month-badge{font-size:10pt;padding:1.5mm 3mm}
+  .monthly-student-meta{margin:2mm 0;border-radius:2mm}
+  .monthly-student-meta div{padding:1.8mm 2.5mm}
+  .monthly-student-meta span{font-size:7.5pt}
+  .monthly-student-meta b{font-size:9pt}
+  .monthly-summary{margin:0 0 2mm;padding:2mm 2.5mm}
+  .monthly-summary h2{font-size:11pt;margin:0 0 1mm}
+  .monthly-summary p{font-size:8.5pt;line-height:1.2}
+  .monthly-kpis{grid-template-columns:repeat(6,1fr);gap:1.5mm;margin-bottom:2mm}
+  .monthly-kpi{min-height:16mm;padding:1.8mm;gap:1.5mm;border-top-width:1mm;border-radius:2mm}
+  .monthly-kpi-icon{width:5.5mm;height:5.5mm;flex-basis:5.5mm}
+  .monthly-kpi strong{font-size:11pt}
+  .monthly-kpi small{font-size:7pt;line-height:1.05}
+  .monthly-kpi em{font-size:7pt}
+  .monthly-panel{margin-bottom:2mm;border-radius:2mm}
+  .monthly-section-title{padding:1.8mm 2.5mm;border-top-width:.7mm}
+  .monthly-section-title h2{font-size:11pt}
+  .monthly-section-title>span,.monthly-legend{font-size:7.5pt}
+  .monthly-subject-table{font-size:8pt}
+  .monthly-subject-table th,.monthly-subject-table td{padding:1.5mm 2mm}
+  .monthly-subject-table th{font-size:7pt}
+  .monthly-progress{min-width:30mm;gap:1.5mm}
+  .monthly-progress i{height:1.5mm}
+  .monthly-progress b{font-size:7.5pt}
+  .monthly-trend-svg{height:37mm;padding:1mm 3mm 0}
+  .monthly-page-two .monthly-insight-plan{padding:2.5mm;gap:4mm;margin-bottom:2mm}
+  .monthly-insight-plan h2,.monthly-parent-guide h2{font-size:11pt;padding:1mm 1.5mm}
+  .monthly-insight-cards{gap:1.2mm}
+  .monthly-insight-cards article{padding:1.5mm 2mm;font-size:7.8pt}
+  .monthly-insight-cards article b{font-size:7pt}
+  .monthly-plan-grid{gap:1.5mm}
+  .monthly-plan-grid div{padding:1.6mm;font-size:7.8pt}
+  .monthly-plan-grid span{width:4.5mm;height:4.5mm}
+  .monthly-action-footer{margin-top:0;gap:3mm}
+  .monthly-action-footer .monthly-parent-guide{padding:2.5mm 3mm}
+  .monthly-parent-guide ul{font-size:8pt;gap:1.5mm;margin:1.5mm 0 0}
+  .monthly-action-footer .monthly-signatures{padding:2.5mm}
+  .monthly-action-footer .monthly-signatures hr{margin-top:7mm}
+}
