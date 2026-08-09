@@ -52,6 +52,7 @@
 .monthly-action-footer .monthly-parent-guide{margin:0}
 .monthly-action-footer .monthly-signatures{margin:0;padding:16px;border:1px solid #cce0d4;border-radius:8px;background:#f4faf6;display:flex;align-items:center}
 .monthly-action-footer .monthly-signatures>div{width:100%}
+.monthly-report-selectors{grid-template-columns:repeat(5,minmax(110px,1fr))}
 @media(max-width:760px){.monthly-action-footer{grid-template-columns:1fr}.monthly-action-footer .monthly-signatures{padding:14px}}
 @media print{.monthly-action-footer{grid-template-columns:minmax(0,1.45fr) minmax(55mm,.8fr);gap:4mm;margin-top:3mm}.monthly-action-footer .monthly-signatures{padding:4mm}.monthly-action-footer .monthly-signatures hr{margin-top:10mm}}
 

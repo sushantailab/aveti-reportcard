@@ -17,7 +17,8 @@ const MONTHLY_STUDENTS=[
   {name:'Arjun Singh',className:'Grade 7',section:'B',school:'Kendriya Vidyalaya',phone:'919876543212'}
 ];
 let MONTHLY_LIVE_STUDENTS=null;
-const MONTHLY_FILTER={session:'',className:'',studentId:'',section:''};
+let MONTHLY_MONTH_OPTIONS=[];
+const MONTHLY_FILTER={session:'',className:'',studentId:'',section:'',month:''};
 const escMonthly=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const monthlyIcon=(name)=>({
   chart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7H3"/></svg>',
@@ -49,7 +50,9 @@ async function monthlyBuildData(selected,students){
   const session=monthlyStudentSession(selected), cls=String(selected.class_level);
   const allTests=(await DB.listTests()).filter(t=>String(t.class_level)===cls&&(t.academic_session||session)===session&&(!t.section||t.section==='All'||t.section===selected.section));
   const results=await DB.allResults();
-  const latestKey=allTests.map(t=>monthlyMonthKey(t.test_date)).filter(Boolean).sort().pop()||'';
+  const availableMonths=allTests.map(t=>monthlyMonthKey(t.test_date)).filter(Boolean).sort();
+  const latestKey=(MONTHLY_FILTER.month&&availableMonths.includes(MONTHLY_FILTER.month))?MONTHLY_FILTER.month:(availableMonths[availableMonths.length-1]||'');
+  MONTHLY_FILTER.month=latestKey;
   const periodTests=allTests.filter(t=>monthlyMonthKey(t.test_date)===latestKey);
   const classStudents=students.filter(s=>monthlyStudentSession(s)===session&&String(s.class_level)===cls&&(!selected.section||monthlyStudentSection(s)===monthlyStudentSection(selected)));
   const resultFor=(test,student)=>results.find(r=>r.test_id===test.id&&r.student_id===student.id);
@@ -123,16 +126,21 @@ function monthlySelectorMarkup(students,current){
   const filtered=classRows.filter(s=>!sec||monthlyStudentSection(s)===sec);
   const selected=filtered.find(s=>String(s.id)===String(MONTHLY_FILTER.studentId))||filtered[0]||students[0];
   if(selected) MONTHLY_FILTER.studentId=selected.id;
+  const monthOptions=MONTHLY_MONTH_OPTIONS.map(key=>monthlyOption(key,monthlyMonthLabel(key),key===MONTHLY_FILTER.month));
   return {selected,html:`<div class="monthly-report-selectors">
     <label>Session <select onchange="monthlySetFilter('session',this.value)">${sessions.map(v=>monthlyOption(v,v,v===session)).join('')}</select></label>
     <label>Class <select onchange="monthlySetFilter('className',this.value)">${classes.map(v=>monthlyOption(v,v,v===cls)).join('')}</select></label>
     <label>Student <select onchange="monthlySetFilter('studentId',this.value)">${filtered.map(s=>monthlyOption(s.id,s.name||'Unnamed student',String(s.id)===String(MONTHLY_FILTER.studentId))).join('')}</select></label>
     <label>Section <select onchange="monthlySetFilter('section',this.value)">${sections.map(v=>monthlyOption(v,v,v===sec)).join('')}</select></label>
+    <label>Month <select onchange="monthlySetFilter('month',this.value)">${monthOptions.join('')}</select></label>
   </div>`};
 }
 async function monthlyReport(){
   setCrumb('Monthly progress');
   const live=await monthlyLoadStudents();
+  const allTests=await DB.listTests();
+  MONTHLY_MONTH_OPTIONS=[...new Set((allTests||[]).map(t=>monthlyMonthKey(t.test_date)).filter(Boolean))].sort().reverse();
+  if(!MONTHLY_FILTER.month||!MONTHLY_MONTH_OPTIONS.includes(MONTHLY_FILTER.month)) MONTHLY_FILTER.month=MONTHLY_MONTH_OPTIONS[0]||'';
   const selector=monthlySelectorMarkup(live,MONTHLY_SAMPLE.student);
   const selected=selector.selected;
   if(selected){
@@ -156,7 +164,7 @@ async function monthlyReport(){
     <section class="monthly-page-two"><section class="monthly-panel monthly-insight-plan"><div><h2>Teacher insight</h2><div class="monthly-insight-cards"><article class="insight-strength"><b>Strength</b><span>${escMonthly(d.insight[0]||'Not available')}</span></article><article class="insight-focus"><b>Focus</b><span>${escMonthly(d.insight[1]||'Not available')}</span></article><article class="insight-recommendation"><b>Recommendation</b><span>${escMonthly(d.insight[2]||'Not available')}</span></article></div></div><div><h2>Next month plan</h2><div class="monthly-plan-grid">${d.plan.map((x,i)=>`<div><span>${i+1}</span><b>${x}</b></div>`).join('')}</div></div></section><div class="monthly-action-footer"><section class="monthly-parent-guide"><h2>Parent action guide</h2><ul><li>Encourage daily reading.</li><li>Ask one question after every class.</li><li>Help your child attempt more practice tests.</li></ul></section><div class="monthly-signatures"><div><b>Academic head</b><strong>AVETI Learning Tuition Center</strong><hr><span>Generated: ${new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short',year:'numeric'}).format(new Date())}</span></div></div></div></section>
   </main>`;
 }
-window.monthlySetFilter=(key,value)=>{MONTHLY_FILTER[key]=value; if(key==='session'){MONTHLY_FILTER.className='';MONTHLY_FILTER.section='';MONTHLY_FILTER.studentId='';} if(key==='className'){MONTHLY_FILTER.section='';MONTHLY_FILTER.studentId='';} if(key==='section') MONTHLY_FILTER.studentId=''; monthlyReport();};
+window.monthlySetFilter=(key,value)=>{MONTHLY_FILTER[key]=value; if(key==='session'){MONTHLY_FILTER.className='';MONTHLY_FILTER.section='';MONTHLY_FILTER.studentId='';MONTHLY_FILTER.month='';} if(key==='className'){MONTHLY_FILTER.section='';MONTHLY_FILTER.studentId='';MONTHLY_FILTER.month='';} if(key==='section'){MONTHLY_FILTER.studentId='';MONTHLY_FILTER.month='';} monthlyReport();};
 window.monthlySelectStudent=name=>{const s=(MONTHLY_LIVE_STUDENTS||[]).find(x=>String(x.id)===String(name))||MONTHLY_STUDENTS.find(x=>x.name===name);if(!s)return;MONTHLY_FILTER.studentId=s.id||s.name;MONTHLY_SAMPLE.student=s.name;MONTHLY_SAMPLE.grade=s.className||monthlyStudentClass(s);MONTHLY_SAMPLE.section=s.section;MONTHLY_SAMPLE.school=s.school||s.school_name||MONTHLY_SAMPLE.school;MONTHLY_SAMPLE.parent_phone=s.phone||s.parent_phone||MONTHLY_SAMPLE.parent_phone;monthlyReport();};
 window.monthlyShareWhatsApp=()=>{const d=MONTHLY_SAMPLE;const message=`Hello, here is ${d.student}'s Monthly Progress Report for ${d.month}. Overall average: ${d.kpis[0][1]}. Please find the attached PDF and encourage continued practice. 🌟`;window.open(`https://wa.me/${d.parent_phone}?text=${encodeURIComponent(message)}`,'_blank','noopener');};
 function printMonthlyReport(){printReportWithFilename(`${String(MONTHLY_SAMPLE.grade||'Class').replace(/\s+/g,'-')}-${String(MONTHLY_SAMPLE.student||'Student').replace(/\s+/g,'-')}-Monthly-Progress-Report.pdf`)}
