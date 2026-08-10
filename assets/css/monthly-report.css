@@ -157,6 +157,7 @@
   .monthly-highlights article strong{font-size:11pt}
   .monthly-page-two .monthly-insight-plan{padding:1.8mm;gap:2.5mm;margin-bottom:1.5mm}
   .monthly-insight-plan h2,.monthly-parent-guide h2{font-size:9.5pt;padding:1mm 1.5mm;background:#edf3fb;color:#173e77;border-radius:1mm}
+  .monthly-insight-plan h2,.monthly-parent-guide h2{background:#173e77;color:#fff}
   .monthly-insight-cards{gap:1mm}
   .monthly-insight-cards article{padding:1.1mm 1.5mm;font-size:6.8pt}
   .monthly-insight-cards article b{font-size:6.2pt}
