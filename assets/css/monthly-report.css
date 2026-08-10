@@ -163,4 +163,8 @@
   .monthly-action-footer .monthly-signatures hr{margin-top:4mm}
   .monthly-page-break,.monthly-page-two{display:block;break-before:auto!important;page-break-before:auto!important}
   .monthly-panel,.monthly-chart-panel,.monthly-insight-plan,.monthly-action-footer{break-inside:avoid;page-break-inside:avoid}
+  /* The report can contain a different number of subjects and plan items.  A
+     print-only zoom keeps that live content on one A4 sheet instead of
+     allowing the final insight/action blocks to spill onto a second page. */
+  .monthly-report{zoom:.78;width:128.205%;max-width:none}
 }
