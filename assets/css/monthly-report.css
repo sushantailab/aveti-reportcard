@@ -180,3 +180,65 @@
      allowing the final insight/action blocks to spill onto a second page. */
   .monthly-report{zoom:1;width:100%;max-width:none}
 }
+
+/* Colourful Monthly Progress PDF — presentation only; report data and layout stay unchanged. */
+@media print {
+  .monthly-report,
+  .monthly-report * {
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+
+  /* The original AVETI asset is intentionally left untouched. */
+  .monthly-cover { background:#0b6b4b !important; border-color:#0b6b4b !important; }
+  .monthly-cover h1 { background:transparent !important; color:#fff !important; }
+  .monthly-cover .monthly-eyebrow,
+  .monthly-cover .monthly-brand-contact { color:#eaf6ef !important; }
+  .monthly-month-badge { background:#07583e !important; color:#fff !important; }
+
+  /* KPI colour semantics: green, lime, blue, amber, lime, teal. */
+  .monthly-kpi.kpi-0 { border-top-color:#087454 !important; background:#f3fbf6 !important; }
+  .monthly-kpi.kpi-0 .monthly-kpi-icon { background:#dff3e7 !important; color:#087454 !important; }
+  .monthly-kpi.kpi-1 { border-top-color:#64a51c !important; background:#f8fce9 !important; }
+  .monthly-kpi.kpi-1 .monthly-kpi-icon { background:#ebf7cf !important; color:#5b9718 !important; }
+  .monthly-kpi.kpi-2 { border-top-color:#2368b4 !important; background:#f0f6ff !important; }
+  .monthly-kpi.kpi-2 .monthly-kpi-icon { background:#e0edff !important; color:#2368b4 !important; }
+  .monthly-kpi.kpi-3 { border-top-color:#e58410 !important; background:#fff8ed !important; }
+  .monthly-kpi.kpi-3 .monthly-kpi-icon { background:#fff0d7 !important; color:#c66c00 !important; }
+  .monthly-kpi.kpi-4 { border-top-color:#79a83a !important; background:#f7fceb !important; }
+  .monthly-kpi.kpi-4 .monthly-kpi-icon { background:#edf7d8 !important; color:#67972c !important; }
+  .monthly-kpi.kpi-5 { border-top-color:#13847b !important; background:#effaf8 !important; }
+  .monthly-kpi.kpi-5 .monthly-kpi-icon { background:#dcf3ef !important; color:#08756e !important; }
+  .monthly-kpi.kpi-negative { border-top-color:#df4c43 !important; background:#fff4f2 !important; }
+  .monthly-kpi.kpi-negative .monthly-kpi-icon { background:#ffe2dd !important; color:#c83b33 !important; }
+
+  /* Navy bars establish a consistent hierarchy across every report section. */
+  .monthly-report>section.monthly-panel>.monthly-section-title,
+  .monthly-insight-plan h2,
+  .monthly-parent-guide h2 {
+    background:#173e77 !important;
+    border-color:#173e77 !important;
+    color:#fff !important;
+  }
+  .monthly-report>section.monthly-panel>.monthly-section-title h2,
+  .monthly-report>section.monthly-panel>.monthly-section-title>span,
+  .monthly-report>section.monthly-panel>.monthly-section-title .monthly-legend,
+  .monthly-insight-plan h2,
+  .monthly-parent-guide h2 { color:#fff !important; }
+
+  /* Meaningful, low-ink content highlights. */
+  .monthly-summary { background:#edf8f1 !important; border-left-color:#087454 !important; }
+  .monthly-insight-cards .insight-strength { background:#edf8f1 !important; border-left-color:#087454 !important; }
+  .monthly-insight-cards .insight-focus { background:#fff8eb !important; border-left-color:#e99520 !important; }
+  .monthly-insight-cards .insight-recommendation { background:#eef4ff !important; border-left-color:#347fd1 !important; }
+  .monthly-subject-table .status-needs-practice { background:#fff0e1 !important; color:#a85b08 !important; }
+  .monthly-subject-table .status-good,
+  .monthly-subject-table .status-above-class { background:#e8f4ec !important; color:#176244 !important; }
+
+  /* Each achievement receives its own visual identity. */
+  .monthly-badges .badge-0 { background:#fff5d9 !important; border-color:#edc464 !important; }
+  .monthly-badges .badge-1 { background:#eef5ff !important; border-color:#a8cbee !important; }
+  .monthly-badges .badge-2 { background:#eef8ef !important; border-color:#a8d4b4 !important; }
+  .monthly-badges .badge-3 { background:#fff0e2 !important; border-color:#f1bd8d !important; }
+  .monthly-badges .badge-4 { background:#f2edff !important; border-color:#c4b2f2 !important; }
+}
