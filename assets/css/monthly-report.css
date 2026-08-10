@@ -209,8 +209,22 @@
   .monthly-kpi.kpi-4 .monthly-kpi-icon { background:#edf7d8 !important; color:#67972c !important; }
   .monthly-kpi.kpi-5 { border-top-color:#13847b !important; background:#effaf8 !important; }
   .monthly-kpi.kpi-5 .monthly-kpi-icon { background:#dcf3ef !important; color:#08756e !important; }
+  .monthly-kpi.kpi-0 strong { color:#087454 !important; }
+  .monthly-kpi.kpi-1 strong { color:#5b9718 !important; }
+  .monthly-kpi.kpi-2 strong { color:#2368b4 !important; }
+  .monthly-kpi.kpi-3 strong { color:#c66c00 !important; }
+  .monthly-kpi.kpi-4 strong { color:#67972c !important; }
+  .monthly-kpi.kpi-5 strong { color:#08756e !important; }
+  .monthly-kpi.kpi-0 small { color:#087454 !important; }
+  .monthly-kpi.kpi-1 small { color:#5b9718 !important; }
+  .monthly-kpi.kpi-2 small { color:#2368b4 !important; }
+  .monthly-kpi.kpi-3 small { color:#c66c00 !important; }
+  .monthly-kpi.kpi-4 small { color:#67972c !important; }
+  .monthly-kpi.kpi-5 small { color:#08756e !important; }
   .monthly-kpi.kpi-negative { border-top-color:#df4c43 !important; background:#fff4f2 !important; }
   .monthly-kpi.kpi-negative .monthly-kpi-icon { background:#ffe2dd !important; color:#c83b33 !important; }
+  .monthly-kpi.kpi-negative strong,
+  .monthly-kpi.kpi-negative small { color:#c83b33 !important; }
 
   /* Navy bars establish a consistent hierarchy across every report section. */
   .monthly-report>section.monthly-panel>.monthly-section-title,
@@ -231,6 +245,9 @@
   .monthly-insight-cards .insight-strength { background:#edf8f1 !important; border-left-color:#087454 !important; }
   .monthly-insight-cards .insight-focus { background:#fff8eb !important; border-left-color:#e99520 !important; }
   .monthly-insight-cards .insight-recommendation { background:#eef4ff !important; border-left-color:#347fd1 !important; }
+  .monthly-insight-cards .insight-strength b { color:#087454 !important; }
+  .monthly-insight-cards .insight-focus b { color:#c66c00 !important; }
+  .monthly-insight-cards .insight-recommendation b { color:#2368b4 !important; }
   .monthly-subject-table .status-needs-practice { background:#fff0e1 !important; color:#a85b08 !important; }
   .monthly-subject-table .status-good,
   .monthly-subject-table .status-above-class { background:#e8f4ec !important; color:#176244 !important; }
@@ -241,4 +258,9 @@
   .monthly-badges .badge-2 { background:#eef8ef !important; border-color:#a8d4b4 !important; }
   .monthly-badges .badge-3 { background:#fff0e2 !important; border-color:#f1bd8d !important; }
   .monthly-badges .badge-4 { background:#f2edff !important; border-color:#c4b2f2 !important; }
+  .monthly-badges .badge-0 span { color:#c88306 !important; }
+  .monthly-badges .badge-1 span { color:#2368b4 !important; }
+  .monthly-badges .badge-2 span { color:#087454 !important; }
+  .monthly-badges .badge-3 span { color:#c66c00 !important; }
+  .monthly-badges .badge-4 span { color:#7043ba !important; }
 }
