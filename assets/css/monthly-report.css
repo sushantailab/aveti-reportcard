@@ -107,9 +107,9 @@
   .monthly-action-footer .monthly-signatures{padding:2.5mm}
   .monthly-action-footer .monthly-signatures hr{margin-top:7mm}
 }
-/* Keep the six agreed KPI cards on one consistent row. */
-.monthly-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
-@media print{.monthly-kpis{grid-template-columns:repeat(6,1fr)}}
+/* Five KPI cards keep the summary concise and readable. */
+.monthly-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media print{.monthly-kpis{grid-template-columns:repeat(5,1fr)}}
 
 /* Final one-page print pass: this must remain last so it overrides earlier pagination rules. */
 @media print {
@@ -127,7 +127,7 @@
   .monthly-summary{margin:0 0 1.5mm;padding:1.5mm 2mm}
   .monthly-summary h2{font-size:9.5pt;padding:0;background:none;color:#173e77}
   .monthly-summary p{font-size:7.5pt}
-  .monthly-kpis{grid-template-columns:repeat(6,1fr);gap:1.2mm;margin-bottom:2mm}
+  .monthly-kpis{grid-template-columns:repeat(5,1fr);gap:1.2mm;margin-bottom:2mm}
   .monthly-kpi{min-height:12mm;padding:1.3mm;gap:1mm}
   .monthly-kpi-icon{width:4.5mm;height:4.5mm;flex-basis:4.5mm}
   .monthly-kpi strong{font-size:9.5pt}
