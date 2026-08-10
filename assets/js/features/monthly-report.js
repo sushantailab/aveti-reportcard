@@ -47,8 +47,8 @@ const monthlyShortSubject=subject=>({Mathematics:'Math','Social Science':'SST','
 async function monthlyBuildData(selected,students){
   const base=MONTHLY_SAMPLE;
   if(!selected) return {...base,subjects:[],trend:{labels:[],student:[],klass:[],topper:[]},month:'No test data',kpis:[['Overall Average','—',''],['Tests Conducted','0',''],['Improvement','—',''],['Exam Attendance','—',''],['Focus Subject','—','']],highlights:[],insight:['No tests are available for this student yet.','Add an Aveti test to begin monthly tracking.','Monthly insights will appear after marks are entered.','Continue attempting chapter tests.'],plan:['Enter the next assessment marks','Review the first available report','Schedule targeted revision','Attempt more practice tests']};
-  const session=monthlyStudentSession(selected), cls=String(selected.class_level);
-  const allTests=(await DB.listTests()).filter(t=>String(t.class_level)===cls&&(t.academic_session||session)===session&&(!t.section||t.section==='All'||t.section===selected.section));
+  const session=monthlyStudentSession(selected), cls=String(selected.class_level), selectedSection=monthlyStudentSection(selected), selectedHasSection=Boolean(String(selected.section??'').trim());
+  const allTests=(await DB.listTests()).filter(t=>String(t.class_level)===cls&&(t.academic_session||session)===session&&(!selectedHasSection||!t.section||t.section==='All'||monthlyNormalizeSection(t.section)===selectedSection));
   const results=await DB.allResults();
   const availableMonths=allTests.map(t=>monthlyMonthKey(t.test_date)).filter(Boolean).sort();
   const latestKey=(MONTHLY_FILTER.month&&availableMonths.includes(MONTHLY_FILTER.month))?MONTHLY_FILTER.month:(availableMonths[availableMonths.length-1]||'');
@@ -56,6 +56,9 @@ async function monthlyBuildData(selected,students){
   const periodTests=allTests.filter(t=>monthlyMonthKey(t.test_date)===latestKey);
   const classStudents=students.filter(s=>monthlyStudentSession(s)===session&&String(s.class_level)===cls&&(!selected.section||monthlyStudentSection(s)===monthlyStudentSection(selected)));
   const resultFor=(test,student)=>results.find(r=>r.test_id===test.id&&r.student_id===student.id);
+  const selectedTestSections=[...new Set(periodTests.filter(test=>resultFor(test,selected)).map(test=>monthlyNormalizeSection(test.section)).filter(section=>section!=='All sections'))];
+  const reportSection=selectedTestSections.length===1?selectedTestSections[0]:monthlyStudentSection(selected);
+  base.section=reportSection;
   const scored=(r,t)=>r&&!r.na&&r.present!==false&&r.marks!=null&&monthlyPercent(r.marks,t.full_marks)!=null;
   const subjectNames=[...new Set(periodTests.map(t=>t.subject).filter(Boolean))].filter(subject=>periodTests.some(t=>t.subject===subject&&classStudents.some(s=>scored(resultFor(t,s),t))));
   const subjectRows=subjectNames.map(subject=>{
@@ -99,7 +102,13 @@ async function monthlyLoadStudents(){
   return MONTHLY_LIVE_STUDENTS;
 }
 function monthlyStudentClass(s){return s?.class_level==null?'':`Class ${s.class_level}`;}
-function monthlyStudentSection(s){return s?.section||'All sections';}
+function monthlyNormalizeSection(value){
+  const raw=String(value??'').trim();
+  if(!raw||/^all(?:\s+sections?)?$/i.test(raw)) return 'All sections';
+  const label=raw.replace(/^section\s*/i,'').trim();
+  return label||'All sections';
+}
+function monthlyStudentSection(s){return monthlyNormalizeSection(s?.section);}
 function monthlyStudentSession(s){return s?.academic_session||currentSession();}
 function monthlyFilteredStudents(students){
   return students.filter(s=>
@@ -144,7 +153,7 @@ async function monthlyReport(){
   if(selected){
     MONTHLY_SAMPLE.student=selected.name||'Unnamed student';
     MONTHLY_SAMPLE.grade=monthlyStudentClass(selected)||MONTHLY_SAMPLE.grade;
-    MONTHLY_SAMPLE.section=selected.section||MONTHLY_SAMPLE.section;
+    MONTHLY_SAMPLE.section=monthlyStudentSection(selected);
     MONTHLY_SAMPLE.school=selected.school||selected.school_name||'';
     MONTHLY_SAMPLE.parent_phone=selected.parent_phone||MONTHLY_SAMPLE.parent_phone;
   }
