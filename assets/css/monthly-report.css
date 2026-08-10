@@ -166,5 +166,5 @@
   /* The report can contain a different number of subjects and plan items.  A
      print-only zoom keeps that live content on one A4 sheet instead of
      allowing the final insight/action blocks to spill onto a second page. */
-  .monthly-report{zoom:.78;width:128.205%;max-width:none}
+  .monthly-report{zoom:.9;width:100%;max-width:none}
 }
