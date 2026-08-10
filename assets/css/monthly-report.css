@@ -110,3 +110,57 @@
 /* Five KPI cards: discipline is intentionally omitted because no source data exists. */
 .monthly-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media print{.monthly-kpis{grid-template-columns:repeat(5,1fr)}}
+
+/* Final one-page print pass: this must remain last so it overrides earlier pagination rules. */
+@media print {
+  .monthly-report{font-size:8pt;line-height:1.12}
+  .monthly-cover{padding:2.5mm 3.5mm;border-top:1.2mm solid #087454}
+  .monthly-cover h1{background:#173e77;color:#fff;font-size:16pt;padding:1.2mm 2.5mm;margin:0;border-radius:1.5mm}
+  .monthly-brand-contact{font-size:7.2pt}
+  .monthly-eyebrow{font-size:8.5pt}
+  .monthly-cover .monthly-brand img{width:21mm;height:10mm}
+  .monthly-month-badge{font-size:8.5pt;padding:1mm 2.5mm}
+  .monthly-student-meta{margin:1.5mm 0}
+  .monthly-student-meta div{padding:1.3mm 2mm}
+  .monthly-student-meta span{font-size:6.5pt}
+  .monthly-student-meta b{font-size:8pt}
+  .monthly-summary{margin:0 0 1.5mm;padding:1.5mm 2mm}
+  .monthly-summary h2{font-size:9.5pt;padding:0;background:none;color:#173e77}
+  .monthly-summary p{font-size:7.5pt}
+  .monthly-kpis{grid-template-columns:repeat(5,1fr);gap:1.2mm;margin-bottom:1.5mm}
+  .monthly-kpi{min-height:12mm;padding:1.3mm;gap:1mm}
+  .monthly-kpi-icon{width:4.5mm;height:4.5mm;flex-basis:4.5mm}
+  .monthly-kpi strong{font-size:9.5pt}
+  .monthly-kpi small,.monthly-kpi em{font-size:6.3pt}
+  .monthly-panel{margin-bottom:1.5mm}
+  .monthly-section-title{padding:1.2mm 2mm;background:#173e77;border-top:0;border-bottom:0}
+  .monthly-section-title h2,.monthly-section-title>span{color:#fff}
+  .monthly-section-title h2{font-size:9.5pt}
+  .monthly-section-title>span,.monthly-legend{font-size:6.5pt}
+  .monthly-subject-table{font-size:7pt}
+  .monthly-subject-table th,.monthly-subject-table td{padding:1mm 1.5mm}
+  .monthly-subject-table th{font-size:6.2pt}
+  .monthly-subject-table span{padding:1px 4px;font-size:6pt}
+  .monthly-progress{min-width:25mm;gap:1mm}
+  .monthly-progress i{height:1.1mm}
+  .monthly-progress b{font-size:6.5pt}
+  .monthly-trend-svg{height:29mm;padding:.5mm 2mm 0}
+  .monthly-highlights{gap:1.2mm;margin-bottom:1.5mm}
+  .monthly-highlights article{padding:1.8mm 2mm}
+  .monthly-highlights article strong{font-size:11pt}
+  .monthly-page-two .monthly-insight-plan{padding:1.8mm;gap:2.5mm;margin-bottom:1.5mm}
+  .monthly-insight-plan h2,.monthly-parent-guide h2{font-size:9.5pt;padding:1mm 1.5mm;background:#173e77;color:#fff}
+  .monthly-insight-cards{gap:1mm}
+  .monthly-insight-cards article{padding:1.1mm 1.5mm;font-size:6.8pt}
+  .monthly-insight-cards article b{font-size:6.2pt}
+  .monthly-plan-grid{gap:1mm}
+  .monthly-plan-grid div{padding:1.1mm;font-size:6.8pt}
+  .monthly-plan-grid span{width:3.8mm;height:3.8mm}
+  .monthly-action-footer{gap:2.5mm}
+  .monthly-action-footer .monthly-parent-guide{padding:1.8mm 2mm}
+  .monthly-parent-guide ul{font-size:6.8pt;gap:1mm;margin:1mm 0 0}
+  .monthly-action-footer .monthly-signatures{padding:1.8mm}
+  .monthly-action-footer .monthly-signatures hr{margin-top:4mm}
+  .monthly-page-break,.monthly-page-two{display:block;break-before:auto!important;page-break-before:auto!important}
+  .monthly-panel,.monthly-chart-panel,.monthly-insight-plan,.monthly-action-footer{break-inside:avoid;page-break-inside:avoid}
+}
