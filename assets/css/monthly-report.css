@@ -142,6 +142,10 @@
   .monthly-report>section.monthly-chart-panel>.monthly-section-title h2,
   .monthly-report>section.monthly-chart-panel>.monthly-section-title>span{color:#fff}
   .monthly-report>section.monthly-chart-panel>.monthly-section-title .monthly-legend{color:#dce9f7}
+  .monthly-report>section.monthly-panel:not(.monthly-chart-panel)>.monthly-section-title,
+  .monthly-report>section.monthly-chart-panel>.monthly-section-title{flex-direction:row!important;align-items:center!important}
+  .monthly-report>section.monthly-panel:not(.monthly-chart-panel)>.monthly-section-title h2,
+  .monthly-report>section.monthly-chart-panel>.monthly-section-title h2{background:transparent!important;color:#fff!important;padding:0!important;border-radius:0!important}
   .monthly-section-title h2{font-size:9.5pt}
   .monthly-section-title>span,.monthly-legend{font-size:6.5pt}
   .monthly-subject-table{font-size:7pt}
