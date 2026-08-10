@@ -127,14 +127,14 @@
   .monthly-summary{margin:0 0 1.5mm;padding:1.5mm 2mm}
   .monthly-summary h2{font-size:9.5pt;padding:0;background:none;color:#173e77}
   .monthly-summary p{font-size:7.5pt}
-  .monthly-kpis{grid-template-columns:repeat(5,1fr);gap:1.2mm;margin-bottom:1.5mm}
+  .monthly-kpis{grid-template-columns:repeat(6,1fr);gap:1.2mm;margin-bottom:2mm}
   .monthly-kpi{min-height:12mm;padding:1.3mm;gap:1mm}
   .monthly-kpi-icon{width:4.5mm;height:4.5mm;flex-basis:4.5mm}
   .monthly-kpi strong{font-size:9.5pt}
   .monthly-kpi small,.monthly-kpi em{font-size:6.3pt}
   .monthly-panel{margin-bottom:1.5mm}
-  .monthly-section-title{padding:1.2mm 2mm;background:#173e77;border-top:0;border-bottom:0}
-  .monthly-section-title h2,.monthly-section-title>span{color:#fff}
+  .monthly-section-title{padding:1.2mm 2mm;background:#edf3fb;border:1px solid #d4e1f1;border-top:.7mm solid #2c65a6;border-bottom:0;border-radius:1.5mm 1.5mm 0 0}
+  .monthly-section-title h2,.monthly-section-title>span{color:#173e77}
   .monthly-section-title h2{font-size:9.5pt}
   .monthly-section-title>span,.monthly-legend{font-size:6.5pt}
   .monthly-subject-table{font-size:7pt}
@@ -149,7 +149,7 @@
   .monthly-highlights article{padding:1.8mm 2mm}
   .monthly-highlights article strong{font-size:11pt}
   .monthly-page-two .monthly-insight-plan{padding:1.8mm;gap:2.5mm;margin-bottom:1.5mm}
-  .monthly-insight-plan h2,.monthly-parent-guide h2{font-size:9.5pt;padding:1mm 1.5mm;background:#173e77;color:#fff}
+  .monthly-insight-plan h2,.monthly-parent-guide h2{font-size:9.5pt;padding:1mm 1.5mm;background:#edf3fb;color:#173e77;border-radius:1mm}
   .monthly-insight-cards{gap:1mm}
   .monthly-insight-cards article{padding:1.1mm 1.5mm;font-size:6.8pt}
   .monthly-insight-cards article b{font-size:6.2pt}
@@ -166,5 +166,5 @@
   /* The report can contain a different number of subjects and plan items.  A
      print-only zoom keeps that live content on one A4 sheet instead of
      allowing the final insight/action blocks to spill onto a second page. */
-  .monthly-report{zoom:.9;width:100%;max-width:none}
+  .monthly-report{zoom:1;width:100%;max-width:none}
 }
