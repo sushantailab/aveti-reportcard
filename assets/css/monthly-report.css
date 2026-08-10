@@ -264,3 +264,54 @@
   .monthly-badges .badge-3 span { color:#c66c00 !important; }
   .monthly-badges .badge-4 span { color:#7043ba !important; }
 }
+
+/* Match the same balanced palette on screen without changing report content. */
+@media screen {
+  .monthly-cover { border-top-color:#0b6b4b; }
+  .monthly-cover h1 { background:#0b6b4b; color:#fff; }
+  .monthly-month-badge { background:#07583e; color:#fff; }
+
+  .monthly-kpi.kpi-0 { border-top-color:#087454; background:#f3fbf6; }
+  .monthly-kpi.kpi-0 .monthly-kpi-icon { background:#dff3e7; color:#087454; }
+  .monthly-kpi.kpi-0 strong,.monthly-kpi.kpi-0 small { color:#087454; }
+  .monthly-kpi.kpi-1 { border-top-color:#64a51c; background:#f8fce9; }
+  .monthly-kpi.kpi-1 .monthly-kpi-icon { background:#ebf7cf; color:#5b9718; }
+  .monthly-kpi.kpi-1 strong,.monthly-kpi.kpi-1 small { color:#5b9718; }
+  .monthly-kpi.kpi-2 { border-top-color:#2368b4; background:#f0f6ff; }
+  .monthly-kpi.kpi-2 .monthly-kpi-icon { background:#e0edff; color:#2368b4; }
+  .monthly-kpi.kpi-2 strong,.monthly-kpi.kpi-2 small { color:#2368b4; }
+  .monthly-kpi.kpi-3 { border-top-color:#e58410; background:#fff8ed; }
+  .monthly-kpi.kpi-3 .monthly-kpi-icon { background:#fff0d7; color:#c66c00; }
+  .monthly-kpi.kpi-3 strong,.monthly-kpi.kpi-3 small { color:#c66c00; }
+  .monthly-kpi.kpi-4 { border-top-color:#79a83a; background:#f7fceb; }
+  .monthly-kpi.kpi-4 .monthly-kpi-icon { background:#edf7d8; color:#67972c; }
+  .monthly-kpi.kpi-4 strong,.monthly-kpi.kpi-4 small { color:#67972c; }
+  .monthly-kpi.kpi-5 { border-top-color:#13847b; background:#effaf8; }
+  .monthly-kpi.kpi-5 .monthly-kpi-icon { background:#dcf3ef; color:#08756e; }
+  .monthly-kpi.kpi-5 strong,.monthly-kpi.kpi-5 small { color:#08756e; }
+  .monthly-kpi.kpi-negative { border-top-color:#df4c43; background:#fff4f2; }
+  .monthly-kpi.kpi-negative .monthly-kpi-icon { background:#ffe2dd; color:#c83b33; }
+  .monthly-kpi.kpi-negative strong,.monthly-kpi.kpi-negative small { color:#c83b33; }
+
+  .monthly-report>section.monthly-panel>.monthly-section-title,
+  .monthly-insight-plan h2,
+  .monthly-parent-guide h2 { background:#173e77; border-color:#173e77; color:#fff; }
+  .monthly-report>section.monthly-panel>.monthly-section-title h2,
+  .monthly-report>section.monthly-panel>.monthly-section-title>span,
+  .monthly-report>section.monthly-panel>.monthly-section-title .monthly-legend,
+  .monthly-insight-plan h2,
+  .monthly-parent-guide h2 { color:#fff; }
+
+  .monthly-insight-cards .insight-strength { background:#edf8f1; border-left-color:#087454; }
+  .monthly-insight-cards .insight-strength b { color:#087454; }
+  .monthly-insight-cards .insight-focus { background:#fff8eb; border-left-color:#e99520; }
+  .monthly-insight-cards .insight-focus b { color:#c66c00; }
+  .monthly-insight-cards .insight-recommendation { background:#eef4ff; border-left-color:#347fd1; }
+  .monthly-insight-cards .insight-recommendation b { color:#2368b4; }
+
+  .monthly-badges .badge-0 { background:#fff5d9; border-color:#edc464; }
+  .monthly-badges .badge-1 { background:#eef5ff; border-color:#a8cbee; }
+  .monthly-badges .badge-2 { background:#eef8ef; border-color:#a8d4b4; }
+  .monthly-badges .badge-3 { background:#fff0e2; border-color:#f1bd8d; }
+  .monthly-badges .badge-4 { background:#f2edff; border-color:#c4b2f2; }
+}
