@@ -41,14 +41,89 @@ async function resolveAssignedTeacher(test){
 
 function teacherHonorific(teacher){
   const value = String(teacher?.gender||teacher?.sex||teacher?.title||'').trim().toLowerCase();
-  if(['female','f','woman','madam','mrs','ms','miss'].some(token=>value===token || value.startsWith(token))) return 'madam';
-  if(['male','m','man','sir','mr'].some(token=>value===token || value.startsWith(token))) return 'sir';
+  if(['female','f','woman','madam','mrs','ms','miss'].some(token=>value===token || value.startsWith(token))) return 'Madam';
+  if(['male','m','man','sir','mr'].some(token=>value===token || value.startsWith(token))) return 'Sir';
   return '';
 }
 
 function teacherGreeting(teacher){
   const honorific = teacherHonorific(teacher);
   return `Hello ${teacher.name}${honorific ? ' '+honorific : ''},`;
+}
+
+function teacherSharePercent(value){
+  if(value==null || Number.isNaN(Number(value))) return '—';
+  const rounded = Math.round(Number(value)*10)/10;
+  return `${Number.isInteger(rounded)?Math.round(rounded):rounded}%`;
+}
+
+function teacherOverallNote(avg){
+  if(avg==null) return 'no scored result yet';
+  if(avg>=80) return 'excellent performance';
+  if(avg>=60) return 'good performance';
+  if(avg>=40) return 'needs guided revision';
+  return 'urgent support needed';
+}
+
+function teacherShareReportTitle(test, scope){
+  const parts = [`Class ${test.class_level}`];
+  if(test.section && test.section!=='All') parts.push(`Section ${test.section}`);
+  parts.push(test.subject);
+  const type = testTypeLabel(test.test_type);
+  const chapterNumbers = (String(scope||'').match(/\d+/g)||[]).map(Number).filter(Number.isFinite);
+  if(type==='Chapter End Test' && chapterNumbers.length===1){
+    parts.push(`Chapter ${chapterNumbers[0]} End Test`);
+  }else if(type==='Chapter End Test' && chapterNumbers.length>1){
+    parts.push(`Chapters ${chapterNumbers.join(', ')} End Test`);
+  }else if(chapterNumbers.length){
+    parts.push(`${type} (${chapterNumbers.map(number=>`Ch ${number}`).join(', ')})`);
+  }else{
+    parts.push(type);
+  }
+  return parts.join(' · ');
+}
+
+function teacherShareNames(rows, emptyText){
+  if(!rows.length) return emptyText;
+  const names = rows.map(row=>row.name).slice(0,3);
+  const suffix = rows.length>3 ? ` +${rows.length-3} more` : '';
+  return names.length===1 ? `${names[0]}${suffix}` : `${names.slice(0,-1).join(', ')} & ${names.at(-1)}${suffix}`;
+}
+
+function teacherDropSummary(rows){
+  if(!rows.length) return 'No major performance drop found.';
+  const items = rows.slice(0,3).map(row=>`${row.name}: ${teacherSharePercent(row.previous)} → ${teacherSharePercent(row.p)}`);
+  const suffix = rows.length>3 ? `; +${rows.length-3} more` : '';
+  return `${items.join('; ')}${suffix} – please check the reason.`;
+}
+
+async function teacherPerformanceDrops(test, currentRows){
+  const currentDate = new Date(testDate(test)).getTime();
+  if(!Number.isFinite(currentDate)) return [];
+  const tests = await DB.listTests();
+  const earlierTests = tests.filter(candidate=>
+    candidate.id!==test.id &&
+    String(candidate.class_level)===String(test.class_level) &&
+    candidate.subject===test.subject &&
+    new Date(testDate(candidate)).getTime()<currentDate
+  ).sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+  if(!earlierTests.length) return [];
+  const allResults = await DB.allResults();
+  return currentRows
+    .filter(row=>!row.na && row.present && row.p!=null)
+    .map(row=>{
+      const previousTest = earlierTests.find(candidate=>{
+        const result = allResults.find(item=>item.test_id===candidate.id && item.student_id===row.student_id);
+        return result && !result.na && result.present && result.marks!=null;
+      });
+      if(!previousTest) return null;
+      const previousResult = allResults.find(item=>item.test_id===previousTest.id && item.student_id===row.student_id);
+      const previous = pct(previousResult.marks,previousTest.full_marks);
+      const drop = Math.round((previous-row.p)*10)/10;
+      return drop>=5 ? {...row,previous,drop} : null;
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.drop-a.drop || a.name.localeCompare(b.name));
 }
 
 function parentNotificationContext(test, studentId, tests, results){
@@ -202,11 +277,18 @@ window.shareTeacherReport = async testId => {
     if(confirm(`${teacher.name} does not have a valid WhatsApp number. Open Teachers to add it now?`)) teachers();
     return;
   }
-  const applicable = Math.max(0, data.enrolled - data.na);
-  const attendance = applicable ? Math.round(data.appeared / applicable * 1000) / 10 : null;
   const test = data.test;
-  const supportCount = data.rows.filter(row=>!row.na && row.present && row.p!=null && row.p<60).length;
-  const body = `${teacherGreeting(teacher)}\n\nThis teacher report is ready for Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)}.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nTeacher action: Please focus on the ${supportCount} students in the Developing and Urgent Support groups. Review the report, form small groups, conduct a remedial class, and discuss a practical improvement plan with each student.\n\nPlease find the detailed report PDF attached.`;
+  const scope = await teacherScopeLabel(test);
+  const absentCount = data.absent;
+  const remedialRows = data.rows
+    .filter(row=>!row.na && row.present && row.p!=null && row.p<60)
+    .sort((a,b)=>a.p-b.p || a.name.localeCompare(b.name));
+  const dropRows = await teacherPerformanceDrops(test,data.rows);
+  const remedialText = remedialRows.length
+    ? `${teacherShareNames(remedialRows,'No students')} – need remedial support.`
+    : 'No student below 60% – monitor and continue practice.';
+  const dropText = teacherDropSummary(dropRows);
+  const body = `${teacherGreeting(teacher)}\n\nThe teacher report is ready for ${teacherShareReportTitle(test,scope)}.\n\n1. Overall: Class average ${teacherSharePercent(data.avg)} – ${teacherOverallNote(data.avg)}.\n2. Absent: ${absentCount} ${absentCount===1?'student':'students'} – ${absentCount?'arrange re-test.':'no re-test needed.'}\n3. Action: ${remedialText}\n4. Performance Drop: ${dropText}\n\nThanks!`;
   window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(body)}`,'_blank','noopener');
 };
 
