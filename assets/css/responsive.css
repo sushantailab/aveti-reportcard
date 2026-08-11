@@ -267,3 +267,377 @@ button,select,input,textarea{max-width:100%}
   .app-content h1,.screen>h1{font-size:var(--ui-heading-size)}.app-content h2,.screen h2{font-size:var(--ui-section-size)}
   .more-menu-sheet button{min-height:44px;font-size:16px}.mobile-bottom-nav button{min-height:48px;font-size:12px}
 }
+
+/* Teacher report PDF: final compact print layer.
+   Loaded after the base print rules so the PDF stays dense without changing screen content. */
+@media print {
+  .teacher-insight-report,
+  .teacher-insight-report * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .teacher-insight-report {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    font-size: 6.6pt !important;
+    line-height: 1.06 !important;
+    overflow: visible !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .teacher-insight-title {
+    margin: 0 0 1.3mm !important;
+    padding: 1.7mm 3mm !important;
+    border-radius: 1.5mm !important;
+    font-size: 12pt !important;
+    line-height: 1 !important;
+    letter-spacing: .02em !important;
+  }
+
+  .teacher-insight-head {
+    grid-template-columns: minmax(0, 1.05fr) minmax(52mm, .95fr) !important;
+    gap: 2.5mm !important;
+    margin-bottom: 1.6mm !important;
+    padding: 2mm 3mm !important;
+    border-radius: 1.7mm !important;
+  }
+
+  .teacher-insight-head .brandbar { gap: 2mm !important; }
+  .teacher-insight-head .centre-output-logo { width: 22mm !important; }
+  .teacher-centre-name { font-size: 7.6pt !important; line-height: 1.05 !important; }
+  .teacher-report-name { font-size: 6.2pt !important; line-height: 1.05 !important; }
+  .teacher-insight-head h1 { margin-top: .8mm !important; font-size: 11.7pt !important; line-height: 1.04 !important; }
+  .teacher-assigned-teacher { margin-top: .8mm !important; gap: 1mm !important; font-size: 6.3pt !important; }
+  .teacher-assigned-teacher b { padding: .4mm 1.1mm !important; font-size: 5.2pt !important; }
+
+  .teacher-test-meta {
+    gap: 1.1mm !important;
+    padding-left: 2.5mm !important;
+    font-size: 6.6pt !important;
+    line-height: 1.12 !important;
+  }
+
+  .teacher-test-line,
+  .teacher-scope-line { gap: 1.1mm !important; }
+  .teacher-test-line b { font-size: 8.1pt !important; line-height: 1.08 !important; }
+  .teacher-scope-line span { font-size: 6.8pt !important; line-height: 1.12 !important; }
+  .teacher-test-line svg,
+  .teacher-scope-line svg {
+    width: 3.8mm !important;
+    height: 3.8mm !important;
+    flex-basis: 3.8mm !important;
+    padding: .65mm !important;
+    border-radius: .9mm !important;
+  }
+
+  .teacher-summary-grid {
+    gap: 1.4mm !important;
+    margin: 1.6mm 0 !important;
+  }
+
+  .teacher-summary-card {
+    min-height: 10mm !important;
+    padding: 1.3mm 1.5mm !important;
+    gap: 1mm !important;
+    border-radius: 1.5mm !important;
+  }
+
+  .teacher-summary-card i {
+    width: 6.2mm !important;
+    height: 6.2mm !important;
+    font-size: 9pt !important;
+  }
+
+  .teacher-summary-card span {
+    gap: .25mm !important;
+    font-size: 5.6pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-summary-card b {
+    font-size: 12.8pt !important;
+    line-height: .95 !important;
+  }
+
+  .teacher-summary-card small {
+    min-height: 0 !important;
+    font-size: 5.2pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-group-heading {
+    margin: 1.5mm 0 1.1mm !important;
+    gap: 2mm !important;
+    font-size: 9.5pt !important;
+    line-height: 1 !important;
+  }
+
+  .teacher-score-groups {
+    gap: 1.3mm !important;
+  }
+
+  .teacher-score-group {
+    min-height: 0 !important;
+    grid-template-rows: auto auto auto minmax(21mm, 1fr) auto !important;
+    border-radius: 1.5mm !important;
+  }
+
+  .teacher-group-title {
+    min-height: 0 !important;
+    padding: 1.3mm !important;
+    font-size: 6.7pt !important;
+    line-height: 1 !important;
+  }
+
+  .teacher-group-range {
+    padding: .9mm !important;
+    font-size: 7pt !important;
+    line-height: 1 !important;
+  }
+
+  .teacher-group-count {
+    min-height: 9.5mm !important;
+    padding: .7mm !important;
+  }
+
+  .teacher-group-count b {
+    font-size: 12.8pt !important;
+    line-height: .95 !important;
+  }
+
+  .teacher-group-count span {
+    font-size: 5.2pt !important;
+    line-height: 1 !important;
+  }
+
+  .teacher-group-students {
+    padding: .9mm 1.5mm !important;
+  }
+
+  .teacher-group-students > div {
+    gap: .9mm !important;
+    padding: .55mm 0 !important;
+    font-size: 5.8pt !important;
+    line-height: 1.04 !important;
+  }
+
+  .teacher-group-students > div b {
+    width: 3.2mm !important;
+    height: 3.2mm !important;
+    flex-basis: 3.2mm !important;
+    font-size: 4.7pt !important;
+  }
+
+  .teacher-group-action {
+    grid-template-columns: 4.8mm 1fr 3mm !important;
+    gap: .8mm !important;
+    padding: 1.1mm !important;
+  }
+
+  .teacher-group-action i {
+    width: 4.5mm !important;
+    height: 4.5mm !important;
+    font-size: 6.6pt !important;
+    border-width: .35mm !important;
+  }
+
+  .teacher-group-action span,
+  .teacher-group-action span b {
+    font-size: 5.2pt !important;
+    line-height: 1.08 !important;
+  }
+
+  .teacher-group-action em {
+    font-size: 9pt !important;
+  }
+
+  .teacher-bottom-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(47mm, .8fr) !important;
+    gap: 1.5mm !important;
+    margin-top: 1.7mm !important;
+    align-items: start !important;
+  }
+
+  .teacher-leaderboard,
+  .teacher-distribution,
+  .teacher-absentees,
+  .teacher-performance-trend {
+    padding: 1.6mm !important;
+    border-radius: 1.5mm !important;
+  }
+
+  .teacher-leaderboard .teacher-board-heading,
+  .teacher-performance-trend .teacher-trend-heading {
+    margin: -1.6mm -1.6mm 1.1mm !important;
+    padding: 1.2mm 1.6mm !important;
+    border-radius: 1.5mm 1.5mm 0 0 !important;
+  }
+
+  .teacher-board-heading h2,
+  .teacher-distribution h2,
+  .teacher-absentees h2,
+  .teacher-trend-heading h2 {
+    font-size: 7.8pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-board-heading span,
+  .teacher-trend-heading span,
+  .teacher-axis {
+    font-size: 5pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-leader-row {
+    grid-template-columns: 4mm minmax(18mm, 1fr) minmax(28mm, 1.45fr) 8.5mm !important;
+    gap: .9mm !important;
+    padding: .65mm 0 !important;
+  }
+
+  .teacher-leader-rank {
+    font-size: 6.5pt !important;
+  }
+
+  .teacher-leader-rank.medal-1,
+  .teacher-leader-rank.medal-2,
+  .teacher-leader-rank.medal-3 {
+    width: 4mm !important;
+    height: 4mm !important;
+  }
+
+  .teacher-leader-name b {
+    font-size: 5.9pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-leader-name span {
+    font-size: 4.8pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-leader-bar {
+    height: 1.4mm !important;
+  }
+
+  .teacher-leader-row > strong {
+    font-size: 5.9pt !important;
+  }
+
+  .teacher-side-insights {
+    gap: 1.4mm !important;
+  }
+
+  .teacher-distribution h2 {
+    margin-bottom: .9mm !important;
+  }
+
+  .teacher-distribution-body {
+    gap: 1.7mm !important;
+  }
+
+  .teacher-donut {
+    width: 21mm !important;
+    height: 21mm !important;
+    flex-basis: 21mm !important;
+  }
+
+  .teacher-donut:after {
+    inset: 5.2mm !important;
+  }
+
+  .teacher-donut div {
+    font-size: 9.5pt !important;
+  }
+
+  .teacher-donut-label,
+  .teacher-distribution-legend > div {
+    font-size: 5.2pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-distribution-legend {
+    min-width: 20mm !important;
+    gap: .6mm !important;
+  }
+
+  .teacher-distribution-legend > div {
+    grid-template-columns: 1.7mm 1fr auto !important;
+    gap: .8mm !important;
+  }
+
+  .teacher-absentees h2 {
+    margin-bottom: .8mm !important;
+    padding-bottom: .8mm !important;
+  }
+
+  .teacher-absentees > b {
+    font-size: 6.8pt !important;
+  }
+
+  .teacher-absentees > span,
+  .teacher-absentees p {
+    font-size: 5.4pt !important;
+    line-height: 1.08 !important;
+  }
+
+  .teacher-absentees p {
+    margin: .65mm 0 !important;
+  }
+
+  .teacher-retest-tag {
+    padding: .45mm .9mm !important;
+    font-size: 4.8pt !important;
+  }
+
+  .teacher-performance-trend {
+    margin-top: 1.7mm !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .teacher-trend-labels,
+  .teacher-trend-row {
+    grid-template-columns: 5mm minmax(28mm, 1fr) 13mm 13mm minmax(25mm, .85fr) !important;
+    gap: .9mm !important;
+  }
+
+  .teacher-trend-labels {
+    padding: 1mm 0 .45mm !important;
+    font-size: 5pt !important;
+  }
+
+  .teacher-trend-row {
+    padding: .65mm 0 !important;
+  }
+
+  .teacher-trend-row > em,
+  .teacher-trend-row b,
+  .teacher-trend-row > strong {
+    font-size: 5.8pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-trend-row > div span,
+  .teacher-trend-score small {
+    font-size: 4.7pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-trend-pill {
+    padding: .45mm .9mm !important;
+    font-size: 4.9pt !important;
+    line-height: 1.05 !important;
+  }
+
+  .teacher-show-all,
+  .report-actions {
+    display: none !important;
+  }
+}
