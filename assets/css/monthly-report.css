@@ -315,3 +315,16 @@
   .monthly-badges .badge-3 { background:#fff0e2; border-color:#f1bd8d; }
   .monthly-badges .badge-4 { background:#f2edff; border-color:#c4b2f2; }
 }
+
+/* Final screen pass: keep these paired titles readable like the other navy report headers. */
+@media screen {
+  .monthly-report .monthly-page-two .monthly-insight-plan > div > h2 {
+    display:block !important;
+    width:100% !important;
+    box-sizing:border-box !important;
+    padding:8px 12px !important;
+    border-radius:6px !important;
+    background:#173e77 !important;
+    color:#fff !important;
+  }
+}

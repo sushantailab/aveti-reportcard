@@ -17,16 +17,30 @@ const crumb = document.getElementById('crumb');
 let CURRENT_TEST = null;
 const LS_LAST_ROUTE = 'aveti:last-route';
 
+function setActiveRoute(route){
+  const safeRoute = route || '';
+  document.querySelectorAll('[data-route]').forEach(el=>{
+    const isActive = Boolean(safeRoute) && el.dataset.route===safeRoute;
+    el.classList.toggle('active', isActive);
+    el.setAttribute('aria-current', isActive ? 'page' : 'false');
+  });
+  document.body.dataset.activeRoute = safeRoute;
+}
+window.setActiveRoute = setActiveRoute;
+
 function setCrumb(t){
   crumb.textContent = t;
   const route = ({
     'Home':'home','Students':'students','Teachers':'teachers','Enter test marks':'marks','Teacher report':'teacher',
     'Parent report':'parent','Growth tracker':'growth','Class insights':'insights',
-    'Certificates':'certificates','Teacher Activation':'activation','Centre admin':'centre-admin'
+    'Monthly progress':'monthly-report','School Results':'marks',
+    'Certificates':'certificates','Certificate verification':'certificates',
+    'Teacher Activation':'activation','Centre admin':'centre-admin'
   })[t];
   if(route) localStorage.setItem(LS_LAST_ROUTE,route);
-  if(route) document.querySelectorAll('[data-route]').forEach(el=>el.classList.toggle('active',el.dataset.route===route));
+  setActiveRoute(route);
 }
+window.setCrumb = setCrumb;
 function show(html){ app.innerHTML = '<div class="screen active">'+html+'</div>'; }
 
 const demoNote = CONFIG.USE_SUPABASE ? '' :

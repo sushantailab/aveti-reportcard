@@ -143,6 +143,7 @@ function monthlySelectorMarkup(students,current){
   </div>`};
 }
 async function monthlyReport(){
+  if(typeof window.setActiveRoute === 'function') window.setActiveRoute('monthly-report');
   setCrumb('Monthly progress');
   const live=await monthlyLoadStudents();
   const allTests=await DB.listTests();

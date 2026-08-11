@@ -12,6 +12,7 @@ window.openTeacher=openTeacher; window.openParents=openParents; window.growth=gr
 window.appNavigate = route => {
   const target = ({home,marks:enterMarks,students:roster,teachers,'centre-admin':centreAdmin,teacher:openTeacher,parent:openParents,growth,insights:classInsights,certificates,'monthly-report':monthlyReport,activation:teacherActivation}[route]||home);
   localStorage.setItem('aveti:last-route',route);
+  if(typeof window.setActiveRoute === 'function') window.setActiveRoute(route);
   return target();
 };
 window.toggleSidebar = ()=>document.querySelector('.app-shell')?.classList.toggle('sidebar-collapsed');
