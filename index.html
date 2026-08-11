@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase client (used only when USE_SUPABASE = true below) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="assets/css/styles.css?v=20260806-1">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260811-close-modal">
 <link rel="stylesheet" href="assets/css/home-nav.css?v=20260803-10">
 <link rel="stylesheet" href="assets/css/responsive.css?v=20260806-1">
 <link rel="stylesheet" href="assets/css/monthly-report.css?v=20260811-1">
@@ -64,6 +64,7 @@
 <!-- Save confirmation modal -->
 <div class="overlay" id="saveOverlay">
   <div class="modal">
+    <button class="modal-close" type="button" id="saveClose" aria-label="Close saved test popup">×</button>
     <div class="check">✓</div>
     <h2 style="font-size:19px;">Test saved</h2>
     <div class="muted small" id="saveSummary" style="margin:6px 0 14px"></div>
@@ -107,6 +108,6 @@
 <script src="assets/js/features/monthly-report.js?v=20260811-2"></script>
 <script src="assets/js/features/teacher-activation.js?v=20260624-4"></script>
 <script src="assets/js/features/centre-admin.js?v=20260724-5"></script>
-<script src="assets/js/app.js?v=20260811-1"></script>
+<script src="assets/js/app.js?v=20260811-close-modal"></script>
 </body>
 </html>

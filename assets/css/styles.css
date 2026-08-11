@@ -393,6 +393,10 @@
   .overlay{position:fixed;inset:0;background:rgba(10,20,12,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
   .overlay.show{display:flex}
   .modal{width:100%;max-width:380px;background:var(--card);border-radius:var(--radius);padding:22px;text-align:center}
+  .modal{position:relative}
+  .modal-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 8px 20px rgba(9,35,22,.08)}
+  .modal-close:hover{background:var(--green-soft);border-color:#bdd8cb;color:var(--green-d)}
+  .modal-close:focus-visible{outline:3px solid rgba(7,126,83,.22);outline-offset:2px}
   .check{width:48px;height:48px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .seg button{border:none;border-radius:0;background:transparent}

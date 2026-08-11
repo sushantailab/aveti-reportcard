@@ -1,9 +1,12 @@
 /* ---------- modal + nav wiring ---------- */
+const closeSaveOverlay = ()=>document.getElementById('saveOverlay')?.classList.remove('show');
+window.closeSaveOverlay = closeSaveOverlay;
+document.getElementById('saveClose').onclick=closeSaveOverlay;
 document.getElementById('saveDone').onclick=e=>{e.preventDefault();document.getElementById('saveOverlay').classList.remove('show');home();};
-document.getElementById('saveToParents').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openParents(CURRENT_TEST);};
-document.getElementById('saveToTeacher').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');openTeacher(CURRENT_TEST);};
-document.getElementById('saveToTeacherWhatsApp').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');shareTeacherReport(CURRENT_TEST);};
-document.getElementById('saveToGrowth').onclick=()=>{document.getElementById('saveOverlay').classList.remove('show');growth();};
+document.getElementById('saveToParents').onclick=()=>{closeSaveOverlay();openParents(CURRENT_TEST);};
+document.getElementById('saveToTeacher').onclick=()=>{closeSaveOverlay();openTeacher(CURRENT_TEST);};
+document.getElementById('saveToTeacherWhatsApp').onclick=()=>{closeSaveOverlay();shareTeacherReport(CURRENT_TEST);};
+document.getElementById('saveToGrowth').onclick=()=>{closeSaveOverlay();growth();};
 const navHome = document.getElementById('navHome');
 const navRoster = document.getElementById('navRoster');
 if(navHome) navHome.onclick=home;
