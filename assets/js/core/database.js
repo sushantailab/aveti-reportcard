@@ -319,6 +319,13 @@ const stripSession = obj => {
 };
 const stripBirthday = obj => { const copy={...obj}; delete copy.date_of_birth; return copy; };
 const stripSchoolId = obj => { const copy={...obj}; delete copy.school_id; return copy; };
+const stripUnsupportedStudentColumns = (error,obj) => {
+  let copy = {...obj};
+  if(missingSchoolColumn(error)) copy = stripSchoolId(copy);
+  if(missingBirthdayColumn(error)) copy = stripBirthday(copy);
+  if(missingAcademicSession(error)) copy = stripSession(copy);
+  return copy;
+};
 const normalizeSchool = s => s ? {...s,name:s.name||s.school_name} : s;
 const missingExtendedTestColumns = error => /chapter_ids|chapter_names|duration_minutes/i.test(String(error?.message||''));
 const missingMultiChapterColumns = error => /chapter_ids|chapter_names/i.test(String(error?.message||''));
@@ -340,7 +347,7 @@ const supaDB = {
     const payload = {...s, centre_id:CENTRE_ID};
     let res = await supa.from('students').insert(payload).select(STUDENT_COLS).single();
     if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
-      const legacyPayload = missingSchoolColumn(res.error) ? stripSchoolId(payload) : (missingBirthdayColumn(res.error) ? stripBirthday(stripSession(payload)) : stripSession(payload));
+      const legacyPayload = stripUnsupportedStudentColumns(res.error,payload);
       const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
       res = await supa.from('students').insert(legacyPayload).select(cols).single();
       if(res.error) throw res.error;
@@ -352,7 +359,7 @@ const supaDB = {
   async updateStudent(id,patch){
     let res = await supa.from('students').update(patch).eq('id',id);
     if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
-      res = await supa.from('students').update(missingSchoolColumn(res.error) ? stripSchoolId(patch) : (missingBirthdayColumn(res.error) ? stripBirthday(stripSession(patch)) : stripSession(patch))).eq('id',id);
+      res = await supa.from('students').update(stripUnsupportedStudentColumns(res.error,patch)).eq('id',id);
     }
     if(res.error) throw res.error;
   },

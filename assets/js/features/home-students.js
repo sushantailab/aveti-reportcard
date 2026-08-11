@@ -439,11 +439,12 @@ window.submitAdd = async ()=>{
   const rawPhone = val('ad_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : null;
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, parent_name:'', parent_phone:phone, school_id:val('ad_school')||null };
+  const schoolId=val('ad_school');
+  const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, parent_name:'', parent_phone:phone };
+  if(schoolId) student.school_id=schoolId;
   if(!(await warnStudentDuplicates(student))) return;
   try{
     const saved=await DB.addStudent(student);
-    const schoolId=val('ad_school');
     if(saved&&schoolId) await DB.saveStudentSchoolEnrolment({student_id:saved.id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
     SHOW_ADD=false; roster();
   }catch(e){
@@ -517,13 +518,16 @@ window.saveEdit = async id=>{
   const rawPhone = val('ed_phone').trim();
   const phone = rawPhone ? normalizeIndianPhone(rawPhone) : null;
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
-  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, parent_phone:phone, school_id:val('ed_school')||null };
+  const schoolId=val('ed_school');
+  const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, parent_phone:phone };
+  if(schoolId) student.school_id=schoolId;
   if(!(await warnStudentDuplicates(student,id))) return;
   try{
     await DB.updateStudent(id,student);
-    const schoolId=val('ed_school');
     if(schoolId) await DB.saveStudentSchoolEnrolment({student_id:id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
-    else await DB.removeStudentSchoolEnrolment(id,student.academic_session);
+    else {
+      try{ await DB.removeStudentSchoolEnrolment(id,student.academic_session); }catch(_e){}
+    }
     EDIT_ID=null; roster();
   }catch(e){
     alert(e.message||'Could not save this student.');
