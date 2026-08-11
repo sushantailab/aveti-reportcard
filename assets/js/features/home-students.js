@@ -403,7 +403,6 @@ function editRow(s){
     <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
     <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>
     <select id="ed_gender" style="width:auto">${genderOptions(s.gender)}</select>
-    <select id="ed_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===x.id?'selected':''}>${x.name}</option>`).join('')}</select>
     <input id="ed_dob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(s.date_of_birth||'').slice(0,10)}" style="width:auto">
     ${schoolField('ed',schoolId)}
     <input id="ed_phone" value="${s.parent_phone||''}" placeholder="+91 parent number" style="flex:1;min-width:150px">
@@ -419,7 +418,6 @@ function addFormHTML(){
       <select id="ad_class" style="width:auto">${classOptions(9)}</select>
       <select id="ad_sec" style="width:auto">${sectionOptions('A',true)}</select>
       <select id="ad_gender" style="width:auto">${genderOptions('')}</select>
-      <select id="ad_school" style="width:auto"><option value="">No school assigned</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</select>
       <input id="ad_dob" type="date" aria-label="Date of birth" title="Date of birth" style="width:auto">
       ${schoolField('ad','')}
       <input id="ad_phone" placeholder="+91 parent number" style="flex:1;min-width:150px">
@@ -437,14 +435,20 @@ window.toggleAdd = ()=>{ SHOW_ADD=!SHOW_ADD; roster(); };
 window.submitAdd = async ()=>{
   const name=val('ad_name').trim(); if(!name){ alert('Enter a student name'); return; }
   const sec = val('ad_sec');
-  const gender = val('ad_gender'); if(!gender){ alert('Select gender.'); return; }
+  const gender = val('ad_gender') || null;
   const rawPhone = val('ad_phone').trim();
-  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
+  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : null;
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
   const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, parent_name:'', parent_phone:phone, school_id:val('ad_school')||null };
   if(!(await warnStudentDuplicates(student))) return;
-  const saved=await DB.addStudent(student); const schoolId=val('ad_school'); if(saved&&schoolId) await DB.saveStudentSchoolEnrolment({student_id:saved.id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
-  SHOW_ADD=false; roster();
+  try{
+    const saved=await DB.addStudent(student);
+    const schoolId=val('ad_school');
+    if(saved&&schoolId) await DB.saveStudentSchoolEnrolment({student_id:saved.id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
+    SHOW_ADD=false; roster();
+  }catch(e){
+    alert(e.message||'Could not add this student.');
+  }
 };
 window.downloadStudentCSVTemplate = ()=>{
   const rows = [
@@ -509,15 +513,21 @@ window.cancelEdit = ()=>{ EDIT_ID=null; roster(); };
 window.saveEdit = async id=>{
   const sec = val('ed_sec');
   const name = val('ed_name').trim(); if(!name){ alert('Enter a student name'); return; }
-  const gender = val('ed_gender'); if(!gender){ alert('Select gender.'); return; }
+  const gender = val('ed_gender') || null;
   const rawPhone = val('ed_phone').trim();
-  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : '';
+  const phone = rawPhone ? normalizeIndianPhone(rawPhone) : null;
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
   const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, parent_phone:phone, school_id:val('ed_school')||null };
   if(!(await warnStudentDuplicates(student,id))) return;
-  await DB.updateStudent(id,student);
-  const schoolId=val('ed_school'); if(schoolId) await DB.saveStudentSchoolEnrolment({student_id:id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section}); else await DB.removeStudentSchoolEnrolment(id,student.academic_session);
-  EDIT_ID=null; roster();
+  try{
+    await DB.updateStudent(id,student);
+    const schoolId=val('ed_school');
+    if(schoolId) await DB.saveStudentSchoolEnrolment({student_id:id,school_id:schoolId,academic_session:student.academic_session,class_level:student.class_level,section:student.section});
+    else await DB.removeStudentSchoolEnrolment(id,student.academic_session);
+    EDIT_ID=null; roster();
+  }catch(e){
+    alert(e.message||'Could not save this student.');
+  }
 };
 window.archiveStudent = async (id,name)=>{
   if(!confirm(`Archive ${name}? The student will be removed from the active Students list. Their marks and reports will be kept safely for recovery.`)) return;

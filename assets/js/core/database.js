@@ -343,8 +343,10 @@ const supaDB = {
       const legacyPayload = missingSchoolColumn(res.error) ? stripSchoolId(payload) : (missingBirthdayColumn(res.error) ? stripBirthday(stripSession(payload)) : stripSession(payload));
       const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
       res = await supa.from('students').insert(legacyPayload).select(cols).single();
+      if(res.error) throw res.error;
       return res.data ? {...res.data,academic_session:s.academic_session||currentSession()} : null;
     }
+    if(res.error) throw res.error;
     return res.data;
   },
   async updateStudent(id,patch){
