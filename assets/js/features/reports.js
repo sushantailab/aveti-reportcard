@@ -22,6 +22,14 @@ function parentMessageChapters(test, chapterNumbers=[]){
 const isCET = test => testTypeLabel(test.test_type)==='Chapter End Test';
 const periodicNextStep = 'Revisit the lesson notes and practise case-based and AR questions. Contact the centre if support is needed.';
 
+async function resolveAssignedTeacher(test){
+  if(!test) return null;
+  const joinedTeacher = test.teacher || null;
+  if(!test.teacher_id) return joinedTeacher;
+  const fullTeacher = (await DB.listTahTeachers()).find(teacher=>String(teacher.id)===String(test.teacher_id)) || null;
+  return fullTeacher ? {...joinedTeacher,...fullTeacher} : joinedTeacher;
+}
+
 function parentNotificationContext(test, studentId, tests, results){
   const currentDate = new Date(testDate(test)).getTime();
   const earlierTests = tests
@@ -163,10 +171,7 @@ async function openTeacher(testId){
 window.shareTeacherReport = async testId => {
   const data = await teacherReportData(testId);
   if(!data) return alert('Test report not found.');
-  let teacher = data.test.teacher;
-  if(!teacher && data.test.teacher_id){
-    teacher = (await DB.listTahTeachers()).find(t=>String(t.id)===String(data.test.teacher_id));
-  }
+  let teacher = await resolveAssignedTeacher(data.test);
   if(!teacher){
     if(confirm('No teacher is assigned to this test. Open Mark Entry to assign one now?')) enterMarks(testId);
     return;
@@ -279,11 +284,8 @@ async function renderTeacher(tests){
     return;
   }
   CURRENT_TEST = test.id;
-  // Fallback for report loads that do not include the nested teacher relation.
-  let assignedTeacher = test.teacher || null;
-  if(!assignedTeacher && test.teacher_id){
-    assignedTeacher = (await DB.listTahTeachers()).find(teacher=>String(teacher.id)===String(test.teacher_id)) || null;
-  }
+  // Fallback for report loads that do not include full nested teacher details.
+  let assignedTeacher = await resolveAssignedTeacher(test);
   const scopeLabel = await teacherScopeLabel(test);
   const students = await DB.listStudents();
   const studentById = new Map(students.map(s=>[s.id,s]));
@@ -454,7 +456,7 @@ window.setTeacherTrendShowAll = async ()=>{
 window.printTeacherReport = async testId=>{
   const data = await teacherReportData(testId || CURRENT_TEST);
   if(!data){ window.print(); return; }
-  const teacher = data.test.teacher || (data.test.teacher_id ? (await DB.listTahTeachers()).find(item=>String(item.id)===String(data.test.teacher_id)) : null);
+  const teacher = await resolveAssignedTeacher(data.test);
   const scope = await teacherScopeLabel(data.test);
   printReportWithFilename(reportPdfFilename(teacher?.name||'Teacher',`Class-${data.test.class_level}`,data.test.subject,scope,testTypeLabel(data.test.test_type),'Teacher-Report'));
 };
@@ -507,7 +509,7 @@ window.exportTeacherPDF = async testId=>{
   });
   if(ranked.length>28) lines.push({text:`+ ${ranked.length-28} more rows in CSV export`,x:40,y:y-8,size:9});
   lines.push({text:'Privacy note: parent phone numbers are not included in this teacher PDF.',x:40,y:38,size:8});
-  const teacher = test.teacher || (test.teacher_id ? (await DB.listTahTeachers()).find(item=>String(item.id)===String(test.teacher_id)) : null);
+  const teacher = await resolveAssignedTeacher(test);
   const scope = await teacherScopeLabel(test);
   downloadBlob(reportPdfFilename(teacher?.name||'Teacher',`Class-${test.class_level}`,test.subject,scope,testTypeLabel(test.test_type),'Teacher-Report'),'application/pdf',simplePdf(lines));
 };
