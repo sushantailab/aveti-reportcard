@@ -25,9 +25,30 @@ const periodicNextStep = 'Revisit the lesson notes and practise case-based and A
 async function resolveAssignedTeacher(test){
   if(!test) return null;
   const joinedTeacher = test.teacher || null;
-  if(!test.teacher_id) return joinedTeacher;
-  const fullTeacher = (await DB.listTahTeachers()).find(teacher=>String(teacher.id)===String(test.teacher_id)) || null;
-  return fullTeacher ? {...joinedTeacher,...fullTeacher} : joinedTeacher;
+  const teachers = await DB.listTahTeachers();
+  const fullTeacher = test.teacher_id ? teachers.find(teacher=>String(teacher.id)===String(test.teacher_id)) : null;
+  const merged = fullTeacher ? {...joinedTeacher,...fullTeacher} : joinedTeacher;
+  if(!merged) return null;
+  if(merged.gender) return merged;
+  const mobile = cleanPhone(merged.mobile||'');
+  const name = String(merged.name||'').trim().toLowerCase();
+  const profileMatch = teachers.find(teacher=>{
+    if(teacher.gender && mobile && cleanPhone(teacher.mobile||'')===mobile) return true;
+    return teacher.gender && name && String(teacher.name||'').trim().toLowerCase()===name;
+  });
+  return profileMatch ? {...merged,gender:profileMatch.gender} : merged;
+}
+
+function teacherHonorific(teacher){
+  const value = String(teacher?.gender||teacher?.sex||teacher?.title||'').trim().toLowerCase();
+  if(['female','f','woman','madam','mrs','ms','miss'].some(token=>value===token || value.startsWith(token))) return 'madam';
+  if(['male','m','man','sir','mr'].some(token=>value===token || value.startsWith(token))) return 'sir';
+  return '';
+}
+
+function teacherGreeting(teacher){
+  const honorific = teacherHonorific(teacher);
+  return `Hello ${teacher.name}${honorific ? ' '+honorific : ''},`;
 }
 
 function parentNotificationContext(test, studentId, tests, results){
@@ -184,10 +205,8 @@ window.shareTeacherReport = async testId => {
   const applicable = Math.max(0, data.enrolled - data.na);
   const attendance = applicable ? Math.round(data.appeared / applicable * 1000) / 10 : null;
   const test = data.test;
-  const teacherGender = String(teacher.gender||teacher.sex||'').toLowerCase();
-  const honorific = teacherGender.startsWith('f') ? 'madam' : 'sir';
   const supportCount = data.rows.filter(row=>!row.na && row.present && row.p!=null && row.p<60).length;
-  const body = `Hello ${teacher.name} ${honorific},\n\nThis teacher report is ready for Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)}.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nTeacher action: Please focus on the ${supportCount} students in the Developing and Urgent Support groups. Review the report, form small groups, conduct a remedial class, and discuss a practical improvement plan with each student.\n\nPlease find the detailed report PDF attached.`;
+  const body = `${teacherGreeting(teacher)}\n\nThis teacher report is ready for Class ${test.class_level} · Section ${test.section||'All'} · ${test.subject} ${testTypeLabel(test.test_type)}.\nClass average: ${data.avg==null?'—':data.avg+'%'} · Exam attendance: ${attendance==null?'—':attendance+'%'} (${data.appeared}/${applicable}).\n\nTeacher action: Please focus on the ${supportCount} students in the Developing and Urgent Support groups. Review the report, form small groups, conduct a remedial class, and discuss a practical improvement plan with each student.\n\nPlease find the detailed report PDF attached.`;
   window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(body)}`,'_blank','noopener');
 };
 

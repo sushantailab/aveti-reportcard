@@ -104,8 +104,9 @@ window.sendBirthdayWish=(encodedPhone,encodedName,role,gender)=>{
   const name=decodeURIComponent(encodedName||'')||'there';
   if(!phone){ alert(`Add a WhatsApp number for ${name} first.`); return; }
   const isTeacher=role==='Teacher';
-  const honorific=String(gender||'').toLowerCase().startsWith('f')?'madam':'sir';
-  const greeting=isTeacher?`Hello ${name} ${honorific}`:'Namaste';
+  const teacherGender=String(gender||'').trim().toLowerCase();
+  const honorific=teacherGender.startsWith('f')?'madam':(teacherGender.startsWith('m')?'sir':'');
+  const greeting=isTeacher?`Hello ${name}${honorific?' '+honorific:''}`:'Namaste';
   const message=isTeacher
     ? `${greeting}, aaj aapka birthday hai 🎂\n\nAveti Learning Tuition Center ki taraf se aapko janamdin ki bahut-bahut shubhkamnayein. Aapko achhi health, happiness aur continued success mile. Students ko inspire karte rahiye! Hamesha khush rahiye 🎉`
     : `${greeting}, aaj ${name} ka birthday hai 🎂\n\nAveti Learning Tuition Center ki taraf se ${name} ko janamdin ki bahut-bahut shubhkamnayein. Bhagwan use achhi health, khushi aur success de. Hamesha muskurate rahiye aur seekhte rahiye! 🎉`;

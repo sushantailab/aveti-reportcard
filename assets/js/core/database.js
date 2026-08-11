@@ -299,6 +299,7 @@ const EDIT_LOG_COLS = 'id,centre_id,test_id,student_id,edited_by,edited_at,old_m
 const TRAINING_EVENT_COLS = 'id,centre_id,title,subtitle,event_date,duration_hours,organizer_name,focus_points,certificate_prefix,signatory_1_name,signatory_1_title,signatory_2_name,signatory_2_title,created_at';
 const TRAINING_PARTICIPANT_COLS = 'id,centre_id,event_id,sequence_no,certificate_id,name,phone,whatsapp,email,school,certificate_url,whatsapp_sent_at,email_sent_at,verified_at,created_at';
 const TAH_TEACHER_COLS = 'id,centre_id,name,mobile,email,gender,date_of_birth,class_levels,subjects,school_name,class_level,subject,board,language,enrollment_date,journey_day,prepared,prepared_at,taught,taught_at,loop_completed,loop_completed_at,nps_score,feedback_sentiment,status,rated,rated_at,referrals_sent,referral_conversions,referred_by,referral_code,testimonial_consent,testimonial_sent,opted_out,archived_at,created_at,updated_at';
+const TAH_TEACHER_MIN_COLS = 'id,centre_id,name,mobile,opted_out,archived_at,created_at,updated_at';
 const TAH_TEMPLATE_COLS = 'id,day_key,language,category,app_target,title,body,video_url,image_url,active,created_at,updated_at';
 const TAH_TEMPLATE_COLS_LEGACY = 'id,day_key,language,category,app_target,title,body,video_url,active,created_at,updated_at';
 const TAH_LOG_COLS = 'id,teacher_id,template_id,day_key,language,channel,status,rendered_body,reply_text,sent_at,delivered_at,replied_at,sent_by,created_at';
@@ -309,6 +310,7 @@ const SCHOOL_RESULT_COLS = 'id,centre_id,student_id,academic_session,subject,exa
 const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const missingBirthdayColumn = error => /date_of_birth|column .* does not exist/i.test(String(error?.message||''));
+const missingTahTeacherProfileColumn = error => /date_of_birth|email|gender|class_levels|subjects|column .* does not exist/i.test(String(error?.message||''));
 const missingSchoolColumn = error => /school_id|school_name|city|is_active/i.test(String(error?.message||''));
 const missingSchoolMasterColumns = error => /school_name|city|is_active/i.test(String(error?.message||''));
 const withDefaultSession = rows => (rows||[]).map(s=>({...s,academic_session:s.academic_session||currentSession()}));
@@ -318,6 +320,15 @@ const stripSession = obj => {
   return copy;
 };
 const stripBirthday = obj => { const copy={...obj}; delete copy.date_of_birth; return copy; };
+const stripTahTeacherProfile = obj => {
+  const copy = {...obj};
+  delete copy.email;
+  delete copy.gender;
+  delete copy.date_of_birth;
+  delete copy.class_levels;
+  delete copy.subjects;
+  return copy;
+};
 const stripSchoolId = obj => { const copy={...obj}; delete copy.school_id; return copy; };
 const stripUnsupportedStudentColumns = (error,obj) => {
   let copy = {...obj};
@@ -494,7 +505,7 @@ const supaDB = {
   },
   async listTahTeachers(){
     let res=await supa.from('tah_teachers').select(TAH_TEACHER_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
-    if(res.error && missingBirthdayColumn(res.error)) res=await supa.from('tah_teachers').select(TAH_TEACHER_COLS.replace(',date_of_birth','')).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+    if(res.error && missingTahTeacherProfileColumn(res.error)) res=await supa.from('tah_teachers').select(TAH_TEACHER_MIN_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
     if(res.error) throw res.error;
     return res.data||[];
   },
@@ -502,7 +513,7 @@ const supaDB = {
     if(!rows.length) return this.listTahTeachers();
     const payload=rows.map(r=>({...r,centre_id:CENTRE_ID}));
     let {error}=await supa.from('tah_teachers').upsert(payload,{onConflict:'mobile'});
-    if(error && missingBirthdayColumn(error)){ ({error}=await supa.from('tah_teachers').upsert(payload.map(stripBirthday),{onConflict:'mobile'})); }
+    if(error && missingTahTeacherProfileColumn(error)){ ({error}=await supa.from('tah_teachers').upsert(payload.map(stripTahTeacherProfile),{onConflict:'mobile'})); }
     if(error) throw error;
     return this.listTahTeachers();
   },
@@ -512,7 +523,7 @@ const supaDB = {
     if(patch.taught) payload.taught_at = new Date().toISOString();
     if(patch.loop_completed) payload.loop_completed_at = new Date().toISOString();
     let {data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS).single();
-    if(error && missingBirthdayColumn(error)){ delete payload.date_of_birth; ({data,error}=await supa.from('tah_teachers').update(payload).eq('id',id).select(TAH_TEACHER_COLS.replace(',date_of_birth','')).single()); }
+    if(error && missingTahTeacherProfileColumn(error)){ ({data,error}=await supa.from('tah_teachers').update(stripTahTeacherProfile(payload)).eq('id',id).select(TAH_TEACHER_MIN_COLS).single()); }
     if(error) throw error;
     return data;
   },
