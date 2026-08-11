@@ -341,7 +341,7 @@ async function roster(){
   const sessionStudents = all.filter(s=>(s.academic_session||currentSession())===SESSION_FILTER);
   const classStudents = CLASS_FILTER==='All' ? sessionStudents : sessionStudents.filter(s=>String(s.class_level)===String(CLASS_FILTER));
   const sectionStudents = SEC_FILTER==='All' ? classStudents : classStudents.filter(s=>(s.section||'')===SEC_FILTER);
-  const students = SCHOOL_FILTER==='All' ? sectionStudents : sectionStudents.filter(s=>ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===SCHOOL_FILTER || s.school_id===SCHOOL_FILTER);
+  const students = SCHOOL_FILTER==='All' ? sectionStudents : sectionStudents.filter(s=>ROSTER_ENROLMENTS.find(e=>e.student_id===s.id)?.school_id===SCHOOL_FILTER);
   const rows = students.length ? students.map(studentRow).join('')
     : '<div class="muted small" style="padding:8px 0">No students here yet.</div>';
   const fbtn = (v,label)=>`<button class="${SEC_FILTER===v?'on':''}" onclick="setSecFilter('${v}')">${label}</button>`;
@@ -379,7 +379,7 @@ window.setSchoolFilter = v=>{ SCHOOL_FILTER=v; roster(); };
 function studentRow(s){
   if(EDIT_ID===s.id) return editRow(s);
   const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id);
-  const school=ROSTER_SCHOOLS.find(x=>x.id===(s.school_id||enrollment?.school_id))?.name||enrollment?.school?.name;
+  const school=ROSTER_SCHOOLS.find(x=>x.id===enrollment?.school_id)?.name||enrollment?.school?.name;
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
     <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth ? ' · DOB '+fmtDate(s.date_of_birth) : ''}${school?(' · '+school):' · No school assigned'}</div></div>
@@ -396,7 +396,7 @@ window.openSchoolModal=prefix=>{ const modal=document.getElementById('schoolMast
 window.closeSchoolModal=()=>document.getElementById('schoolMasterModal')?.classList.remove('open');
 window.saveNewSchool=async()=>{ const modal=document.getElementById('schoolMasterModal'), name=val('newSchoolName').trim(), city=val('newSchoolCity').trim(); if(!name){alert('Enter a school name.');return;} try{ let school=ROSTER_SCHOOLS.find(x=>x.name.toLowerCase()===name.toLowerCase()); if(!school) school=await DB.createSchool({school_name:name,city}); ROSTER_SCHOOLS=await DB.listSchools(); const prefix=modal.dataset.target||'ad'; const search=document.getElementById(`${prefix}_school_search`), hidden=document.getElementById(`${prefix}_school`); if(search) search.value=school.name||school.school_name||name; if(hidden) hidden.value=school.id; closeSchoolModal(); }catch(e){alert(e.message||'Could not create school.');} };
 function editRow(s){
-  const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id), schoolId=s.school_id||enrollment?.school_id||'';
+  const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id), schoolId=enrollment?.school_id||'';
   return `<div class="listrow" style="flex-wrap:wrap;gap:8px">
     <input id="ed_name" value="${s.name}" placeholder="Name" style="flex:1;min-width:120px">
     <select id="ed_session" style="width:auto">${sessionOptions(s.academic_session)}</select>
@@ -441,7 +441,6 @@ window.submitAdd = async ()=>{
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
   const schoolId=val('ad_school');
   const student = { name, academic_session:val('ad_session'), class_level:parseInt(val('ad_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ad_dob')||null, parent_name:'', parent_phone:phone };
-  if(schoolId) student.school_id=schoolId;
   if(!(await warnStudentDuplicates(student))) return;
   try{
     const saved=await DB.addStudent(student);
@@ -520,7 +519,6 @@ window.saveEdit = async id=>{
   if(rawPhone && !phone){ alert('Enter a valid Indian 10-digit parent phone number. Parent cards cannot be sent without this.'); return; }
   const schoolId=val('ed_school');
   const student = { name, academic_session:val('ed_session'), class_level:parseInt(val('ed_class')), section: sec==='All'?null:sec, gender, date_of_birth:val('ed_dob')||null, parent_phone:phone };
-  if(schoolId) student.school_id=schoolId;
   if(!(await warnStudentDuplicates(student,id))) return;
   try{
     await DB.updateStudent(id,student);

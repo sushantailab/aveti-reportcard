@@ -289,7 +289,7 @@ let CENTRE_ID = null;   // set after login by ensureCentre()
 let CURRENT_USER_ID = 'demo-user';
 let ACCESS_ROLE = 'centre_admin';
 let ACCESS_CENTRES = [];
-const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,school_id,centre_id';
+const STUDENT_COLS = 'id,name,academic_session,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
 const STUDENT_COLS_LEGACY = 'id,name,class_level,section,gender,date_of_birth,optional_subject,parent_name,parent_phone,centre_id';
 const CHAPTER_COLS = 'id,centre_id,class_level,subject,chapter_no,title,created_at';
 const TEST_COLS = 'id,centre_id,class_level,section,subject,teacher_id,teacher:teacher_id(id,centre_id,name,mobile,opted_out),chapter_id,chapter_ids,chapter_no,chapter_name,chapter_names,test_type,full_marks,duration_minutes,test_date,chapter:chapter_id(id,centre_id,class_level,subject,chapter_no,title)';
@@ -344,7 +344,7 @@ const supaDB = {
     return withDefaultSession(res.data);
   },
   async addStudent(s){
-    const payload = {...s, centre_id:CENTRE_ID};
+    const payload = stripSchoolId({...s, centre_id:CENTRE_ID});
     let res = await supa.from('students').insert(payload).select(STUDENT_COLS).single();
     if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
       const legacyPayload = stripUnsupportedStudentColumns(res.error,payload);
@@ -357,7 +357,7 @@ const supaDB = {
     return res.data;
   },
   async updateStudent(id,patch){
-    let res = await supa.from('students').update(patch).eq('id',id);
+    let res = await supa.from('students').update(stripSchoolId(patch)).eq('id',id);
     if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
       res = await supa.from('students').update(stripUnsupportedStudentColumns(res.error,patch)).eq('id',id);
     }
