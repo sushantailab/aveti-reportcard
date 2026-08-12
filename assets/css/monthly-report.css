@@ -328,3 +328,69 @@
     color:#fff !important;
   }
 }
+
+/* Final Monthly Progress header refinement: keep the original logo left,
+   center the centre identity, and avoid repeating the report month badge. */
+@media screen {
+  .monthly-cover {
+    display:flex;
+    align-items:center;
+    min-height:112px;
+    padding:18px 24px;
+  }
+  .monthly-brand {
+    width:100%;
+    display:grid;
+    grid-template-columns:132px minmax(0,1fr);
+    align-items:center;
+    gap:22px;
+  }
+  .monthly-cover .monthly-brand img {
+    width:112px;
+    height:62px;
+    object-fit:contain;
+  }
+  .monthly-brand-copy {
+    min-width:0;
+    text-align:left;
+  }
+  .monthly-eyebrow { font-size:17px; letter-spacing:.12em; }
+  .monthly-brand-contact { font-size:13px; margin:2px 0 5px; }
+  .monthly-cover h1 {
+    display:inline-block;
+    font-size:30px;
+    line-height:1.05;
+    margin:0;
+    padding:6px 12px;
+    background:#0b6b4b;
+    color:#fff;
+  }
+  .monthly-month-badge { display:none !important; }
+  .monthly-summary {
+    background:#edf8f1;
+    border-left:5px solid #0b6b4b;
+    padding:13px 17px;
+  }
+}
+
+@media print {
+  .monthly-cover {
+    display:flex;
+    align-items:center;
+    min-height:29mm;
+    padding:3mm 4mm;
+  }
+  .monthly-brand {
+    display:grid;
+    grid-template-columns:28mm minmax(0,1fr);
+    align-items:center;
+    gap:4mm;
+  }
+  .monthly-cover .monthly-brand img { width:24mm; height:13mm; }
+  .monthly-brand-copy { min-width:0; }
+  .monthly-eyebrow { font-size:10pt; }
+  .monthly-brand-contact { font-size:7.5pt; margin:0 0 1mm; }
+  .monthly-cover h1 { font-size:18pt; padding:1.2mm 2.5mm; margin:0; }
+  .monthly-month-badge { display:none !important; }
+  .monthly-summary { background:#edf8f1 !important; border-left-color:#0b6b4b !important; }
+}
