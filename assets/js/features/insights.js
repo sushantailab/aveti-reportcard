@@ -167,6 +167,9 @@ async function classInsights(initial){
   if(!INSIGHTS.cls) INSIGHTS.cls = '1';
   if(!INSIGHTS.section) INSIGHTS.section = 'All';
   if(!INSIGHTS.subject) INSIGHTS.subject = SUBJECTS[0];
+  // Keep the subject valid for the selected class (matches the Enter marks list).
+  const allowedSubjects = subjectsForClass(INSIGHTS.cls);
+  if(allowedSubjects.length && !allowedSubjects.includes(INSIGHTS.subject)) INSIGHTS.subject = allowedSubjects[0];
   renderClassInsights(buildSubjectInsights(tests,students,results,INSIGHTS));
 }
 
@@ -176,7 +179,7 @@ function insightsFilterBar(){
       <div class="wrap-fields">
         <div class="field"><label>Class</label><select onchange="setInsightsFilter('cls',this.value)">${classOptions(INSIGHTS.cls)}</select></div>
         <div class="field"><label>Section</label><select onchange="setInsightsFilter('section',this.value)">${sectionOptions(INSIGHTS.section,true)}</select></div>
-        <div class="field"><label>Subject</label><select onchange="setInsightsFilter('subject',this.value)">${subjectOptions(INSIGHTS.subject)}</select></div>
+        <div class="field"><label>Subject</label><select onchange="setInsightsFilter('subject',this.value)">${subjectOptionsForClass(INSIGHTS.cls,INSIGHTS.subject)}</select></div>
       </div>
     </div>`;
 }
@@ -211,7 +214,7 @@ function renderClassInsights(data){
     <div class="insight-report exact-insight-report">
       <div class="report-style-title">Class Insights — Student Performance Report</div>
       <div class="insight-print-head"><img class="insight-report-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="insight-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class Insights —<br>Student Performance Report</h1></div><button class="insight-print-button" onclick="printInsightsReport()">🖨 Print / Save as PDF</button></div>
-      <div class="insight-meta"><div>${insightIcon('class')}<span>Class<b>Class ${INSIGHTS.cls}</b></span></div><div>${insightIcon('subject')}<span>Subject<b>${INSIGHTS.subject}</b></span></div><div>${insightIcon('exam')}<span>Exams included<b>${included}</b></span></div></div>
+      <div class="insight-meta"><div>${insightIcon('class')}<span>Class<b>Class ${INSIGHTS.cls}</b></span></div><div>${insightIcon('subject')}<span>Subject<b>${subjectDisplayName(INSIGHTS.subject,INSIGHTS.cls)}</b></span></div><div>${insightIcon('exam')}<span>Exams included<b>${included}</b></span></div></div>
   <div class="insight-metrics exact-metrics"><div class="metric icon-metric">${insightIcon('average')}<span><div class="tiny">Class average</div><div class="n">${data.classAverage??'--'}${data.classAverage==null?'':'%'}</div><div class="tiny faint">All attended exams</div></span></div><div class="metric icon-metric">${insightIcon('improve')}<span><div class="tiny">Highest improvement</div><div class="n">${improve==null?'--':(improve>0?'+':'')+improve}</div><div class="tiny faint">percentage points</div></span></div><div class="metric icon-metric attendance-metric">${insightIcon('attendance')}<span><div class="tiny">Exam attendance</div><div class="n">${data.examAttendance??'--'}${data.examAttendance==null?'':'%'}</div><div class="tiny faint">of applicable exams attended</div></span></div></div>
       <div class="insight-main-grid"><div class="card pad insight-leaderboard"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Top performers</h2></div><div class="muted small">Average percentage across all attended exams</div></div><div class="insight-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>${leaderboard}${data.rows.filter(row=>row.percent!=null).length>10?`<button class="insight-show-all" onclick="setInsightsShowAll()">${INSIGHTS.showAll?'Show Top 10':'Show all students'}</button>`:''}</div><div class="card pad insight-sections"><div class="insight-heading"><div>${insightIcon('leader')}<h2>Section leaders</h2></div></div>${sectionCards}</div></div>
       <div class="card pad insight-trend-card"><div class="insight-heading"><div>${insightIcon('improve')}<h2>Performance trend</h2></div><div class="muted small">Top 10 by overall average · previous attended exam vs current attended exam</div></div><div class="insight-trend-head"><span>Student</span><span>Previous %</span><span>Current %</span><span>Change</span></div>${trendRows}${data.trendRows.length>10?`<button class="insight-show-all" onclick="setInsightsTrendShowAll()">${INSIGHTS.showAllTrends?'Show Top 10':'Show all students'}</button>`:''}</div>

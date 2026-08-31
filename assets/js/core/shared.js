@@ -10,7 +10,6 @@ const sessionOptions = sel => SESSIONS.map(s=>`<option value="${s}" ${s===(sel||
 const classOptions   = sel => CLASSES.map(c=>`<option value="${c}" ${c==sel?'selected':''}>Class ${c}</option>`).join('');
 const classFilterOptions = sel => '<option value="All">All classes</option>' + CLASSES.map(c=>`<option value="${c}" ${String(c)===String(sel)?'selected':''}>Class ${c}</option>`).join('');
 const sectionOptions = (sel,withAll) => (withAll?['All','A','B']:['A','B']).map(s=>`<option value="${s}" ${s==sel?'selected':''}>${s==='All'?'All sections':'Section '+s}</option>`).join('');
-const subjectOptions = sel => SUBJECTS.map(s=>`<option ${s==sel?'selected':''}>${s}</option>`).join('');
 const subjectsForClass = cls => {
   const n=Number(cls);
   if(n>=1 && n<=5) return ['Mathematics','EVS','Hindi','English'];

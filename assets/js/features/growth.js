@@ -18,6 +18,9 @@ async function growth(){
   if(!GR.cls) GR.cls = '1';
   if(!GR.section) GR.section = 'All';
   if(!GR.subject) GR.subject = SUBJECTS[0];
+  // Keep the subject valid for the selected class (matches the Enter marks list).
+  const allowedSubjects = subjectsForClass(GR.cls);
+  if(allowedSubjects.length && !allowedSubjects.includes(GR.subject)) GR.subject = allowedSubjects[0];
   const classStudents = students.filter(s=>
     String(s.class_level)===String(GR.cls) &&
     selectedSectionMatches(s.section, GR.section)
@@ -154,7 +157,7 @@ async function growth(){
     ${filterBar}
     <div class="growth-dashboard">
       <div class="report-style-title">Chapterwise Growth Report</div>
-      <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — ${GR.subject} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="printGrowthReport()">🖨 Print / Save as PDF</button><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
+      <div class="growth-head"><img class="growth-print-logo" alt="Aveti Learning Tuition Center logo" src="assets/images/aveti-logo.png"><div><div class="eyebrow">Aveti Learning Tuition Center</div><div class="growth-print-contact">${CONFIG.CENTRE.address}${CONFIG.CENTRE.phone?` · Ph ${CONFIG.CENTRE.phone}`:''}</div><h1>Class ${GR.cls} — ${subjectDisplayName(GR.subject,GR.cls)} chapterwise growth report</h1><div class="tiny muted">${GR.section==='All'?'All sections':`Section ${GR.section}`}</div></div><div class="growth-controls"><button class="growth-print-button" onclick="printGrowthReport()">🖨 Print / Save as PDF</button><div class="seg"><button class="${GR.mode==='class'?'on':''}" onclick="setGrowthMode('class')">Class trend</button><button class="${GR.mode==='ind'?'on':''}" onclick="setGrowthMode('ind')">Individual</button></div><select style="width:auto;${GR.mode==='ind'?'':'display:none'}" onchange="setGrowthStudent(this.value)">${growthStudentOptions(classStudents)}</select></div></div>
       ${growthReportMeta()}
       <div class="growth-summary-grid">
         <div class="growth-summary-card"><span>${growthIcon('average')}</span><div><small>Class average</small><strong>${classAverage==null?'—':classAverage+'%'}</strong><em>All attended exams</em></div></div>
@@ -180,7 +183,7 @@ function growthFilterBar(){
       <div class="wrap-fields">
         <div class="field"><label>Class</label><select onchange="setGrowthFilter('cls',this.value)">${classOptions(GR.cls)}</select></div>
         <div class="field"><label>Section</label><select onchange="setGrowthFilter('section',this.value)">${sectionOptions(GR.section,true)}</select></div>
-        <div class="field"><label>Subject</label><select onchange="setGrowthFilter('subject',this.value)">${subjectOptions(GR.subject)}</select></div>
+        <div class="field"><label>Subject</label><select onchange="setGrowthFilter('subject',this.value)">${subjectOptionsForClass(GR.cls,GR.subject)}</select></div>
       </div>
     </div>`;
 }
