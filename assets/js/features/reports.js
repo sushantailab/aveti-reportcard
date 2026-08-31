@@ -451,7 +451,7 @@ async function renderTeacher(tests){
   const leaderboardRows = (TEACHER_SHOW_ALL ? present : present.slice(0,10)).map((r,i)=>`
     <div class="teacher-leader-row">
       <div class="teacher-leader-rank ${i<3?'medal-'+(i+1):''}">${i+1}</div>
-      <div class="teacher-leader-name"><b>${r.name}</b><span>Section ${test.section||'All'}</span></div>
+      <div class="teacher-leader-name"><b>${r.name}</b><span>Section ${test.section||'All'} · ${r.marks}/${test.full_marks}</span></div>
       <div class="teacher-leader-bar"><span style="width:${r.p}%"></span></div>
       <strong>${r.p}%</strong>
     </div>`).join('');
