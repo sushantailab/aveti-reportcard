@@ -1,0 +1,11 @@
+{
+  "name": "aveti-reportcard",
+  "private": true,
+  "description": "Build tooling for the Aveti Learning report-card dashboard (static site).",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  }
+}
