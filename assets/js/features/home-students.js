@@ -68,6 +68,44 @@ const homeMiniCalendar = (month,year,tests) => {
   const days=Array.from({length:lastDay},(_,index)=>{const day=index+1,count=counts.get(day)||0;return `<i class="home-calendar-day${count?' has-test':''}${count>1?' multiple-tests':''}">${day}${count?'<b aria-label="Test day"></b>':''}</i>`;}).join('');
   return `<aside class="home-mini-calendar" aria-label="${new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric'}).format(new Date(year,month,1))} test calendar"><div><b>${new Intl.DateTimeFormat('en-IN',{month:'short'}).format(new Date(year,month,1))} ${year}</b><span><i class="single"></i>Test <i class="multiple"></i>2+</span></div><section><em>Su</em><em>Mo</em><em>Tu</em><em>We</em><em>Th</em><em>Fr</em><em>Sa</em>${blank}${days}</section></aside>`;
 };
+const HOME_MATRIX_CLASSES = [5,6,7,8,9,10];
+const HOME_MATRIX_SUBJECTS = [
+  {key:'mathematics',label:'Mathematics'},
+  {key:'science',label:'Science / EVS'},
+  {key:'social-science',label:'Social Science'},
+  {key:'english',label:'English'},
+  {key:'sanskrit',label:'Sanskrit'},
+  {key:'hindi',label:'Hindi'}
+];
+function homeMatrixSubjectGroup(subject,classLevel){
+  const name=normalizeText(subject).toLowerCase().replace(/[._-]+/g,' ').replace(/\s+/g,' ').trim();
+  if(/^(mathematics|math)(?:\s*(?:i|ii|1|2))?$/.test(name)) return 'mathematics';
+  if(name==='science' || (Number(classLevel)===5 && name==='evs')) return 'science';
+  if(/^(social science|sst)(?:\s*(?:i|ii|1|2))?$/.test(name)) return 'social-science';
+  if(name==='english') return 'english';
+  if(name==='sanskrit') return 'sanskrit';
+  if(name==='hindi') return 'hindi';
+  return '';
+}
+function homeTestCoverageMatrix(tests,monthName,year){
+  const counts=new Map();
+  tests.forEach(test=>{
+    const classLevel=Number(test.class_level);
+    const subjectGroup=homeMatrixSubjectGroup(test.subject,classLevel);
+    if(!HOME_MATRIX_CLASSES.includes(classLevel) || !subjectGroup) return;
+    const key=`${classLevel}:${subjectGroup}`;
+    counts.set(key,(counts.get(key)||0)+1);
+  });
+  const head=HOME_MATRIX_SUBJECTS.map(subject=>`<th scope="col">${subject.label}</th>`).join('');
+  const rows=HOME_MATRIX_CLASSES.map(classLevel=>{
+    const cells=HOME_MATRIX_SUBJECTS.map(subject=>{
+      const count=counts.get(`${classLevel}:${subject.key}`)||0;
+      return `<td>${count?`<span class="home-test-count" aria-label="${count} ${subject.label} test${count===1?'':'s'}"><b>${count}</b></span>`:'<span class="home-test-none" aria-label="No tests">—</span>'}</td>`;
+    }).join('');
+    return `<tr><th scope="row">Class ${classLevel}</th>${cells}</tr>`;
+  }).join('');
+  return `<section class="home-test-matrix" aria-label="${monthName} ${year} test coverage by class and subject"><div class="home-test-matrix-title"><b>Monthly test coverage</b><span>Tests conducted by class and subject</span></div><div class="home-test-matrix-scroll"><table><thead><tr><th scope="col">Class</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
 
 /* ---------- HOME ---------- */
 let HOME_CLASS_FILTER = 'All', HOME_SUBJECT_FILTER = 'All', HOME_SHOW_ALL = false;
@@ -199,7 +237,7 @@ async function home(){
           <article class="home-stat-card"><div><i class="home-icon subject">${homeIcon('subject')}</i><b>${periodSubjects.size}</b><span>Subjects assessed</span></div>${homeBars(periodSubjects.size,'orange')}</article>
           <article class="home-stat-card attendance-card"><div class="attendance-ring" style="--attendance:${attendance||0}"><b>${attendance==null?'—':attendance+'%'}</b><span>Exam attendance</span></div></article>
         </div>
-        <div class="home-summary-grid"><div class="home-summary"><b>Tests by class</b><div>${periodClasses.size?[...periodClasses.entries()].sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,count])=>`<span><label>Class ${key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodClasses.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div><div class="home-summary"><b>Tests by subject</b><div>${periodSubjects.size?[...periodSubjects.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>`<span><label>${key==='Mathematics'?'Math':key}</label><i><em style="width:${Math.max(20,count/Math.max(...periodSubjects.values())*100)}%"></em></i><strong>${count}</strong></span>`).join(''):'<em>No tests in '+monthName+' '+selectedYear+'</em>'}</div></div></div>
+        ${homeTestCoverageMatrix(periodTests,monthName,selectedYear)}
       </section>
       ${birthdayPanel(birthdayEntries(allStudents,allTeachers))}
 
@@ -234,10 +272,12 @@ window.setHomeMonth = value=>{ HOME_PERIOD_MONTH=value; home(); };
 window.setHomeYear = value=>{ HOME_PERIOD_YEAR=value; home(); };
 
 /* ---------- TEACHERS DIRECTORY ---------- */
-let TEACHER_SHOW_ADD = false, TEACHER_EDIT_ID = null, TEACHER_SEARCH = '';
+let TEACHER_SHOW_ADD = false, TEACHER_EDIT_ID = null, TEACHER_SEARCH = '', TEACHER_DIRECTORY = [];
 async function teachers(){
   setCrumb('Teachers');
-  const all = await DB.listTahTeachers();
+  const [all, allTests] = await Promise.all([DB.listTahTeachers(), DB.listTests()]);
+  const subjectSources = [...all, ...allTests];
+  TEACHER_DIRECTORY = all;
   const query = normalizeText(TEACHER_SEARCH).toLowerCase();
   const filtered = query ? all.filter(t=>[t.name,t.mobile,t.email,...(t.subjects||[])].some(v=>String(v||'').toLowerCase().includes(query))) : all;
   show(`
@@ -247,7 +287,7 @@ async function teachers(){
         <div><h2 style="font-size:20px">Teachers</h2><div class="muted small">Add teacher names and WhatsApp contacts. Select a teacher while entering marks to share that class report.</div></div>
         <button class="primary" onclick="toggleTeacherAdd()">+ Add teacher</button>
       </div>
-      <div style="display:${TEACHER_SHOW_ADD?'block':'none'};padding:0 18px 8px">${teacherFormHTML()}</div>
+      <div style="display:${TEACHER_SHOW_ADD?'block':'none'};padding:0 18px 8px">${teacherFormHTML(subjectSources)}</div>
       <div class="pad row" style="padding-top:4px;padding-bottom:6px;gap:8px;align-items:center;flex-wrap:wrap">
         <label class="small muted" for="teacherSearch">Find teacher</label>
         <input id="teacherSearch" value="${escapeHTML(TEACHER_SEARCH)}" placeholder="Name, WhatsApp number or email" oninput="setTeacherSearch(this.value)" style="max-width:340px;flex:1;min-width:220px">
@@ -257,7 +297,7 @@ async function teachers(){
     </div>`);
 }
 function teacherDirectoryRow(t){
-  if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t);
+  if(TEACHER_EDIT_ID===t.id) return teacherEditRow(t, TEACHER_DIRECTORY||[]);
   return `<div class="listrow" style="gap:12px;flex-wrap:wrap">
     ${avatar(t.gender,t.name)}
     <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}${t.date_of_birth?` · DOB ${fmtDate(t.date_of_birth)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
@@ -270,7 +310,7 @@ function teacherMultiChoice(id,items,selected,label){
   const values=(selected||[]).map(String);
   return `<details class="teacher-multi"><summary>${label} <span>${values.length?`${values.length} selected`:'Select'}</span></summary><div>${items.map(item=>`<label><input type="checkbox" name="${id}" value="${escapeHTML(item.value)}" ${values.includes(String(item.value))?'checked':''}> ${escapeHTML(item.label)}</label>`).join('')}</div></details>`;
 }
-function teacherFormHTML(){
+function teacherFormHTML(teachers=[]){
   return `<div style="background:#f8faf7;border-radius:11px;padding:12px"><div class="row" style="gap:8px;flex-wrap:wrap">
     <input id="teacherAddName" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherAddMobile" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
@@ -279,12 +319,12 @@ function teacherFormHTML(){
     <select id="teacherAddGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select>
   </div><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
     ${teacherMultiChoice('teacherAddClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),[],'Classes taught')}
-    ${teacherMultiChoice('teacherAddSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),[],'Subjects taught')}
+    ${teacherMultiChoice('teacherAddSubjects',teacherSubjects(teachers).map(s=>({value:s,label:subjectDisplayName(s,7)})),[],'Subjects taught')}
     <button class="primary" onclick="saveNewTeacher()">Add teacher</button>
     <button onclick="toggleTeacherAdd()">Cancel</button>
   </div><div class="tiny muted" style="margin-top:7px">Select every class and subject the teacher teaches. The Teacher dropdown in Mark Entry will show only matching teachers. Leave both lists empty only when the teacher can teach any class and subject.</div></div>`;
 }
-function teacherEditRow(t){
+function teacherEditRow(t,teachers=[]){
   return `<div class="listrow" style="gap:8px;flex-wrap:wrap;background:#f8faf7">
     <input id="teacherEditName" value="${escapeHTML(t.name)}" placeholder="Teacher name" style="flex:1;min-width:180px">
     <input id="teacherEditMobile" value="${escapeHTML(t.mobile||'')}" inputmode="numeric" placeholder="WhatsApp number" style="flex:1;min-width:170px">
@@ -292,7 +332,7 @@ function teacherEditRow(t){
     <input id="teacherEditDob" type="date" aria-label="Date of birth" title="Date of birth" value="${String(t.date_of_birth||'').slice(0,10)}" style="width:auto">
     <select id="teacherEditGender" aria-label="Gender" style="width:auto"><option value="">Gender</option><option value="female" ${t.gender==='female'?'selected':''}>Female</option><option value="male" ${t.gender==='male'?'selected':''}>Male</option><option value="other" ${t.gender==='other'?'selected':''}>Other</option></select>
     ${teacherMultiChoice('teacherEditClasses',teacherClasses().map(c=>({value:c,label:'Class '+c})),t.class_levels||[],'Classes taught')}
-    ${teacherMultiChoice('teacherEditSubjects',teacherSubjects().map(s=>({value:s,label:subjectDisplayName(s,7)})),t.subjects||[],'Subjects taught')}
+    ${teacherMultiChoice('teacherEditSubjects',teacherSubjects(teachers).map(s=>({value:s,label:subjectDisplayName(s,7)})),t.subjects||[],'Subjects taught')}
     <label class="small muted"><input id="teacherEditPaused" type="checkbox" ${t.opted_out?'checked':''}> Pause sharing</label>
     <button class="primary" onclick="saveTeacherEdit('${t.id}')">Save</button>
     <button onclick="cancelTeacherEdit()">Cancel</button>

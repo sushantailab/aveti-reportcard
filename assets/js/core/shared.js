@@ -19,7 +19,16 @@ const subjectsForClass = cls => {
   return subjects;
 };
 const teacherClasses = () => Array.from({length:8},(_,index)=>index+3);
-const teacherSubjects = () => [...new Set(teacherClasses().flatMap(subjectsForClass))];
+// Keep the standard catalog, but also surface exact subject names already
+// stored in the database (for example Math-1, Math-2, or Social Science-2).
+const teacherSubjects = (teachers=[]) => {
+  const stored = (teachers||[]).flatMap(t=>[
+    ...(Array.isArray(t.subjects)?t.subjects:[]),
+    ...String(t.subject||'').split(',')
+  ]).map(s=>normalizeText(s)).filter(Boolean);
+  return [...new Set([...teacherClasses().flatMap(subjectsForClass), ...stored])]
+    .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+};
 const subjectDisplayName = (subject,cls) => {
   const n=Number(cls);
   if((n===7 || n===8) && subject==='Mathematics') return 'Mathematics I';

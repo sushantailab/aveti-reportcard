@@ -79,6 +79,9 @@ button,select,input,textarea{max-width:100%}
   .workflow-tools button{min-height:43px!important}
 }
 
+/* Home monthly test-coverage matrix. */
+.home-test-matrix{margin-top:12px;border:1px solid #cfe0d7;border-radius:8px;overflow:hidden;background:#fff}.home-test-matrix-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px;background:#edf6f1;color:#174936}.home-test-matrix-title b{font-size:14px}.home-test-matrix-title span{font-size:11px;color:#587267}.home-test-matrix-scroll{overflow-x:auto}.home-test-matrix table{width:100%;min-width:700px;border-collapse:collapse;font-size:12px}.home-test-matrix th,.home-test-matrix td{padding:10px 12px;border-top:1px solid #e0ebe5;text-align:center}.home-test-matrix thead th{border-top:0;background:#f8fbf9;color:#38564a;font-size:11px;font-weight:800;white-space:nowrap}.home-test-matrix th:first-child{min-width:88px;text-align:left}.home-test-matrix tbody th{color:#204b3b;font-weight:800;background:#fcfefd}.home-test-count{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#e1f4e8;color:#087456;font-family:var(--font-data);font-size:13px;font-weight:800;box-shadow:inset 0 0 0 1px #b8dfc7}.home-test-none{color:#a3b1aa;font-size:15px}.home-test-matrix tbody tr:hover td,.home-test-matrix tbody tr:hover th{background:#f7fbf8}@media(max-width:720px){.home-test-matrix{margin-top:10px}.home-test-matrix-title{align-items:flex-start;flex-direction:column;gap:2px}.home-test-matrix th,.home-test-matrix td{padding:9px 11px}}
+
 /* Final readable-balanced UI layer (screen only). Print styles remain unchanged. */
 @media screen {
   :root {
