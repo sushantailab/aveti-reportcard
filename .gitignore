@@ -2,3 +2,8 @@
 .playwright-cli/
 node_modules/
 dist/
+
+# apps/web (Next.js) — see docs/ARCHITECTURE.md
+.next/
+.env*.local
+*.tsbuildinfo

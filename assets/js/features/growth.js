@@ -3,7 +3,7 @@ let GR = { mode:'class', student:null, cls:'', section:'All', subject:'' };
 
 function schoolComparisonHTML(rows){
   if(!rows?.length) return `<div class="card school-comparison"><h2>${growthIcon('subject')}School exam comparison</h2><p class="muted">No school results entered yet. Add PT1, Term1, PT2 or Annual marks from Enter marks → School Results.</p></div>`;
-  return `<div class="card school-comparison"><h2>${growthIcon('subject')}School exam comparison</h2><p class="muted">Aveti preparation compared with school performance · percentages only</p><div class="school-comparison-table"><div class="school-comparison-head"><span>Exam</span><span>Aveti internal</span><span>School</span><span>Difference</span></div>${rows.map(r=>{const diff=r.difference; const status=diff==null?'awaiting':Math.abs(diff)<=5?'stable':diff>0?'positive':'negative'; return `<div class="school-comparison-row"><div><b>${r.exam}</b><small>${r.school_exam_date||''}${r.school?.name?` · ${r.school.name}`:''}</small></div><strong>${r.aveti_percentage==null?'—':r.aveti_percentage+'%'}</strong><strong>${r.result_status==='absent'?'Absent':r.school_percentage==null?'Awaiting School Result':r.school_percentage+'%'}</strong><span class="school-diff ${status}">${r.result_status==='absent'?'Absent — no percentage comparison':diff==null?'Awaiting School Result':`${diff>=0?'+':''}${diff} pp`}</span></div>`;}).join('')}</div></div>`;
+  return `<div class="card school-comparison"><h2>${growthIcon('subject')}School exam comparison</h2><p class="muted">Aveti preparation compared with school performance · percentages only</p><div class="school-comparison-table"><div class="school-comparison-head"><span>Exam</span><span>Aveti internal</span><span>School</span><span>Difference</span></div>${rows.map(r=>{const diff=r.difference; const status=diff==null?'awaiting':Math.abs(diff)<=5?'stable':diff>0?'positive':'negative'; return `<div class="school-comparison-row"><div><b>${r.exam}</b><small>${r.school_exam_date||''}${r.school?.name?` · ${escapeHTML(r.school.name)}`:''}</small></div><strong>${r.aveti_percentage==null?'—':r.aveti_percentage+'%'}</strong><strong>${r.result_status==='absent'?'Absent':r.school_percentage==null?'Awaiting School Result':r.school_percentage+'%'}</strong><span class="school-diff ${status}">${r.result_status==='absent'?'Absent — no percentage comparison':diff==null?'Awaiting School Result':`${diff>=0?'+':''}${diff} pp`}</span></div>`;}).join('')}</div></div>`;
 }
 
 async function growth(){
@@ -190,7 +190,7 @@ function growthFilterBar(){
 
 function growthStudentOptions(students){
   return students.length
-    ? students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${s.name}</option>`).join('')
+    ? students.map(s=>`<option value="${s.id}" ${s.id===GR.student?'selected':''}>${escapeHTML(s.name)}</option>`).join('')
     : '<option value="">No students</option>';
 }
 
@@ -240,7 +240,7 @@ function lineChartSVG(labels, series){
       dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${s.color}"><title>${chartText(labels[i].full)} — ${chartText(s.name)}${detail}: ${v}%</title></circle>${showValue?`<text x="${p[0]}" y="${p[1]-9}" font-size="11" font-weight="700" fill="${s.color}" text-anchor="middle">${v}%</text>`:''}`;
     });
     if(d) paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="${s.w}" ${s.dash?'stroke-dasharray="6 4"':''} stroke-linecap="round" stroke-linejoin="round"/>`;
-    legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${s.name}</span>`;
+    legend+=`<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:16px"><span style="width:${s.dash?'14px':'10px'};height:${s.dash?'0':'10px'};${s.dash?'border-bottom:2px dashed '+s.color:'background:'+s.color+';border-radius:2px'}"></span>${escapeHTML(s.name)}</span>`;
   });
   return `<div style="margin-bottom:6px">${legend}</div><svg viewBox="0 0 ${W} ${H}" width="100%">${grid}${paths}${dots}${xl}</svg>`;
 }

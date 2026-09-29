@@ -29,18 +29,23 @@ window.toggleMoreMenu = ()=>{
 /* =============================================================
    AUTH (Supabase email/password). Demo mode skips login entirely.
    ============================================================= */
-let AUTH_MODE = 'signin';
 const loginOverlay = document.getElementById('loginOverlay');
 const authErr = el => document.getElementById('authErr').textContent = el;
 
+/* Phase 0 fix (docs/ARCHITECTURE.md §7, item 6): public self-signup is closed.
+   A centre login is created only by the Master Admin, from Centres → Shared Centre
+   Admin login (assets/js/features/centre-admin.js), which uses the admin-centre
+   Supabase Edge Function under the service-role key. This screen only signs in.
+   This is a client-side convenience, not the security boundary — "Allow new users
+   to sign up" must also be turned off for Email in the Supabase Auth dashboard,
+   since a request straight to the API bypasses this file entirely. */
 function renderAuthMode(){
-  document.getElementById('loginTitle').textContent = AUTH_MODE==='signin' ? 'Sign in' : 'Create an account';
-  document.getElementById('authSubmit').textContent = AUTH_MODE==='signin' ? 'Sign in' : 'Create account';
-  document.getElementById('authToggle').textContent = AUTH_MODE==='signin' ? 'New centre? Create an account' : 'Have an account? Sign in';
-  document.getElementById('authPass').setAttribute('autocomplete', AUTH_MODE==='signin'?'current-password':'new-password');
+  document.getElementById('loginTitle').textContent = 'Sign in';
+  document.getElementById('authSubmit').textContent = 'Sign in';
+  document.getElementById('authToggle').style.display = 'none';
+  document.getElementById('authPass').setAttribute('autocomplete', 'current-password');
   authErr('');
 }
-document.getElementById('authToggle').onclick = e=>{ e.preventDefault(); AUTH_MODE = AUTH_MODE==='signin'?'signup':'signin'; renderAuthMode(); };
 
 async function loadAccessContext(){
   const centres = await DB.listAccessibleCentres();
@@ -90,16 +95,8 @@ document.getElementById('authSubmit').onclick = async ()=>{
   const password = document.getElementById('authPass').value;
   if(!email || !password){ authErr('Enter email and password.'); return; }
   authErr('');
-  const fn = AUTH_MODE==='signup'
-    ? supa.auth.signUp({ email, password })
-    : supa.auth.signInWithPassword({ email, password });
-  const { data, error } = await fn;
+  const { error } = await supa.auth.signInWithPassword({ email, password });
   if(error){ authErr(error.message); return; }
-  if(AUTH_MODE==='signup' && !data.session){
-    authErr('Account created — check your email to confirm, then sign in.');
-    AUTH_MODE='signin'; renderAuthMode();
-    return;
-  }
   await afterLogin();
 };
 
