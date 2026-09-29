@@ -303,7 +303,7 @@ function teacherDirectoryRow(t){
     <div style="flex:1;min-width:220px"><b>${escapeHTML(t.name)}</b><div class="tiny faint">${t.gender?`${cap(t.gender)} · `:''}WhatsApp: ${escapeHTML(t.mobile||'Not set')}${t.email?` · ${escapeHTML(t.email)}`:''}${t.date_of_birth?` · DOB ${fmtDate(t.date_of_birth)}`:''}</div><div class="tiny faint">Classes: ${(t.class_levels||[]).length?(t.class_levels||[]).map(c=>'Class '+c).join(', '):'Any'} · Subjects: ${(t.subjects||[]).length?escapeHTML((t.subjects||[]).join(', ')):'Any'}</div></div>
     <span class="pill ${t.opted_out?'warn':'ok'}">${t.opted_out?'sharing paused':'ready to share'}</span>
     <button onclick="startTeacherEdit('${t.id}')">Edit</button>
-    <button onclick="archiveTeacher('${t.id}','${escapeHTML(t.name).replace(/'/g,'')}')" style="color:var(--red)">Archive</button>
+    <button onclick="archiveTeacher('${t.id}',${escapeHTML(JSON.stringify(t.name))})" style="color:var(--red)">Archive</button>
   </div>`;
 }
 function teacherMultiChoice(id,items,selected,label){
@@ -406,7 +406,7 @@ async function roster(){
           <option value="B" ${SEC_FILTER==='B'?'selected':''}>Section B</option>
         </select>
         <span class="small muted">School</span>
-        <select style="width:auto;max-width:220px" onchange="setSchoolFilter(this.value)"><option value="All">All schools</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${SCHOOL_FILTER===x.id?'selected':''}>${x.name}</option>`).join('')}</select>
+        <select style="width:auto;max-width:220px" onchange="setSchoolFilter(this.value)"><option value="All">All schools</option>${ROSTER_SCHOOLS.map(x=>`<option value="${x.id}" ${SCHOOL_FILTER===x.id?'selected':''}>${escapeHTML(x.name)}</option>`).join('')}</select>
       </div>
     <div class="pad" style="padding-top:8px">${rows}</div>
     </div>
@@ -423,11 +423,11 @@ function studentRow(s){
   const school=ROSTER_SCHOOLS.find(x=>x.id===enrollment?.school_id)?.name||enrollment?.school?.name;
   return `<div class="listrow">
     ${avatar(s.gender,s.name)}
-    <div style="flex:1"><div>${s.name}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth ? ' · DOB '+fmtDate(s.date_of_birth) : ''}${school?(' · '+school):' · No school assigned'}</div></div>
-    <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+s.parent_phone+'</span>'):'<span class="pill warn">no number</span>'}</div>
+    <div style="flex:1"><div>${escapeHTML(s.name)}</div><div class="tiny faint">Session ${s.academic_session||currentSession()} · Class ${s.class_level}${s.section?(' · Sec '+s.section):' · All sec'}${s.gender?(' · '+cap(s.gender)):''}${s.date_of_birth ? ' · DOB '+fmtDate(s.date_of_birth) : ''}${school?(' · '+escapeHTML(school)):' · No school assigned'}</div></div>
+    <div class="small" style="margin-right:8px">${s.parent_phone?('<span class="muted">'+escapeHTML(s.parent_phone)+'</span>'):'<span class="pill warn">no number</span>'}</div>
     <button onclick="startEdit('${s.id}')">Edit</button>
-    <button onclick="archiveStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Archive</button>
-    <button onclick="deleteStudent('${s.id}','${s.name.replace(/'/g,"")}')" style="color:var(--red)">Delete</button>
+    <button onclick="archiveStudent('${s.id}',${escapeHTML(JSON.stringify(s.name))})" style="color:var(--red)">Archive</button>
+    <button onclick="deleteStudent('${s.id}',${escapeHTML(JSON.stringify(s.name))})" style="color:var(--red)">Delete</button>
   </div>`;
 }
 function schoolDatalist(){ return `<datalist id="schoolMasterOptions">${ROSTER_SCHOOLS.map(x=>`<option value="${escapeHTML(x.name)}">`).join('')}</datalist>`; }
@@ -439,7 +439,7 @@ window.saveNewSchool=async()=>{ const modal=document.getElementById('schoolMaste
 function editRow(s){
   const enrollment=ROSTER_ENROLMENTS.find(e=>e.student_id===s.id), schoolId=enrollment?.school_id||'';
   return `<div class="listrow" style="flex-wrap:wrap;gap:8px">
-    <input id="ed_name" value="${s.name}" placeholder="Name" style="flex:1;min-width:120px">
+    <input id="ed_name" value="${escapeHTML(s.name)}" placeholder="Name" style="flex:1;min-width:120px">
     <select id="ed_session" style="width:auto">${sessionOptions(s.academic_session)}</select>
     <select id="ed_class" style="width:auto">${classOptions(s.class_level)}</select>
     <select id="ed_sec" style="width:auto">${sectionOptions(s.section||'All',true)}</select>

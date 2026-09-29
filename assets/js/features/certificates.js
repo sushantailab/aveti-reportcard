@@ -24,7 +24,7 @@ function defaultTrainingEvent(){
   };
 }
 
-const escapeHTML = s => String(s??'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+// escapeHTML now lives in core/shared.js, which loads before this file.
 const eventFocusPoints = event => normalizeText(event?.focus_points).split(/\n|;/).map(normalizeText).filter(Boolean);
 const certIdFor = (event,index) => `${event.certificate_prefix || 'AVT-PD'}-${String(index+1).padStart(6,'0')}`;
 const certificateVerifyURL = participant => `${location.origin}${location.pathname}?verify=${encodeURIComponent(participant.certificate_id)}`;

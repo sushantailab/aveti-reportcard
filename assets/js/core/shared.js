@@ -1,3 +1,10 @@
+/* Escapes text before it is interpolated into an HTML string (innerHTML, an
+   attribute value, or inside an inline event handler). Used wherever a name a
+   teacher or admin typed — a student, teacher, parent or centre name — is
+   rendered back into the page; without it, a name containing `<`, `"` or `'`
+   can break the markup or, inside an onclick attribute, run as script. */
+const escapeHTML = s => String(s??'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
 /* ---------- shared options + avatar ---------- */
 const SUBJECTS = ['Mathematics','Science','Hindi','English','Social Science','EVS'];
 const CLASSES = Array.from({length:12},(_,i)=>i+1);

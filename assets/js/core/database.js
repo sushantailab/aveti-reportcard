@@ -91,12 +91,28 @@ const missingTeacherColumn = error => /teacher_id|relationship.*teacher|tah_teac
 const stripExtendedTestColumns = obj => { const copy={...obj}; delete copy.chapter_ids; delete copy.chapter_names; delete copy.duration_minutes; return copy; };
 const stripTeacherColumn = obj => { const copy={...obj}; delete copy.teacher_id; return copy; };
 const normalizeTest = t => t?.chapter ? {...t,chapter_no:t.chapter.chapter_no,chapter_name:t.chapter.title} : t;
+/* Supabase returns at most 1000 rows per request. A list that can grow past that
+   (students, tests, marks) comes back truncated with no error, so every average,
+   rank and trend built from it is quietly wrong. `build(from,to)` returns the query
+   for one page; the result keeps Supabase's {data,error} shape so callers that
+   inspect `error` (for the legacy-column fallbacks below) work unchanged. */
+const PAGE_SIZE = 1000;
+async function fetchAllRows(build){
+  const rows = [];
+  for(let from=0;;from+=PAGE_SIZE){
+    const res = await build(from, from+PAGE_SIZE-1);
+    if(res.error) return res;
+    rows.push(...(res.data||[]));
+    if((res.data||[]).length<PAGE_SIZE) break;
+  }
+  return {data:rows, error:null};
+}
 const supaDB = {
   async listStudents(){
-    const res = await supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+    const res = await fetchAllRows((from,to)=>supa.from('students').select(STUDENT_COLS).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name').range(from,to));
     if(res.error && (missingAcademicSession(res.error) || missingBirthdayColumn(res.error) || missingSchoolColumn(res.error))){
       const cols = missingBirthdayColumn(res.error) ? STUDENT_COLS_LEGACY.replace(',date_of_birth','') : STUDENT_COLS_LEGACY;
-      const legacy = await supa.from('students').select(cols).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name');
+      const legacy = await fetchAllRows((from,to)=>supa.from('students').select(cols).eq('centre_id',CENTRE_ID).is('archived_at',null).order('name').range(from,to));
       return withDefaultSession(legacy.data);
     }
     return withDefaultSession(res.data);
@@ -163,9 +179,9 @@ const supaDB = {
     return data;
   },
   async listTests(){
-    let res=await supa.from('tests').select(TEST_COLS).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
-    if(res.error && missingTeacherColumn(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
-    if(res.error && missingExtendedTestColumns(res.error)) res=await supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false});
+    let res=await fetchAllRows((from,to)=>supa.from('tests').select(TEST_COLS).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false}).range(from,to));
+    if(res.error && missingTeacherColumn(res.error)) res=await fetchAllRows((from,to)=>supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false}).range(from,to));
+    if(res.error && missingExtendedTestColumns(res.error)) res=await fetchAllRows((from,to)=>supa.from('tests').select(TEST_COLS_LEGACY).eq('centre_id',CENTRE_ID).order('test_date',{ascending:false}).range(from,to));
     return (res.data||[]).map(normalizeTest);
   },
   async addTest(t){
@@ -187,7 +203,21 @@ const supaDB = {
     return normalizeTest(data);
   },
   async listResults(testId){ const {data}=await supa.from('results').select(RESULT_COLS).eq('test_id',testId); return data||[]; },
-  async allResults(){ const testIds=(await this.listTests()).map(t=>t.id); if(!testIds.length) return []; const {data}=await supa.from('results').select(RESULT_COLS).in('test_id',testIds); return data||[]; },
+  /* A long `.in()` list can also push the request URL past its length limit
+     (separately from the row-count truncation fetchAllRows guards against), so the
+     test ids are chunked too. */
+  async allResults(){
+    const testIds=(await this.listTests()).map(t=>t.id);
+    if(!testIds.length) return [];
+    const ID_BATCH=200, all=[];
+    for(let i=0;i<testIds.length;i+=ID_BATCH){
+      const ids=testIds.slice(i,i+ID_BATCH);
+      const {data,error}=await fetchAllRows((from,to)=>supa.from('results').select(RESULT_COLS).in('test_id',ids).range(from,to));
+      if(error) throw error;
+      all.push(...data);
+    }
+    return all;
+  },
   async saveResults(testId,rows){
     // Centre Admins are archive-only, so they cannot delete existing result rows.
     // Upsert safely creates a first mark entry or updates the same student's saved mark.

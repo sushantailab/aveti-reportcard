@@ -512,7 +512,7 @@ function renderEMRoster(){
     <div class="listrow" style="${r.na?'opacity:.55':''}">
       <div style="width:20px" class="tiny faint">${i+1}</div>
       ${avatar(r.gender,r.name)}
-      <div style="flex:1">${r.name}${r.na?' <span class="pill">N.A.</span>':''}</div>
+      <div style="flex:1">${escapeHTML(r.name)}${r.na?' <span class="pill">N.A.</span>':''}</div>
       <input class="mkin" type="number" min="0" max="${EM.full}" step="0.5" placeholder="0" ${(r.present&&!r.na)?'':'disabled'} value="${r.marks??''}" oninput="setMark(${i},this.value)">
       <span class="tiny faint" style="width:28px">/${EM.full}</span>
       <button style="min-width:74px" ${r.na?'disabled':''} class="${r.present?'':'on'}" onclick="toggleAbsent(${i})">${r.present?'Absent':'Absent ✓'}</button>
