@@ -20,15 +20,17 @@ flowchart LR
 
 Phase 0's fixes are in `sushantailab/aveti-reportcard#1`. Phase 1 has started: `apps/web/` exists, builds, and its landing page and email/password sign-in are wired up against the real database — see §2.1 for exactly what that does and doesn't include yet. The live app at the repo root (`index.html` + `assets/`) is completely untouched by any of this and still serves production.
 
-## 1. Repository strategy: one repo, not two
+## 1. Repository, app and domain strategy: one of each — a confirmed decision
 
-An earlier draft of the PRD proposed two repositories (`markskhata-website`, `markskhata-app`). **That is superseded.** Reasons to keep one repo (`sushantailab/aveti-reportcard`, renamed later if you like):
+This got a real pros/cons review (not just picked by default), because it's actually three separate questions people usually blur together, and each one was decided the same way: merged, not split.
 
-- You are not a coder yet. Two repos means two places to clone, two sets of environment variables, two Vercel projects, two places a bug can hide. One repo is one thing to keep in your head.
-- Next.js can serve both the public marketing pages (`markskhata.in`) and the logged-in app (`markskhata.in/app/...` or a subdomain) from the **same deployment**, using "route groups" (explained in §2). You do not need separate hosting to keep them visually and technically separate.
-- A single repo means a single CI pipeline, a single source of truth for the database schema, and one Vercel project to pay for instead of two.
+| Question | Decision | Why |
+| --- | --- | --- |
+| One repo or two? | **One** — `sushantailab/aveti-reportcard` | An earlier PRD draft proposed splitting into `markskhata-website` + `markskhata-app`; superseded. Two repos means two clones, two sets of environment variables, two Vercel projects, two places a bug can hide — real cost for a solo, non-coder founder, for no benefit yet. |
+| One Next.js app or two (a separate marketing app and a separate product app)? | **One** — `apps/web/` serves the landing page, auth and the logged-in app together, via "route groups" (§2) | For one deployable app, a second app (or a monorepo tool to manage several) adds build configuration and CI complexity in exchange for nothing. Split into a second app only the day there is a genuine second *deployable* — a mobile app, say — that needs to share code with this one. |
+| One domain (path-based, e.g. `markskhata.in/home`) or a subdomain split (`app.markskhata.in`)? | **One domain, path-based** | A subdomain buys independent scaling and a marginal "feels like a dedicated app" security perception, at the cost of wiring up cross-domain login cookies yourself and running two deploys in sync — for a solo founder that cost is real and the benefit isn't yet. Path-based also keeps every page's SEO value on one domain instead of splitting it. |
 
-Split into two repos later **only if**: a separate team owns the marketing site, or the marketing site needs a totally different tech stack (e.g. a CMS). Neither applies today.
+None of these are permanent. Revisit any one of them the day its actual trigger shows up: a second real app that needs shared code (→ a monorepo tool), a dedicated marketing/growth hire who wants a no-code page builder for the landing page (→ split the marketing site out), or a specific security/compliance reason to isolate the public site from the app holding student data (→ split then, not before).
 
 ## 2. Target folder structure
 
