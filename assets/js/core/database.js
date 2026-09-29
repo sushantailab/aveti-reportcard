@@ -35,7 +35,7 @@ const SCHOOL_COLS = 'id,centre_id,school_name,city,is_active,archived_at,created
 const SCHOOL_COLS_LEGACY = 'id,centre_id,name,board,archived_at,created_at,updated_at';
 const SCHOOL_ENROLMENT_COLS = 'id,centre_id,student_id,school_id,academic_session,class_level,section,created_at,updated_at,school:school_id(id,centre_id,name,board)';
 const SCHOOL_RESULT_COLS = 'id,centre_id,student_id,academic_session,subject,exam_type,school_exam_date,marks_obtained,full_marks,percentage,result_status,entered_by,created_at,updated_at';
-const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id';
+const CENTRE_COLS = 'id,name,address,phone,email,centre_head_name,logo_url,band_config,status,archived_at,owner_user_id,board,centre_type,class_levels,language';
 const missingAcademicSession = error => String(error?.message||'').toLowerCase().includes('academic_session');
 const missingBirthdayColumn = error => /date_of_birth|column .* does not exist/i.test(String(error?.message||''));
 /* Name the column a Postgres / PostgREST "missing column" error refers to, if any. */

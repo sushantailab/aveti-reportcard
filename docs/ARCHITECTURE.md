@@ -234,3 +234,121 @@ The existing `supabase/migrations/` folder and its naming (`YYYYMMDD_description
 - A monorepo tool (Turborepo, Nx) — unnecessary complexity for one Next.js app; revisit only if a second app (e.g. a mobile app) is added later.
 - Kubernetes, Docker, or any self-hosted server — Vercel + Supabase is the right size for this product's traffic for a long time yet.
 - Automated test coverage beyond the money paths — see §3's testing row.
+
+## 11. Bilingual, multi-board & onboarding (MarksKhata productisation)
+
+This section records the design agreed in the Sep 2026 planning session for turning the
+single-tenant Aveti app into the multi-tenant MarksKhata product. It is the source of
+truth for the board model, the onboarding fields, the language (medium) system, and the
+per-centre customisation layer. Build order is at the end.
+
+### 11.1 Two independent axes: board (data) vs language (display)
+
+The single most important design point: **board and language are separate concerns.**
+
+- **Board** decides *which* curriculum data applies — the set of subjects and the fixed
+  chapter list with fixed serial numbers. A board is really `board + curriculum`:
+  - **CBSE – NCERT** — CBSE board following NCERT books. Fixed chapters, fixed order. (Default.)
+  - **Odisha Board (Odia)** — the single Odia-medium state curriculum (BSE Odisha). Fixed.
+  - **CBSE – Other books (non-NCERT)** — CBSE board, but the school uses other publishers'
+    books (grades 1–8) that are *aligned to* NCERT, plus extras NCERT has no equivalent for
+    (e.g. a standalone English Grammar book). Grades 9–10 are NCERT-mandatory nationwide.
+- **Language / medium** decides *what language the labels are shown in* — English or Odia.
+  It is a display preference, not a data selector. A CBSE school can teach in Odia medium;
+  an Odisha-board school can teach in English. Every catalogue entry and every UI label
+  therefore carries **both** an English and an Odia value; language just switches which is shown.
+
+Consequence: the translation workbook has a `title_en` column and a `title_or` column per
+chapter; the UI string table has an `en` and an `or` value per key. Filling the Odia side
+never duplicates rows — it only fills a column. (Workbook delivered:
+`MarksKhata_Translation.xlsx`, generated from the live DB, classes 3–9, 308 CBSE-NCERT chapters.)
+
+### 11.2 The curriculum data model: shared master + per-centre custom
+
+Confirmed decision (see §11.6): move from **per-centre chapter copies** to **one shared
+master catalogue, bilingual, keyed by board**, with a thin **per-centre customisation layer**
+on top. The picker a teacher sees = `master(board) ∪ this centre's custom rows`.
+
+- **Master catalogue** (shared, read-only reference, bilingual):
+  - `curriculum_chapters(board, class_level, subject, chapter_no, title_en, title_or)`
+  - `curriculum_subjects(board, class_level, subject_key, name_en, name_or)`
+  These are populated by importing the translated workbook. All centres on a board read them.
+- **Per-centre customisation** (already half-exists via the `chapters.centre_id` column):
+  - Custom **chapters** — already shipped: the "+ Add new chapter" button writes a per-centre
+    row into `chapters`. Extended with `title_or` for a bilingual custom title.
+  - Custom **subjects** — NEW: `centre_subjects(centre_id, class_level, subject, name_or)`.
+    Mirrors "add chapter". Solves the non-NCERT case (e.g. add "English Grammar" under Class 6,
+    then add its chapters). No publisher modelling — the master list is the aligned starting
+    point, and the two "add your own" buttons cover every mismatch.
+
+Why this is low-risk: existing tests snapshot `chapter_names[]` onto the test row itself
+(`20260723_periodic_tests.sql`), so historical reports do not depend on the live catalogue.
+The picker's *source* can move to the master table without touching past data; the old
+per-centre `chapters` rows stay as each centre's custom layer.
+
+### 11.3 Onboarding & the `centres` table
+
+New columns on `public.centres` (all additive, safe defaults so existing rows keep working):
+
+| Column | Meaning |
+|---|---|
+| `board text default 'CBSE-NCERT'` | one of `CBSE-NCERT`, `Odisha-Board`, `CBSE-Other` |
+| `centre_type text default 'coaching'` | `school` or `coaching` (tuition) |
+| `class_levels int[] default '{}'` | classes the centre runs, e.g. `{5,6,7,8,9,10}` |
+| `language text default 'en'` | default display language: `en` or `or` |
+
+Flows (same field set, one shared form component):
+- **Public signup — minimal:** email, password, centre name, phone, **type, board, classes,
+  language**. Address / logo / centre-head deferred to "Customize profile" later. (Public
+  signup is currently disabled in the live app; the fields land in the super-admin form first.)
+- **Super-admin manual create** (`centreAdmin()` → `createCentreFromAdmin()`): same fields,
+  filled by the operator. This is the immediate target for the live app.
+
+`centre_type` drives the School Exam feature (§11.5). `board` selects the catalogue (§11.2).
+`class_levels` drives the home-page table (§11.4). `language` seeds the display language.
+
+### 11.4 Home page = live grid from the centre's classes + subjects
+
+When a centre's `class_levels` are known, the home page renders that centre's own table:
+centre name + logo, classes down the side, subjects across the top, each cell showing how
+many tests were conducted (type + count). English data already maps this way; the same
+render runs in Odia once strings + catalogue are translated.
+
+### 11.5 Test taxonomy & the School Exam split
+
+- Rename the product-neutral label: **"Aveti test" → "Test Marks"**; drop the hardcoded
+  "Aveti" special-casing in `shared.js` (`displayCentreName`).
+- Test types (translatable via `Test_Types`): Chapter-End Test (Unit Test), Term 1,
+  Half-Yearly, Term 3, Annual.
+- Full-marks options extended to `[20,25,30,35,40,60,80]` (60 & 80 newly added). Durations
+  unchanged (free `duration_minutes`).
+- **School Exam** (already scaffolded in `20260807_school_exam_results.sql`: `schools`,
+  `student_school_enrolments`, `school_exam_results`) is shown **only for `centre_type =
+  coaching`** — a tuition centre tracks the marks its students got in their school's
+  term/half-yearly/annual, to compare against its own tests. For a `school` centre those
+  exams *are* its Test Marks, so the School Exam button is hidden.
+- Multi-school tuition case is already solved: `student_school_enrolments` ties each student
+  to one school per session, so school is captured once on the student, not per mark entry.
+
+### 11.6 Confirmed decisions (Sep 2026 session)
+
+- Catalogue model: **one shared master table, bilingual, per board.** (Not per-centre copies.)
+- Language switch: **centre default + live per-user EN/Odia toggle.** Report language selectable.
+- Full-marks: **add 60 and 80.** Durations unchanged.
+- Board dropdown wording: **CBSE – NCERT / Odisha Board (Odia) / CBSE – Other books (non-NCERT).**
+- Non-NCERT handled by **Add-your-own-subject + Add-your-own-chapter**, not publisher modelling.
+
+### 11.7 Build order
+
+1. **DB migration** — centre fields (§11.3) + `centre_subjects` + `chapters.title_or`. (Additive.)
+2. **Onboarding UI** — board (3-way) / type / classes (multi-select) / language on the
+   super-admin create + edit centre forms; wire `createCentre`/`updateCentre`/`CENTRE_COLS`.
+3. **Add-your-own-subject** — mirror "Add chapter"; merge `centre_subjects` into `subjectsForClass`.
+4. **Rename Aveti → Test Marks**, fix test-type taxonomy, add full-marks 60/80.
+5. **Master catalogue tables + import** the translated workbook (needs Sushant's Odia columns).
+6. **i18n string engine + toggle** — `t(key)` dictionary `{en,or}`; import translated strings.
+7. **Home-page live grid**, then **bilingual reports & WhatsApp templates**.
+
+Steps 1–4 are English-only and ship to the live app now. Steps 5–7 depend on the translated
+workbook. The DB layer (steps 1, 5) is shared by both the live app and the future Next.js app,
+so none of it is wasted.
