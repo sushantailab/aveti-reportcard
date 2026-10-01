@@ -188,6 +188,12 @@ Called only from `app/api/ai/generate-insights/route.ts`, triggered by a schedul
 
 ## 6. Git workflow (kept deliberately simple for a solo/small team)
 
+This section describes the workflow for **`apps/web`** once it's deployed on Vercel
+(Preview links, CI, etc. — not built yet). For the **live app** (`index.html` +
+`assets/`, deployed to GitHub Pages today), see `docs/DEV_WORKFLOW.md` for the
+workflow that actually exists right now — local setup, a dev database, and the
+pre-release checklist.
+
 - **`main`** is always production. Every commit on `main` is safe to deploy — Vercel deploys it automatically.
 - **Feature branches** for anything bigger than a typo fix: `git checkout -b fix/1000-row-bug`. When it's ready, open a Pull Request into `main`.
 - **Every Pull Request** automatically gets: a Vercel Preview link (§4) and a CI run (`ci.yml`: install dependencies, typecheck, lint, build). A PR cannot merge if the build fails.
