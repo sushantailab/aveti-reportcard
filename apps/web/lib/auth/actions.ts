@@ -6,6 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = { error?: string } | undefined;
 
+/**
+ * Temporary strangler-fig bridge (ARCHITECTURE.md §0): apps/web's own `/home`
+ * has no marks/students/reports yet, so a successful login/signup sends the
+ * user to the real, working dashboard (the legacy index.html app) instead of
+ * an empty stub. Swap this for `/home` once those screens are ported here.
+ */
+const LEGACY_DASHBOARD_URL =
+  process.env.LEGACY_DASHBOARD_URL || "https://sushantailab.github.io/aveti-reportcard/";
+
 const credentialsSchema = z.object({
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
@@ -30,7 +39,7 @@ export async function signIn(_prevState: AuthActionState, formData: FormData): P
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
 
-  redirect("/home");
+  redirect(LEGACY_DASHBOARD_URL);
 }
 
 /**
@@ -58,7 +67,7 @@ export async function signUp(_prevState: AuthActionState, formData: FormData): P
     return { error: "Account created — check your email to confirm, then sign in." };
   }
 
-  redirect("/home");
+  redirect(LEGACY_DASHBOARD_URL);
 }
 
 export async function signOut() {
