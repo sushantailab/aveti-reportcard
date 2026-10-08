@@ -1,0 +1,15 @@
+# Netlify build config for MarksKhata (apps/web, the Next.js rebuild).
+#
+# This repo has two deployable things (see docs/ARCHITECTURE.md §0/§2.3):
+#   - The live legacy app (index.html + assets/) — deployed separately by
+#     .github/workflows/deploy.yml to GitHub Pages. Untouched by this file.
+#   - apps/web — the Next.js app this file builds and deploys to Netlify.
+#
+# "base" points Netlify at the subfolder so it installs/builds apps/web's
+# own package.json instead of the repo root's. The Next.js Runtime
+# (@netlify/plugin-nextjs) is auto-installed on detecting Next.js — no
+# manual adapter setup needed.
+[build]
+  base = "apps/web"
+  command = "npm run build"
+  publish = ".next"
