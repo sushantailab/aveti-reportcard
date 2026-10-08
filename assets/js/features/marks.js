@@ -14,16 +14,17 @@ function markTeacherOptions(teachers, selected='', cls, subject){
 }
 async function enterMarks(testId){
   setCrumb('Enter test marks');
-  const editTest = testId ? (await DB.listTests()).find(t=>t.id===testId) : null;
+  const allTests = await DB.listTests();
+  const editTest = testId ? allTests.find(t=>t.id===testId) : null;
   const draft = !editTest ? readJSON(LS_MARK_DRAFT,null) : null;
   const useDraft = !!draft && RESTORE_MARK_DRAFT;
   RESTORE_MARK_DRAFT = false;
   const lastEntry = readJSON(LS_LAST_ENTRY,null);
-  const recentTest = !editTest && !lastEntry && !useDraft ? (await DB.listTests())[0] : null;
+  const recentTest = !editTest && !lastEntry && !useDraft ? allTests[0] : null;
   const defaultEntry = lastEntry || (recentTest ? {academic_session:currentSession(),class_level:recentTest.class_level,section:recentTest.section||'All',subject:recentTest.subject} : {academic_session:currentSession(),class_level:9,section:'All',subject:'Mathematics'});
   let markTeachers=[];
   try { markTeachers = await DB.listTahTeachers(); } catch(e) { markTeachers=[]; }
-  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[], draftDirty:!!useDraft, teachers:markTeachers };
+  EM = { full:editTest?Number(editTest.full_marks):25, rows:[], editId:editTest?editTest.id:null, editTest, removedResultStudentIds:[], draftDirty:!!useDraft, teachers:markTeachers, allTests, retestConfirmed:false };
   if(useDraft) EM = {...EM, full:Number(draft.full)||25, rows:draft.rows||[], editId:draft.editId||null, removedResultStudentIds:draft.removed_result_student_ids||[], draftDirty:true};
   EM.saveLabel = `✓ ${editTest||EM.editId?'Save changes':'Save & generate reports'}`;
   const selectedSession = useDraft ? (draft.academic_session||currentSession()) : (defaultEntry.academic_session||currentSession());
@@ -45,6 +46,7 @@ async function enterMarks(testId){
     ${schoolResultTabs('aveti')}
     ${demoNote}
     ${draftNotice}
+    <div id="emRetestNotice"></div>
     <div class="card pad">
       <h2 style="font-size:18px;margin-bottom:14px">${editTest?'Edit test marks':'Enter test marks'}</h2>
       <div class="wrap-fields" style="margin-bottom:10px">
@@ -167,7 +169,45 @@ window.loadEMChapters = async (changed=true)=>{
   renderChapterPicker();
   EM.pendingChapterId = '';
   toggleNewChapter();
+  EM.retestConfirmed = false;
+  checkRetestNotice();
   saveDraft(changed);
+};
+/* A test may already exist for the class/subject/chapter combination the
+   teacher just picked — this happens whenever a chapter is genuinely retested,
+   which the app allows with no limit. Find same-chapter tests so the teacher
+   can choose to edit the existing one instead of unknowingly duplicating it. */
+function findExistingTestsForChapters(cls,subject,chapterIds,excludeId){
+  const ids = new Set((chapterIds||[]).filter(Boolean).map(String));
+  if(!ids.size) return [];
+  return (EM.allTests||[]).filter(t=>{
+    if(excludeId && String(t.id)===String(excludeId)) return false;
+    if(String(t.class_level)!==String(cls) || t.subject!==subject) return false;
+    const tChapterIds = new Set([...(t.chapter_ids||[]),t.chapter_id].filter(Boolean).map(String));
+    return [...ids].some(id=>tChapterIds.has(id));
+  }).sort((a,b)=>new Date(testDate(b))-new Date(testDate(a)));
+}
+window.checkRetestNotice = async ()=>{
+  const box = document.getElementById('emRetestNotice');
+  if(!box) return;
+  if(EM.editId || EM.retestConfirmed){ box.innerHTML=''; return; }
+  const cls = parseInt(val('emClass'));
+  const subject = val('emSub');
+  const matches = findExistingTestsForChapters(cls,subject,EM.selectedChapterIds,EM.editId);
+  if(!matches.length){ box.innerHTML=''; return; }
+  const match = matches[0];
+  let entered = 0;
+  try{ entered = (await DB.listResults(match.id)).filter(r=>r.marks!=null||r.present===false||r.na).length; }catch(e){}
+  const chapterLabel = (match.chapter_names&&match.chapter_names[0]) || match.chapter_name || match.chapter?.title || 'this chapter';
+  box.innerHTML = `<div class="banner row between" style="margin-bottom:12px;padding:10px 12px;gap:10px;flex-wrap:wrap">
+    <span class="small">A test for <b>${escapeHTML(chapterLabel)}</b> already exists — ${fmtDate(testDate(match))}, ${escapeHTML(String(match.full_marks))} marks${entered?`, ${entered} students entered`:''}.</span>
+    <span class="row" style="gap:7px"><button type="button" class="ghost" onclick="dismissRetestNotice()">Enter a new retest instead</button><button type="button" onclick="enterMarks('${match.id}')">Edit that test</button></span>
+  </div>`;
+};
+window.dismissRetestNotice = ()=>{
+  EM.retestConfirmed = true;
+  const box = document.getElementById('emRetestNotice');
+  if(box) box.innerHTML='';
 };
 window.toggleChapterPicker = ()=>document.getElementById('emChapterPicker')?.classList.toggle('open');
 document.addEventListener('click',event=>{
@@ -180,7 +220,7 @@ window.updateChapterPicker = (id,checked)=>{
   if(!option) return;
   option.selected=checked;
   EM.selectedChapterIds=Array.from(sel.selectedOptions).filter(o=>o.value).map(o=>o.value);
-  renderChapterPicker(); saveDraft();
+  renderChapterPicker(); checkRetestNotice(); saveDraft();
 };
 function renderChapterPicker(){
   const sel=document.getElementById('emChap'), menu=document.getElementById('emChapterMenu'), summary=document.getElementById('emChapterSummary');
@@ -197,6 +237,7 @@ window.selectNewChapter = ()=>{
   EM.selectedChapterIds=[];
   document.getElementById('emChapterPicker')?.classList.remove('open');
   toggleNewChapter();
+  checkRetestNotice();
 };
 window.restoreMarksDraft = async ()=>{
   if(!readJSON(LS_MARK_DRAFT,null)) return;

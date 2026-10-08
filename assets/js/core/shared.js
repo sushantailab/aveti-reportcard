@@ -25,6 +25,24 @@ const subjectsForClass = cls => {
   if(n===7 || n===8) return subjects.flatMap(s=>s==='Mathematics'?['Mathematics','Mathematics II']:s==='Social Science'?['Social Science','Social Science II']:[s]);
   return subjects;
 };
+// ---- onboarding option builders (board / centre type / language / classes) ----
+const BOARD_OPTIONS = [
+  ['CBSE-NCERT','CBSE – NCERT'],
+  ['Odisha-Board','Odisha Board (Odia)'],
+  ['CBSE-Other','CBSE – Other books (non-NCERT)']
+];
+const CENTRE_TYPE_OPTIONS = [['coaching','Coaching / Tuition centre'],['school','School']];
+const LANGUAGE_OPTIONS = [['en','English'],['or','Odia (ଓଡ଼ିଆ)']];
+const boardOptions = sel => BOARD_OPTIONS.map(([v,l])=>`<option value="${v}" ${v===(sel||'CBSE-NCERT')?'selected':''}>${l}</option>`).join('');
+const centreTypeOptions = sel => CENTRE_TYPE_OPTIONS.map(([v,l])=>`<option value="${v}" ${v===(sel||'coaching')?'selected':''}>${l}</option>`).join('');
+const languageOptions = sel => LANGUAGE_OPTIONS.map(([v,l])=>`<option value="${v}" ${v===(sel||'en')?'selected':''}>${l}</option>`).join('');
+// Multi-select classes as checkboxes; `sel` is an array of class numbers.
+const classCheckboxes = (sel,name) => {
+  const chosen = (sel||[]).map(Number);
+  return CLASSES.map(c=>`<label class="class-check"><input type="checkbox" name="${name||'centreClasses'}" value="${c}" ${chosen.includes(c)?'checked':''}> ${c}</label>`).join('');
+};
+const readCheckedClasses = name => Array.from(document.querySelectorAll(`input[name="${name||'centreClasses'}"]:checked`)).map(el=>Number(el.value)).sort((a,b)=>a-b);
+
 const teacherClasses = () => Array.from({length:8},(_,index)=>index+3);
 // Keep the standard catalog, but also surface exact subject names already
 // stored in the database (for example Math-1, Math-2, or Social Science-2).
