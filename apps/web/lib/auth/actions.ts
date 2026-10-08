@@ -15,9 +15,21 @@ export type AuthActionState = { error?: string } | undefined;
 const LEGACY_DASHBOARD_URL =
   process.env.LEGACY_DASHBOARD_URL || "https://sushantailab.github.io/aveti-reportcard/";
 
-const credentialsSchema = z.object({
+const signUpSchema = z.object({
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
+});
+
+// Sign-in must accept whatever password an account already has, however it
+// was created. The legacy app (assets/js/app.js) has never enforced a
+// minimum length on Centre Admin logins, so an 8-character minimum here
+// silently rejected real, working passwords before Supabase was ever asked —
+// it looked exactly like "my password isn't working" with no error that
+// explained why. Only length-check on signUp, where a *new* password is
+// actually being chosen.
+const signInSchema = z.object({
+  email: z.string().email("Enter a valid email address."),
+  password: z.string().min(1, "Enter your password."),
 });
 
 /**
@@ -27,7 +39,7 @@ const credentialsSchema = z.object({
  * this page is only for returning users.
  */
 export async function signIn(_prevState: AuthActionState, formData: FormData): Promise<AuthActionState> {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -51,7 +63,7 @@ export async function signIn(_prevState: AuthActionState, formData: FormData): P
  * session below already exists or the user must verify first.
  */
 export async function signUp(_prevState: AuthActionState, formData: FormData): Promise<AuthActionState> {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
