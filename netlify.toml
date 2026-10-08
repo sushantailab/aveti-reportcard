@@ -6,10 +6,20 @@
 #   - apps/web — the Next.js app this file builds and deploys to Netlify.
 #
 # "base" points Netlify at the subfolder so it installs/builds apps/web's
-# own package.json instead of the repo root's. The Next.js Runtime
-# (@netlify/plugin-nextjs) is auto-installed on detecting Next.js — no
-# manual adapter setup needed.
+# own package.json instead of the repo root's.
+#
+# The Next.js Runtime (@netlify/plugin-nextjs) is supposed to be
+# auto-installed on detecting Next.js, but the deploy path this project
+# actually goes through (API/CLI zip-and-build, not a GitHub-webhook build)
+# skipped that auto-install — the first deploy published the raw .next
+# folder as plain static files (plugin_state: "none"), which 404s on every
+# route because nothing translated Next's routing into Netlify functions.
+# Declaring the plugin explicitly forces it to run regardless of which
+# deploy path triggered the build.
 [build]
   base = "apps/web"
   command = "npm run build"
   publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
